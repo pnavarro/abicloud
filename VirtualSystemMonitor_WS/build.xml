@@ -1,0 +1,269 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="(insert your project name here)" default="war" basedir=".">
+
+	<!-- Test that a valid ant version is being used -->
+	<condition property="valid.ant.version">
+		<or>
+		  <contains substring="1.6.5" string="${ant.version}" />	
+		  <contains substring="1.7." string="${ant.version}" />	
+		</or>
+	</condition>
+	<fail message="You should be using ant 1.6.5 or better."
+	      unless="valid.ant.version"/>
+	
+	<property file="project.properties"/>
+	<!-- TOMCAT specific settings in .properties. Use accordingly -->
+	<property file="${user.home}/.ant.properties"/>
+
+	<!-- Project properties check: There should be no CHANGE* set -->
+	<condition property="property.check">
+		<or>
+		  <contains substring="CHANGE" string="${lib.dir}" />	
+		  <contains substring="CHANGE" string="${extern.lib.dir}" />	
+		  <contains substring="CHANGE" string="${xsd.dir}" />	
+		  <contains substring="CHANGE" string="${dist.dir}" />	
+		  <contains substring="CHANGE" string="${classes.dir}" />	
+		  <contains substring="CHANGE" string="${gen.src.dir}" />	
+		  <contains substring="CHANGE" string="${user.xsd.file}" />	
+		  <contains substring="CHANGE" string="${user.wsdl.file}" />	
+		  <contains substring="CHANGE" string="${user.output.dir}" />	
+		  <contains substring="CHANGE" string="${wiseman.root}" />	
+		  <contains substring="CHANGE" string="${war.filename}" />	
+		  <contains substring="CHANGE" string="${user.namespace.path}" />	
+		  <contains substring="CHANGE" string="${resource.uri}" />	
+		  <contains substring="CHANGE" string="${service.address}" />	
+		  <contains substring="CHANGE" string="${user.generate.jaxb}" />	
+		</or>
+	</condition>
+	<fail message="You did not set a required property. Please check project.properties 
+		and/or etc/bindings.properties configuration."
+	      if="property.check"/>	
+	
+	<!-- Uncomment when using HTTP proxy settings.
+	<setproxy proxyhost="${http.proxyHost}" 
+	          proxyport="${http.proxyPort}" 
+	          nonproxyhosts="${http.nonProxyHosts}"/>
+	-->
+	<path id="compile.classpath">
+		<fileset dir="${lib.dir}">
+			<include name="**/*.jar"/>
+		</fileset>
+	</path>
+
+	<!-- This setting may need to be modified for alternate Binding technology -->
+	<path id="jaxb.compile.classpath">
+		<fileset dir="${extern.lib.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+	<!--  =================================================  -->
+	<!--   "init" - initializes props and dirs for targets   -->
+	<!--  =================================================  -->
+	<target name="init">
+		<!-- determine if user added an xsd to the dir -->
+		<fileset id="empty" dir="${xsd.dir}" includes="**/*.xsd"/>
+		<pathconvert property="nofiles.files" refid="empty"/>
+		<condition property="xsd.user.not.null">
+			<not>
+				<equals arg1="" arg2="${nofiles.files}"/>
+			</not>
+		</condition>
+		<mkdir dir="${basedir}/${dist.dir}" />
+		<mkdir dir="${basedir}/${classes.dir}" />
+		<mkdir dir="${basedir}/${gen.src.dir}" />
+	</target>
+
+
+	<!--  ===========================================================  -->
+	<!--   "compile" - Compiles source files in src and gen-src dirs   -->
+	<!--  ===========================================================  -->
+	<target name="compile" 
+		depends="init,generate" 
+		description="Compiles source files in src and gen-src directories.">
+		
+		<javac destdir="${basedir}/${classes.dir}"
+                   debug="${debug}">
+			<classpath refid="compile.classpath" />
+			<src path="${basedir}/${src.dir}" />
+		</javac>
+
+		<!-- Copies non-java related artifacts that may be used in implementation -->
+		<copy todir="${basedir}/${classes.dir}">
+			<fileset dir="${basedir}/${src.dir}" includes="**/*.gif,**/*.properties"/>
+		</copy>
+	</target>
+
+	<!-- For those consumers that don't already have a favorite JAVA<->XML technology, JAXB instructions/configuration is provided  -->
+	<!--  ===================================================================  -->
+	<!--   "jaxb" - Runs JAXB's XJC compiler on any .xsd files in the xsd dir  -->
+	<!--  ===================================================================  -->
+	<target name="jaxb" 
+		depends="init" if="xsd.user.not.null" 
+		description="Runs JAXB's XJC compiler on any .xsd files in the xsd directory.">
+		<taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
+			<classpath>
+				<fileset dir="${extern.lib.dir}/jaxws" includes="*.jar" excludes="ant.jar"/>
+			</classpath>
+		</taskdef>
+		<xjc target="${gen.src.dir}">
+			<!-- uncomment if HTTP proxies are needed for internet access, 
+                 define it in ${user.home}/.ant.properties -->
+			<!-- <arg value="-httpproxy" />
+			<arg value="${http.proxy}" /> -->
+			<schema dir="${basedir}/${xsd.dir}" />
+		</xjc>
+	</target>
+
+    <!-- Convenience method for users following default installation instructions.  -->
+	<!--  =================================================  -->
+	<!--   "deploy" - Deploys the jar to a webapp's lib dir  -->
+	<!--  =================================================  -->
+	<path id="deployer.classpath">
+		<pathelement path="${catalina.home}/server/lib/catalina-ant.jar" />
+	</path>
+
+	<target name="deploy" depends="war">
+		<taskdef name="deploy" 
+			     classname="org.apache.catalina.ant.DeployTask" 
+			     classpathref="deployer.classpath" />
+		<deploy url="${catalina.manager.url}" 
+			    username="${catalina.manager.username}" 
+			    password="${catalina.manager.password}"
+		        path="${war.context.path}" 
+			    war="${basedir}/${dist.dir}/${war.filename}" 
+			    update="true" />
+	</target>
+
+	<!--  =================================================  -->
+	<!--   "properties" - Create the wiseman.properties file -->
+	<!--  =================================================  -->
+	<target name="properties" >
+		<echo file="${basedir}/etc/wiseman.properties" 
+			  message="${line.separator}# name of the war file's default WSDL file${line.separator}"/>
+		<echo file="${basedir}/etc/wiseman.properties" 
+			  append="true" 
+			  message="service.wsdl = ${user.wsdl.file}${line.separator}"/>
+		<echo file="${basedir}/etc/wiseman.properties"
+			  append="true"
+			  message="${line.separator}# name of the war file's default schema file${line.separator}"/>
+		<echo file="${basedir}/etc/wiseman.properties" 
+			  append="true" 
+			  message="service.xsd = ${user.xsd.file}${line.separator}"/>
+	</target>
+	
+
+	<!--  ===================================================================  -->
+	<!--   "clean" - Deletes the directories ${dist.dir} and ${classes.dir}    -->
+	<!--  ===================================================================  -->
+	<target name="clean" 
+		description="Deletes the directories ${classes.dir} and ${gen.src.dir}">
+		<delete dir="${basedir}/${dist.dir}"/>
+		<delete dir="${basedir}/${classes.dir}"/>
+		<delete dir="${basedir}/${gen.src.dir}"/>
+		<delete dir="${basedir}/velocity.log"/>
+	</target>
+
+	<!--  ===================================================================  -->
+	<!--   "genwsdl" - Generates WSDL from State XSD                           -->
+	<!--  ===================================================================  -->
+	<target name="genwsdl" description="Generates WSDL from State XSD">
+		<mkdir dir="${wsdl.dir}"/>
+		<mkdir dir="${xsd.dir}"/>
+		<copy todir="${xsd.dir}">
+			<fileset dir="${xsd.dir}/${user.namespace.path}" includes="${user.xsd.file}"/>
+		</copy>
+		<taskdef name="xsd2wsdl" 
+			     classname="com.sun.ws.management.tools.Xsd2WsdlTask">
+			<classpath>
+				<fileset dir="${lib.dir}">
+					<include name="*.jar"/>
+				</fileset>
+			</classpath>
+		</taskdef>
+		<xsd2wsdl xsdFile="${basedir}/${xsd.dir}/${user.xsd.file}"
+			      resourceURI="${resource.uri}"
+			      outputDir="${basedir}/${wsdl.dir}"
+				  serviceAddress="${service.address}" />
+	</target>
+
+	<!--  ===================================================================  -->
+	<!--   "generate" - Generates Java Classes from WSDL                       -->
+	<!--  ===================================================================  -->
+	<target name="generate" depends="genwsdl" description="Generates Java Classes from WSDL">
+		<taskdef name="wsdl2wsman" 
+                 classname="com.sun.ws.management.tools.Wsdl2WsmanTask" >
+			<classpath refid="compile.classpath" />
+		</taskdef>
+		<mkdir dir="${user.output.dir}"/>
+		<wsdl2wsman generateJaxb="${user.generate.jaxb}" 
+			           outputDir="${basedir}/${user.output.dir}" 
+                       wsdlFile="${basedir}/${wsdl.dir}/${user.wsdl.file}"
+                       processAsSchema="false" >
+
+		</wsdl2wsman>
+		<!-- delete spec generated types until we know how to tell jaxb not to generate again -->
+		<delete dir="${gen.src.dir}/org/xmlsoap/schemas" />
+	</target>
+	
+	<target name="war">
+			<mkdir dir="dist"/>
+			<war destfile="${basedir}/${dist.dir}/${war.filename}"
+		         webxml="${basedir}/${webcontent.dir}/WEB-INF/web.xml"
+		         index="true" update="false">
+				<!-- <webinf dir="${webcontent.dir}/WEB-INF"/> -->
+				<zipfileset dir="${basedir}/${webcontent.dir}" includes="*/**" />						
+			</war>
+		</target>	
+
+		<!--
+		   This target is invoked right after automatic compilation by eclipse 
+		   Do the following in order to have this configured in Eclipse:
+		   1. Right click on the project 
+		   2. Click on "Properties"
+		   3. Select the "Builders" 
+		   4. Click on the "Import" button 
+		   5. Select this ant target from the list, this is should have the following format
+		   		i. [PROJECT_NAME] build.xml[TARGET_NAME]
+		   		ii. [PROJECT_NAME] build.xml  
+		   		Note that option (ii) appears for a build file's default target, 
+		   		select this option if this ant target is the default
+		   6. From the "Builders" section select the recently added build target and click on "edit"
+		   7. Select the "Refresh" tab and check the "Refresh resources upon completion" box 
+		   	  and then select the "The entire workspace" option.
+		   8. From the JRE tab select "Run in the same JRE as the workspace"
+		   9. Click on OK and all should be fine, of course if you are fed up there is always http://netbeans.org :)
+		   		    
+		-->
+		<target name="post-automatic-compile">
+			
+			<echo>
+				Project directory: ${project.dir}
+			</echo>
+			<copy todir="${webcontent.dir}/WEB-INF/classes">
+			
+				<!-- Copy the conf directory to the classes directory but ommitting log4j files -->
+				
+				<fileset dir="${project.dir}" 
+				         includes="conf/**,resources/**" 
+				         excludes="resources/binding.properties,resources/wiseman.properties" />
+				
+				<fileset dir="${project.dir}/resources" 
+				         includes="binding.properties,wiseman.properties" />			
+				
+			</copy>
+
+			<copy todir="${webcontent.dir}/WEB-INF/lib" >
+				<fileset dir ="${project.dir}/lib" includes="*.jar" />
+			</copy>
+			
+			<copy todir="${webcontent.dir}">
+				<fileset dir="${basedir}" includes="xsd/**,wsdls/**/"/>
+			</copy>
+			
+			<!-- <eclipse.refreshLocal resource="${basedir}" depth="infinite"/> -->
+			
+		</target>
+
+</project>

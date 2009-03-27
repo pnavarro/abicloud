@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<AbiCloudPopUp xmlns="net.undf.abicloud.view.common.*" xmlns:mx="http://www.adobe.com/2006/mxml">
+	
+	<mx:Metadata>
+		[Event(name="EnterpriseFormClose", type="flash.events.Event")]		
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.business.managers.UserManager;
+			import net.undf.abicloud.model.AbiCloudModel;
+			import net.undf.abicloud.vo.user.User;
+			import mx.utils.ObjectUtil;
+			import mx.resources.ResourceManager;
+			import mx.resources.ResourceBundle;
+			import net.undf.abicloud.vo.user.Enterprise;
+			import net.undf.abicloud.events.UserEvent;
+			
+			[ResourceBundle("Common")]
+			private var rb:ResourceBundle;
+			[ResourceBundle("User")]
+			private var rb2:ResourceBundle;
+			
+			//The enterprise that will be created or edited
+			private var _enterprise:Enterprise;
+			
+			//Flag to indicate when this component is listening for enterprise creation or edition
+			private var _listenerRegistered:Boolean;
+			
+			/**
+			 * Initializes this component to create a new enterprise,
+			 * or edit an existing one
+			 */
+			public function init(enterprise:Enterprise = null):void
+			{
+				this._enterprise = enterprise;
+				
+				if(this._enterprise)
+				{
+					//Edit an existing enterprise
+					titleText = ResourceManager.getInstance().getString("User", "POPUP_TITLE_ENTERPRISE_EDIT");
+					
+					//Setting fields
+					nameInput.text = this._enterprise.name;
+					
+					acceptButton.enabled = true;
+				}
+				else
+				{
+					//Create a new enterprise
+					titleText = ResourceManager.getInstance().getString("User", "POPUP_TITLE_ENTERPRISE_ADD");
+					
+					//Cleaning fields
+					nameInput.text = "";
+					
+					acceptButton.enabled = false;
+				}
+				
+				_listenerRegistered = false;
+				nameInput.setFocus();
+			}
+			
+			private function onAccept():void
+			{
+				var userEvent:UserEvent;
+				
+				if(this._enterprise)
+				{
+					//Editing the enterprise, without modifying the original one until changes are saved in server
+					var enterpriseCopy:Enterprise = ObjectUtil.copy(this._enterprise) as Enterprise;
+					enterpriseCopy.name = nameInput.text;
+					
+					//Registering listener, if it is not, to know when the enterprise has been edited
+					if(! this._listenerRegistered)
+					{
+						//UserEvent.ENTERPRISE_EDTIED event is dispatched when an enterprise has been successfully edited
+						AbiCloudModel.getInstance().userManager.addEventListener(UserEvent.ENTERPRISE_EDITED, enterpriseCallFinishedHandler);
+						this._listenerRegistered = true;
+					}
+					
+					userEvent = new UserEvent(UserEvent.EDIT_ENTERPRISE);
+					userEvent.oldEnterprise = this._enterprise;
+					userEvent.enterprise = enterpriseCopy;
+				}
+				else
+				{
+					//Creating the new enterprise
+					var newEnterprise:Enterprise = new Enterprise();
+					newEnterprise.name = nameInput.text;
+					
+					//Registering listener, if it is not, to know when the enterprise has been created
+					if(! this._listenerRegistered)
+					{
+						//UserManager.ENTERPRISES_UPDATED event is dispatched when an enterprise has been succesfully created
+						AbiCloudModel.getInstance().userManager.addEventListener(UserManager.ENTERPRISES_UPDATED, enterpriseCallFinishedHandler);							
+						this._listenerRegistered = true;
+					}
+					
+					userEvent = new UserEvent(UserEvent.CREATE_ENTERPRISE);
+					userEvent.enterprise = newEnterprise;
+				}
+				
+				dispatchEvent(userEvent);
+			}
+			
+			private function enterpriseCallFinishedHandler(event:Event):void
+			{
+				//Closing form
+				onCancel();
+			}
+			
+			private function onCancel():void
+			{
+				//Unregistering apropiate event
+				if(this._listenerRegistered)
+				{
+					if(this._enterprise)
+						AbiCloudModel.getInstance().userManager.removeEventListener(UserEvent.ENTERPRISE_EDITED, enterpriseCallFinishedHandler);
+					else
+						AbiCloudModel.getInstance().userManager.removeEventListener(UserManager.ENTERPRISES_UPDATED, enterpriseCallFinishedHandler);
+						
+				}
+				
+				dispatchEvent(new Event("EnterpriseFormClose"));
+			}
+			
+			private function validateForm():void
+			{
+				if(nameInput.text.length > 0)
+					acceptButton.enabled = true;
+				else
+					acceptButton.enabled = false;
+			}
+			
+			/**
+			 * Basic behaivour is as follows:
+			 * If user presses the Enter, in any part of this Pop Up (except buttons), it would be
+			 * like Accept Button has been pressed
+			 */
+			override protected function keyboardHandler(keyboardEvent:KeyboardEvent):void
+			{
+				if(keyboardEvent.target == acceptButton || keyboardEvent.target == cancelButton)
+					super.keyboardHandler(keyboardEvent);
+				else
+				{
+					if(keyboardEvent.keyCode == 13 && acceptButton.enabled)
+						onAccept();
+				}
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:Form paddingTop="3">
+		<mx:FormItem label="@Resource(bundle='Common', key='TEXTINPUT_LABEL_NAME')" required="true">
+			<mx:TextInput id="nameInput" maxChars="39" height="20"
+					      change="validateForm()" />
+		</mx:FormItem>
+		
+		<!-- BUTTONS -->
+		<mx:FormItem direction="horizontal">
+			<mx:Button id="acceptButton" label="@Resource(bundle='Common', key='BUTTON_ACCEPT')" 
+					   click="onAccept()" height="18"/>
+			
+			<mx:Button id="cancelButton" label="@Resource(bundle='Common', key='BUTTON_CANCEL')"
+					   click="onCancel()"  height="18" styleName="buttonGris"/>
+		</mx:FormItem>
+	</mx:Form>
+</AbiCloudPopUp>

@@ -1,0 +1,231 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" 
+		   width="85" height="85"
+		   styleName="VirtualImageMiniature"
+		   verticalScrollPolicy="off" horizontalScrollPolicy="off"
+		   creationComplete="onCreationComplete()" xmlns:utils="net.undf.abicloud.utils.*"
+		   mouseDown="onMouseDown()" mouseUp="onMouseUp()"
+		   rollOver="onRollOver()" rollOut="onRollOut()">
+	
+	<!-- Miniature that represents a Virtual Image
+		Also used as source for Drag & Drop Functionality -->
+		
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.business.managers.VirtualImageManager;
+		
+			import net.undf.abicloud.events.VirtualImageEvent;
+			import mx.controls.Alert;
+			import mx.resources.ResourceManager;
+			import net.undf.abicloud.view.common.AbiCloudAlert;
+			import mx.events.CloseEvent;
+			import mx.resources.ResourceBundle;
+			import mx.core.Application;
+			import mx.controls.SWFLoader;
+			import mx.controls.Image;
+			import mx.managers.DragManager;
+			import mx.core.DragSource;
+			import net.undf.abicloud.vo.virtualimage.VirtualImage;
+			
+			
+			private static const DEFAULT_WIDTH:int = 85;
+			private static const DEFAULT_HEIGHT:int = 85;
+			
+			
+			//The virtual image
+			[Bindable]
+			private var _virtualImage:VirtualImage;
+			
+			private var _sizeMultiplier:Number;
+			
+			//Indicates if the Virtual Images displayed can be editable
+			private var _editable:Boolean = false;
+			
+			private function onCreationComplete():void
+			{
+				//Changing the style of this component, depending on the multiplier
+				this.width = DEFAULT_WIDTH * this._sizeMultiplier;
+				this.height = DEFAULT_HEIGHT * this._sizeMultiplier;
+				
+				//Making fontSize bigger, if multiplier > 1
+				if(this._sizeMultiplier > 1)
+					nameLabel.setStyle("fontSize", 11);
+			
+			}
+			
+			public function set virtualImage(vI:VirtualImage):void
+			{
+				this._virtualImage = vI;
+			}
+			
+			public function get virtualImage():VirtualImage
+			{
+				return this._virtualImage;
+			}
+			
+			/**
+			 * Changes the size of this component by a multiplier
+			 **/
+			public function set sizeMultiplier(multiplier:Number):void
+			{
+				this._sizeMultiplier = multiplier;	
+			}
+			
+			public function set editable(value:Boolean):void
+			{
+				this._editable = value;
+			}
+			
+			private function onRollOver():void
+			{
+				if(this._editable && !DragManager.isDragging)
+				{
+					buttonsContainer.visible = true;
+					nameLabel.visible = false;
+				}
+			}
+			
+			private function onRollOut():void
+			{
+				if(this._editable)
+				{
+					buttonsContainer.visible = false;
+					nameLabel.visible = true;
+				}
+			}
+			
+			private function onClickEdit():void
+			{
+				var virtualImageEvent:VirtualImageEvent = new VirtualImageEvent(VirtualImageEvent.VIRTUAL_IMAGE_SELECTED_TO_EDIT, true);
+				virtualImageEvent.virtualImage = this._virtualImage;
+				dispatchEvent(virtualImageEvent);
+			}
+			
+			private function onClickErase():void
+			{
+				AbiCloudAlert.showAlert(ResourceManager.getInstance().getString("Common", "ALERT_TITLE_LABEL"),
+								 ResourceManager.getInstance().getString("VirtualImage", "ALERT_DELETE_VIRTUALIMAGE_HEADER"),
+								 ResourceManager.getInstance().getString("VirtualImage", "ALERT_DELETE_VIRTUALIMAGE_TEXT"),
+								 Alert.YES | Alert.NO,
+								 eraseVirtualImage);
+			}
+			
+			private function eraseVirtualImage(closeEvent:CloseEvent):void
+			{
+				if(closeEvent.detail == Alert.YES)
+				{
+					//Announcing that user wants to delete a Virtual Image
+					var event:VirtualImageEvent = new VirtualImageEvent(VirtualImageEvent.DELETE_VIRTUALIMAGE);
+					event.virtualImage = this._virtualImage;
+					dispatchEvent(event);
+				}
+			}
+			
+			//////////////////////////////////////////
+			// DRAG & DROP FUNCTIONALITY
+			
+			/**
+			 * Handler for MouseEvent.Mouse_DOWN, to register if user wants to
+			 * start a drag operation
+			 */
+			private function onMouseDown():void
+			{
+				if(! DragManager.isDragging)
+					addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+			}
+			
+			/**
+			 * Handler for MouseEvent.MOUSE_UP
+			 */
+			private function onMouseUp():void
+			{
+				//We do not need this listener anymore
+				removeEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+			}
+			
+			/**
+			 * Handler for MouseEvent.MOUSE_MOVE, to start a drag operation
+			 */
+			private function onMouseMove(event:MouseEvent):void
+			{
+				//We do not need this listener anymore
+				removeEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+				
+				//Creating the Drag Source
+				var dragSource:DragSource = new DragSource();
+				dragSource.addData(this._virtualImage, "VirtualImage");
+				
+				//Creating the Drag Proxy, to display the Virtual Image's image while dragging
+				var dragProxy:Image = new Image();
+				dragProxy.source = virtualImageIcon.source;
+				dragProxy.width = virtualImageIcon.width + 10;
+				dragProxy.height = virtualImageIcon.height + 10;
+				
+				//Starting the drag operation
+				dispatchEvent(new Event("virtualImageMiniatureDraggedStart", true));
+				DragManager.doDrag(this, dragSource, event, dragProxy);
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<utils:ImageDefault id="virtualImageIcon" verticalCenter="0" horizontalCenter="0"
+					  source="{this._virtualImage.icon.path}"
+					  defaultImagePath="{VirtualImageManager.DEFAULT_ICON_IMAGE_PATH}"
+					  top="5" bottom="20" left="30" right="10"/>
+			  
+	
+	<mx:Label id="nameLabel"
+			  horizontalCenter="0" bottom="5"
+			  text="{_virtualImage.name}"
+			  truncateToFit="true"
+			  fontWeight="bold" fontSize="8"/>
+			  
+	<mx:HBox id="buttonsContainer" visible="false"
+			 bottom="0" horizontalCenter="0"
+			 paddingBottom="0" horizontalGap="0">
+		
+		<mx:Button id="editButton" styleName="VirtualImageButtonEdit"
+				   label="@Resource(bundle='Common', key='BUTTON_EDIT_UPPERCASE')"
+				   click="onClickEdit()"/>
+		<mx:Button id="eraseButton" styleName="VirtualImageButtonErase" height="100%"
+				   click="onClickErase()"
+				   toolTip="@Resource(bundle='Common', key='BUTTON_DEL_TOOLTIP')"/>
+	</mx:HBox>			  
+	
+</mx:Canvas>

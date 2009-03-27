@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="(abicloud_server)" default="deploy" basedir=".">
+
+	<!-- Test that a valid ant version is being used -->
+	<condition property="valid.ant.version">
+		<or>
+		  <contains substring="1.6.5" string="${ant.version}" />	
+		  <contains substring="1.7." string="${ant.version}" />	
+		</or>
+	</condition>
+	<fail message="You should be using ant 1.6.5 or better."
+	      unless="valid.ant.version"/>
+	
+	<property file="project.properties"/>
+
+	<!-- Project properties check: There should be no CHANGE* set -->
+	<condition property="property.check">
+		<or>
+		  <contains substring="CHANGE" string="${webcontent.dir}" />
+		  <contains substring="CHANGE" string="${lib.dir}" />
+	      <contains substring="CHANGE" string="${dist.dir}" />	
+		</or>
+	</condition>
+	<fail message="You did not set a required property. Please check project.properties 
+		and/or etc/bindings.properties configuration."
+	      if="property.check"/>	
+	
+    <!-- Convenience method for users following default installation instructions.  -->
+	<!--  =================================================  -->
+	<!--   "deploy" - Deploys the jar to a webapp's lib dir  -->
+	<!--  =================================================  -->
+	<path id="deployer.classpath">
+		<pathelement path="${lib.dir}/catalina-ant.jar" />
+	</path>
+
+	<target name="deploy" depends="war">
+		<taskdef name="deploy" 
+			     classname="org.apache.catalina.ant.DeployTask" 
+			     classpathref="deployer.classpath" />
+		<deploy url="${catalina.manager.url}" 
+			    username="${catalina.manager.username}" 
+			    password="${catalina.manager.password}"
+		        path="${war.context.path}" 
+			    war="${basedir}/${dist.dir}/${war.filename}" 
+			    update="true" />
+	</target>
+
+	
+	<!--  =================================================  -->
+	<!--   "war" - Create the war file                       -->
+	<!--  =================================================  -->
+	<target name="war">
+		<war destfile="${basedir}/${dist.dir}/${war.filename}"
+	         webxml="${basedir}/${webcontent.dir}/WEB-INF/web.xml"
+	         index="true" update="false">
+			<!-- <webinf dir="${webcontent.dir}/WEB-INF"/> -->
+			<zipfileset dir="${basedir}/${webcontent.dir}" includes="*/**" />
+			<classes dir="${basedir}" includes="resources/**"/>
+			<classes dir="${basedir}" includes="conf/**" excludes="conf/log4j*"/>
+			<classes dir="${basedir}/conf" includes="log4j*"/>
+		</war>
+	</target>
+	
+    <target name="javadoc" description="Create javadocumentation">
+        <delete dir="javadoc"/>
+        <mkdir dir="javadoc"/>
+        <javadoc destdir="javadoc" private="true" charset="UTF-8">
+            <fileset dir="${basedir}/src" defaultexcludes="yes">
+                <include name="**/*.java"/>
+            </fileset>
+        </javadoc>
+    </target>
+	
+	
+	<!--
+	   This target is invoked right after automatic compilation by eclipse 
+	   Do the following in order to have this configured in Eclipse:
+	   1. Right click on the project 
+	   2. Click on "Properties"
+	   3. Select the "Builders" 
+	   4. Click on the "Import" button 
+	   5. Select this ant target from the list, this is should have the following format
+	   		i. [PROJECT_NAME] build.xml[TARGET_NAME]
+	   		ii. [PROJECT_NAME] build.xml  
+	   		Note that option (ii) appears for a build file's default target, 
+	   		select this option if this ant target is the default
+	   6. From the "Builders" section select the recently added build target and click on "edit"
+	   7. Select the "Refresh" tab and check the "Refresh resources upon completion" box 
+	   	  and then select the "The entire workspace" option.
+	   8. Select the "Recursively include sub-folders" option.	  
+	   9. From the JRE tab select "Run in the same JRE as the workspace"
+	   10. Click on OK and all should be fine, of course if you are fed up there is always http://netbeans.org :)
+	   		    
+	-->
+	<target name="post-automatic-compile">
+		
+		
+		<copy todir="${webcontent.dir}/WEB-INF/classes">
+		
+			<!-- Copy the conf directory to the classes directory but ommitting log4j files -->
+			<fileset dir="${project.dir}" includes="conf/**,resources/**" excludes="conf/log4j*"/>
+			
+			<!-- Add the log4j files to the classes directory -->
+			<fileset dir="${project.dir}/conf" includes="log4j*"/>
+		</copy>	
+		
+	</target>
+    	
+</project>

@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		 width="200" backgroundColor="#FFFFFF" backgroundAlpha="0"
+		 styleName="VirtualDataCenterListRenderer"
+		 verticalScrollPolicy="off" horizontalScrollPolicy="off"
+		 dragEnter="dragEnterHandler(event)"
+		 dragDrop="dragDropHandler(event)">
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.events.VirtualApplianceEvent;
+			import mx.utils.ObjectUtil;
+			import mx.managers.DragManager;
+			import net.undf.abicloud.vo.virtualappliance.VirtualAppliance;
+			import net.undf.abicloud.vo.virtualappliance.VirtualDataCenter;
+			import mx.events.DragEvent;
+			
+			//The VirtualDataCenter being rendered in the list
+			private var _virtualDataCenter:VirtualDataCenter;
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				
+				if(value && value is VirtualDataCenter)
+					this._virtualDataCenter = value as VirtualDataCenter;		
+			}
+			
+			/**
+			 * A VirtualDataCenterListRenderer accepts drops of VirtualAppliance
+			 */
+			private function dragEnterHandler(dragEvent:DragEvent):void
+			{
+				if(dragEvent.dragSource.hasFormat("VirtualAppliance"))
+				{
+					var virtualApplianceDragged:VirtualAppliance = dragEvent.dragSource.dataForFormat("VirtualAppliance") as VirtualAppliance;
+					if(virtualApplianceDragged.virtualDataCenter.id != this._virtualDataCenter.id)
+					{
+						DragManager.acceptDragDrop(this);
+						DragManager.showFeedback(DragManager.MOVE);
+					}
+				}
+			}
+			
+			/**
+			 * When user drops a VirtualAppliance inside this VirtualDataCenterListRenderer,
+			 * the VirtualAppliance will be assigned to the VirtualDataCenter that represents this component
+			 */
+			private function dragDropHandler(dragEvent:DragEvent):void
+			{
+				var virtualApplianceDragged:VirtualAppliance = dragEvent.dragSource.dataForFormat("VirtualAppliance") as VirtualAppliance;
+				var virtualApplianceCopy:VirtualAppliance = ObjectUtil.copy(virtualApplianceDragged) as VirtualAppliance;
+				virtualApplianceCopy.virtualDataCenter = this._virtualDataCenter;
+				
+				var virtualApplianceEvent:VirtualApplianceEvent = new VirtualApplianceEvent(VirtualApplianceEvent.EDIT_VIRTUALAPPLIANCE);
+				virtualApplianceEvent.virtualAppliance = virtualApplianceCopy;
+				virtualApplianceEvent.oldVirtualAppliance = virtualApplianceDragged;
+				dispatchEvent(virtualApplianceEvent);
+			}
+		]]>
+	</mx:Script>
+	<mx:Label text="{data.name}" maxWidth="190"
+			  truncateToFit="true"/>
+</mx:Canvas>

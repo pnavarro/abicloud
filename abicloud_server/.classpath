@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<classpath>
+	<classpathentry kind="src" path="src"/>
+	<classpathentry excluding="com/abiquo/abiserver/scheduler/test/|com/abiquo/abiserver/scheduler/test/data/" kind="src" path="test"/>
+	<classpathentry kind="con" path="org.eclipse.jst.server.core.container/org.eclipse.jst.server.tomcat.runtimeTarget/Apache Tomcat v6.0"/>
+	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.module.container"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/activation.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/ant-launcher.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/avalon-logkit-2.1.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/cfgatewayadapter.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/commons-collections-3.1.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/commons-discovery-0.2.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/commons-logging.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/concurrent.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/cos.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/dbunit-2.3.0.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/dom4j-1.6.1.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/FastInfoset.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/flex-messaging-common.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/flex-messaging-opt.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/flex-messaging-proxy.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/flex-messaging-remoting.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/hibernate3.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/http.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jasypt-1.5.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/javassist-3.4.GA.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jaxb-impl.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jaxb-xjc.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jaxws-api.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jaxws-rt.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jaxws-tools.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jdom-1.0.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jfig-1.5.2.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jsr173_api.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jsr250-api.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/jta-1.1.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/junit-4.5.jar" sourcepath="/home/jdevesa/Projects/abicloud/trunk/abicloud_WS/lib/junit-4.5.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/log4j-1.2.15.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/mAccessor.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/mail.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/mimepull.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/mViewer.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/oro-2.0.8.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/ovf-binding.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/p6spy.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/resolver.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/saaj-impl.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/sjsxp.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/slf4j-log4j12-1.5.2.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/stax-ex.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/velocity-1.4.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/velocity-1.5.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/velocity-dep-1.4.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/werken-xpath-0.9.4.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/wiseman_src.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/wiseman_test.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/wiseman-client-src.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/wiseman-client.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/wiseman-core.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/wiseman-tools.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/wiseman.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/wsdl4j.jar"/>
+	<classpathentry kind="lib" path="WebContent/WEB-INF/lib/xalan.jar"/>
+	<classpathentry kind="con" path="org.eclipse.jst.j2ee.internal.web.container"/>
+	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
+	<classpathentry kind="output" path="WebContent/WEB-INF/classes"/>
+</classpath>

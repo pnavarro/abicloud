@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+	creationComplete="onCreationComplete()" 
+	creationPolicy="all"
+	verticalGap="11"
+	verticalAlign="middle" horizontalAlign="center"
+	verticalScrollPolicy="off" horizontalScrollPolicy="off"
+	styleName="loginStyle" width="225">
+	
+	
+<!-- ********************************************************
+
+	Login component for login process
+
+
+	********************************************************* -->
+		
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.view.common.AbiCloudAlert;
+			import com.adobe.crypto.MD5;
+			import mx.resources.ResourceBundle;
+			import mx.resources.ResourceManager;
+			import net.undf.abicloud.events.LoginEvent;
+			import net.undf.abicloud.vo.authentication.Login;
+			
+			import mx.events.ValidationResultEvent;
+			import mx.validators.ValidationResult;
+			
+			[ResourceBundle("Login")]
+			private var rb:ResourceBundle;
+			
+			[ResourceBundle("Common")]
+			private var rb2:ResourceBundle;
+			
+			[Bindable]
+			private var languageDP:Array = [{label:"English", data:"en_US"},
+											{label:"Español", data:"es_ES"},
+											{label:"Català", data:"ca_ES"}];
+			
+			private function onCreationComplete():void
+			{
+				this.addEventListener(KeyboardEvent.KEY_UP, checkEnter);	
+			}
+			
+			public function init():void
+			{	
+				//Checking for SharedObject presence
+				var so:SharedObject = SharedObject.getLocal("AbiCloudSO");
+				
+				if(so.data.user != null)
+				{
+					tiUsuario.text = so.data.user;
+					tiPasswd.text = so.data.pass;
+					cbAutoLogin.selected = true;
+				}
+				
+				//Checking for SharedObject with locale info
+				var so2:SharedObject = SharedObject.getLocal("AbiCloudSOLocale");
+				if(so2.data.localeIndex != null)
+				{
+					ResourceManager.getInstance().localeChain = [languageDP[so2.data.localeIndex].data];
+					languageCombo.prompt = languageDP[so2.data.localeIndex].label;
+				}
+				else
+				{
+					//Setting default language: English
+					ResourceManager.getInstance().localeChain = [languageDP[0].data];
+					languageCombo.prompt = languageDP[0].label;
+				}
+				
+				//Setting AbiCloudAlert buttons language
+				AbiCloudAlert.okLabel = ResourceManager.getInstance().getString("Common", "ALERT_ACCEPT_LABEL");
+				AbiCloudAlert.cancelLabel = ResourceManager.getInstance().getString("Common", "ALERT_CANCEL_LABEL");
+				AbiCloudAlert.yesLabel = ResourceManager.getInstance().getString("Common", "ALERT_YES_LABEL");
+				AbiCloudAlert.noLabel = ResourceManager.getInstance().getString("Common", "ALERT_NO_LABEL");
+				
+				tiUsuario.setFocus();
+			}
+			
+			private function checkEnter(event:KeyboardEvent):void
+			{
+				if (event.keyCode == Keyboard.ENTER)
+					login();	
+			}
+			
+			/**
+			 * Starts login process
+			 **/
+			private function login():void
+			{
+				//Notifying that user wants to make log in
+				autoLogin();
+				
+				var loginInfo:net.undf.abicloud.vo.authentication.Login = new net.undf.abicloud.vo.authentication.Login();
+				loginInfo.user = tiUsuario.text;
+				loginInfo.password = MD5.hash(tiPasswd.text);
+				loginInfo.locale = ResourceManager.getInstance().localeChain[0];
+				
+				var event:LoginEvent = new LoginEvent(LoginEvent.LOGIN);
+				event.login = loginInfo;
+				dispatchEvent(event);
+				
+				//Clear fields
+				tiUsuario.text = "";
+				tiPasswd.text = "";
+			}
+			
+			/**
+			 * Saves login information in user's computer
+			 **/
+			private function autoLogin():void
+			{
+				var so:SharedObject = SharedObject.getLocal("AbiCloudSO");
+				
+				if (cbAutoLogin.selected)
+				{
+					so.data.user = tiUsuario.text;
+					so.data.pass = tiPasswd.text;
+				}
+				else 
+				{
+					so.clear();
+				}				
+				so.flush();
+			}
+
+			private function onChangeLanguage():void
+			{
+				if(languageCombo.selectedIndex > -1)
+				{
+					//Setting the language selected by the user
+					ResourceManager.getInstance().localeChain = [languageCombo.selectedItem.data];
+					
+					//Setting AbiCloudAlert buttons language
+					AbiCloudAlert.okLabel = ResourceManager.getInstance().getString("Common", "ALERT_ACCEPT_LABEL");
+					AbiCloudAlert.cancelLabel = ResourceManager.getInstance().getString("Common", "ALERT_CANCEL_LABEL");
+					AbiCloudAlert.yesLabel = ResourceManager.getInstance().getString("Common", "ALERT_YES_LABEL");
+					AbiCloudAlert.noLabel = ResourceManager.getInstance().getString("Common", "ALERT_NO_LABEL");
+					
+					//Saving the language in a Shared Object
+					var so:SharedObject = SharedObject.getLocal("AbiCloudSOLocale");
+					so.data.localeIndex = languageCombo.selectedIndex;
+				}
+			}
+			/* FORGOT PASSWORD TEMPORALLY DISABLED
+			private function errorMail():void
+			{
+				var mensaje:Message = new Message();
+				mensaje.type = Message.TYPE_ERROR;
+				mensaje.title = "Error en el formulario";
+				mensaje.subTitle = "Atención";
+				mensaje.message = "Revisa el campo email.";
+				mensaje.button1Label = "Aceptar";
+				mensaje.button1ClickHandler = mensaje.close;
+				mensaje.show();
+			}
+			
+			private function enviarContrasenya():void
+			{
+				var recordarContrasenaEvt:RecordarContrasenaEvent = new RecordarContrasenaEvent();
+				
+				recordarContrasenaEvt.usuario = tiEmailRecordar.text;
+				recordarContrasenaEvt.email = tiEmailRecordar.text;
+				
+				recordarContrasenaEvt.callBack = resultRecordarContrasena;
+				
+				recordarContrasenaEvt.dispatch();
+			}
+			
+			private function resultRecordarContrasena():void
+			{
+				vsMain.selectedIndex = 2;
+			}
+			*/
+		]]>
+	</mx:Script>
+	<mx:Image source="assets/general/logoLogin.png"/>
+	<!--<mx:HBox width="100%" height="100%" > -->
+		<mx:ViewStack id="vsMain" width="100%" height="100%">
+			
+			<!-- Login -->
+			<mx:VBox width="100%" height="100%" verticalGap="5" verticalAlign="middle" horizontalAlign="center"
+					 horizontalScrollPolicy="off" verticalScrollPolicy="off">
+				<mx:VBox verticalGap="0" width="180" styleName="loginStyleIntern"
+						 horizontalScrollPolicy="off" verticalScrollPolicy="off">
+					<mx:Label text="{ResourceManager.getInstance().getString('Login', 'LABEL_USER')}"/>
+					<mx:TextInput id="tiUsuario" width="100%" height="20"/>
+					<mx:Spacer height="10"/>
+					<mx:Label text="{ResourceManager.getInstance().getString('Login', 'LABEL_PASSWORD')}"/>
+					<mx:TextInput id="tiPasswd" width="100%" displayAsPassword="true" height="20"/>
+					<mx:Spacer height="10"/>
+					<mx:CheckBox id="cbAutoLogin" label="{ResourceManager.getInstance().getString('Login', 'LABEL_CHECKBOX_AUTOLOGIN')}" height="17"/>
+				</mx:VBox>
+				
+				<mx:HBox width="100%">
+					<!-- FORGOT PASSWORD TEMPORALLY DISABLED
+					<mx:LinkButton label="He olvidado mi contraseña" click="vsMain.selectedIndex = 1" styleName="passwordPerdido"/>
+					-->
+					<mx:Spacer width="100%" />
+				</mx:HBox>
+				
+				<!-- Language Selector -->
+				<mx:VBox verticalGap="0" width="180" styleName="loginStyleIntern"
+						 horizontalScrollPolicy="off" verticalScrollPolicy="off">
+					<mx:Label text="{ResourceManager.getInstance().getString('Login', 'LABEL_LANGUAGE')}"/>
+					<mx:ComboBox id="languageCombo" width="100%" height="20"
+								 dataProvider="{languageDP}" labelField="label"
+								 change="onChangeLanguage()"/>
+				</mx:VBox>
+			</mx:VBox>
+			
+			<!-- Forgotten password -->
+			<mx:VBox width="100%" height="100%" verticalAlign="middle" verticalGap="0" paddingTop="8" show="tiEmailRecordar.text=''">
+				<mx:Text text="Introduce la dirección de correo electrónico con la que te registraste y en unos segundos recibirás tus datos de acceso." width="100%"/>
+				<mx:Form width="100%">
+					<mx:FormItem label="Email:" width="100%">
+						<mx:TextInput id="tiEmailRecordar" width="100%"/>
+					</mx:FormItem>
+				</mx:Form>
+				
+				<mx:Spacer height="100%"/>
+				
+				<mx:HBox width="100%" horizontalAlign="right">
+					<mx:Button label="Cancelar" styleName="loginButton" click="vsMain.selectedIndex = 0" />
+					<mx:Button id="btEnviarContrasenya" label="Enviar" styleName="loginButton" />
+				</mx:HBox>
+			</mx:VBox>
+			
+			<mx:Canvas width="100%" height="100%">
+				
+				<mx:Text text="Se ha enviado un mail con sus datos de acceso" width="100%" verticalCenter="0"/>			
+						
+				<mx:Button label="Aceptar" styleName="loginButton" click="vsMain.selectedIndex = 0" right="0" bottom="0"/>
+			</mx:Canvas>
+			
+		</mx:ViewStack>
+<!--	</mx:HBox>-->
+	
+	<mx:Button click="login()" label="@Resource(bundle='Common', key='BUTTON_ACCEPT')" height="18" styleName="loginButton"/>
+</mx:VBox>

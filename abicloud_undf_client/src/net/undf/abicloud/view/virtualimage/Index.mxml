@@ -1,0 +1,405 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		   xmlns:components="net.undf.abicloud.view.virtualimage.components.*"
+		   implements="net.undf.abicloud.view.main.IBodyComponent"
+		   width="100%" height="100%"
+		   creationComplete="onCreationComplete()" 
+		   show="onShow()"
+		   hide="onHide()">
+	
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.view.virtualimage.components.VirtualImageEdit;
+			import net.undf.abicloud.view.virtualimage.components.CategoryRenderer;
+			import net.undf.abicloud.business.managers.VirtualImageManager;
+			import net.undf.abicloud.view.virtualimage.components.VirtualImageAdd;
+			import net.undf.abicloud.view.virtualimage.components.CategoryAdd;
+			import mx.events.MenuEvent;
+			import net.undf.abicloud.model.AbiCloudModel;
+			import mx.binding.utils.BindingUtils;
+			import mx.collections.ArrayCollection;
+			import net.undf.abicloud.vo.virtualimage.Repository;
+			import mx.managers.PopUpManager;
+			import net.undf.abicloud.view.virtualimage.components.RepositoryEdit;
+			import net.undf.abicloud.view.virtualimage.components.RepositoryAdd;
+			import net.undf.abicloud.events.VirtualImageEvent;
+			import mx.resources.ResourceManager;
+			import mx.resources.ResourceBundle;
+			import net.undf.abicloud.view.common.AbiCloudAlert;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			
+			
+			[ResourceBundle("Common")]
+			private var rb:ResourceBundle;
+			[ResourceBundle("VirtualImage")]
+			private var rb2:ResourceBundle;
+			
+			//Pop Ups
+			private var _repositoryAdd:RepositoryAdd;
+			private var _repositoryEdit:RepositoryEdit;
+			
+			private var _categoryAdd:CategoryAdd;
+			
+			private var _virtualImageAdd:VirtualImageAdd;
+			private var _virtualImageEdit:VirtualImageEdit;
+			
+			/////////////////////////////////////
+			//IBodyComponent implementation
+			
+			public function hasUnsavedChanges():Boolean
+			{
+				return false;
+			}
+			
+			public function saveChanges():void
+			{
+				
+			}
+			
+			public function discardUnsavedChanges():void
+			{
+				
+			}
+			
+			private function onCreationComplete():void
+			{
+				//Creating Pop Ups
+				_repositoryAdd = new RepositoryAdd();
+				_repositoryAdd.addEventListener("repositoryAddClose", closeAddRepository);
+				
+				_repositoryEdit = new RepositoryEdit();
+				_repositoryEdit.addEventListener("repositoryEditClose", closeEditRepository);
+				
+				_categoryAdd = new CategoryAdd();
+				_categoryAdd.addEventListener("categoryAddClose", closeAddCategory);
+				
+				_virtualImageAdd = new VirtualImageAdd();
+				_virtualImageAdd.addEventListener("virtualImageAddClose", closeAddVirtualImage);
+				
+				_virtualImageEdit = new VirtualImageEdit();
+				_virtualImageEdit.addEventListener("virtualImageEditClose", closeVirtualImageEdit);
+				
+				//Listening for when a Virtual Image has been selected to edit
+				addEventListener(VirtualImageEvent.VIRTUAL_IMAGE_SELECTED_TO_EDIT, editVirtualImage);
+			}
+			
+			/**
+			 * Everytime this component is shown
+			 **/
+			private function onShow():void
+			{
+				//Listening for the repositories available in the model
+				AbiCloudModel.getInstance().virtualImageManager.addEventListener(VirtualImageManager.VIRTUAL_IMAGES_INFORMATION_UPDATED, virtualImagesInformationUpdated);
+				
+				//Listening for categories available in the model
+				AbiCloudModel.getInstance().virtualImageManager.addEventListener(VirtualImageManager.CATEGORIES_UPDATED, categoriesUpdated);
+										
+				//Listening for virtual images available in the model
+				AbiCloudModel.getInstance().virtualImageManager.addEventListener(VirtualImageManager.VIRTUALIMAGES_UPDATED, virtualImagesUpdated);
+				
+				//Requesting the list of repositories and categories
+				var event:VirtualImageEvent = new VirtualImageEvent(VirtualImageEvent.GET_VIRTUALIMAGES_INFORMATION);
+				dispatchEvent(event);
+			}
+			
+			/**
+			 * Everytime this component is hiden
+			 */
+			private function onHide():void
+			{
+				//Removing listeners, since we do not want that this component is listening when it is not shown
+				AbiCloudModel.getInstance().virtualImageManager.removeEventListener(VirtualImageManager.VIRTUAL_IMAGES_INFORMATION_UPDATED, virtualImagesInformationUpdated);
+				AbiCloudModel.getInstance().virtualImageManager.removeEventListener(VirtualImageManager.CATEGORIES_UPDATED, categoriesUpdated);
+				AbiCloudModel.getInstance().virtualImageManager.removeEventListener(VirtualImageManager.VIRTUALIMAGES_UPDATED, virtualImagesUpdated);
+			}
+			
+			/**
+			 * Sets the repositories List data provider, when new repositories are available in the model
+			 * Since when we receive the list of repositories, we also receive the list of categories and icons
+			 * we can now request the list of virtual images
+			 **/
+			private function virtualImagesInformationUpdated(event:Event):void
+			{
+				repositoriesList.dataProvider = AbiCloudModel.getInstance().virtualImageManager.repositories;
+				
+				//Requesting the list of virtual images
+				var virtualImageEvent:VirtualImageEvent = new VirtualImageEvent(VirtualImageEvent.GET_VIRTUALIMAGES_BY_USER);
+				dispatchEvent(virtualImageEvent);
+			}
+			
+			/**
+			 * When the list of categories has been updated
+			 * Usually, when the user adds or delete a category
+			 */
+			private function categoriesUpdated(event:Event):void
+			{
+				//Requesting the list of virtual images
+				//We need to do it, because if a category has been deleted, maybe
+				//some virtual images has been reallocated in another category
+				var virtualImageEvent:VirtualImageEvent = new VirtualImageEvent(VirtualImageEvent.GET_VIRTUALIMAGES_BY_USER);
+				dispatchEvent(virtualImageEvent);
+			}
+			
+			/**
+			 * Initializes the VirtualImageAccordion, when new virtual images are available in 
+			 * the model
+			 */
+			private function virtualImagesUpdated(event:Event):void
+			{
+				virtualImagesAccordion.categories = AbiCloudModel.getInstance().virtualImageManager.categories;	
+			}
+			
+			/**
+			 * When user clicks to add a new repository
+			 **/
+			private function addRepository():void
+			{
+				PopUpManager.addPopUp(_repositoryAdd, this, true);
+				PopUpManager.centerPopUp(_repositoryAdd);
+				_repositoryAdd.init();
+			}
+			
+			/**
+			 * When user clicks to delete a Repository, we ask him / her for confirmation
+			 **/	
+			private function askRepositoryDeletion():void
+			{
+				AbiCloudAlert.showAlert(ResourceManager.getInstance().getString("Common", "ALERT_TITLE_LABEL"),
+								 ResourceManager.getInstance().getString("VirtualImage", "ALERT_DELETE_REPOSITORY_HEADER"),
+								 ResourceManager.getInstance().getString("VirtualImage", "ALERT_DELETE_REPOSITORY_TEXT"),
+								 Alert.YES | Alert.NO,
+								 deleteRepository);
+			}
+			
+			/**
+			 * Calls for Repository deletion, if the user has confirmed it
+			 **/
+			private function deleteRepository(closeEvent:CloseEvent):void
+			{
+				if(closeEvent.detail == Alert.YES)
+				{
+					//Announcing that user wants to delete a Repository
+					var event:VirtualImageEvent = new VirtualImageEvent(VirtualImageEvent.DELETE_REPOSITORY);
+					event.repository = repositoriesList.selectedItem as Repository;
+					dispatchEvent(event);
+				}
+			}
+			
+			/**
+			 * When user clicks to edit a repository
+			 **/
+			private function editRepository():void
+			{
+				PopUpManager.addPopUp(_repositoryEdit, this, true);
+				PopUpManager.centerPopUp(_repositoryEdit);
+				_repositoryEdit.init(repositoriesList.selectedItem as Repository);
+			}
+			
+			private function closeAddRepository(event:Event):void
+			{
+				PopUpManager.removePopUp(_repositoryAdd);
+			}
+			
+			private function closeEditRepository(event:Event):void
+			{
+				PopUpManager.removePopUp(_repositoryEdit);
+			}
+			
+			/**
+			 * When user clicks on a Repository in the Repository List, we only show the Virtual Images that belong to that
+			 * repository
+			 **/
+			private function onClickRepositoriesList():void
+			{
+				if(repositoriesList.selectedIndex > -1)
+				{
+					
+				}
+			}
+			
+			
+			//////////////////////////////////////////////
+			//CATEGORIES AND VIRTUAL IMAGES
+			/**
+			 * When user clicks to add a new category or virtual image
+			 **/
+			 private function onClickAddButton(event:MenuEvent):void
+			 {
+			 	addButton.dataProvider = addButtonDataProvider; //To avoid an annoying graphic problem...
+			 
+			 	if(event.item.@id == "addVirtualImage")
+			 	{
+			 		PopUpManager.addPopUp(this._virtualImageAdd, this, true);
+			 		PopUpManager.centerPopUp(this._virtualImageAdd);
+			 		
+			 		this._virtualImageAdd.init();
+			 	}
+			 	else if(event.item.@id == "addCategory")
+			 	{
+			 		PopUpManager.addPopUp(this._categoryAdd, this, true);
+			 		PopUpManager.centerPopUp(this._categoryAdd);
+			 		
+			 		this._categoryAdd.init();
+			 	}
+			 }
+			 
+			 private function editVirtualImage(virtualImageEvent:VirtualImageEvent):void
+			 {
+			 	PopUpManager.addPopUp(this._virtualImageEdit, this, true);
+			 	PopUpManager.centerPopUp(this._virtualImageEdit);
+			 	
+			 	this._virtualImageEdit.init(virtualImageEvent.virtualImage);
+			 }
+			 
+			 private function askCategoryDeletion():void
+			 {
+			 	if(! CategoryRenderer(virtualImagesAccordion.selectedChild).category.isErasable)
+			 		AbiCloudAlert.showError(ResourceManager.getInstance().getString("Common", "ALERT_ERROR_TITLE_LABEL"),
+								 ResourceManager.getInstance().getString("VirtualImage", "ALERT_DELETE_CATEGORY_HEADER"),
+								 ResourceManager.getInstance().getString("VirtualImage", "ALERT_UNABLE_DELETE_CATEGORY_TEXT"),
+								 Alert.OK, null);
+			 	else
+				 	AbiCloudAlert.showAlert(ResourceManager.getInstance().getString("Common", "ALERT_TITLE_LABEL"),
+								 ResourceManager.getInstance().getString("VirtualImage", "ALERT_DELETE_CATEGORY_HEADER"),
+								 ResourceManager.getInstance().getString("VirtualImage", "ALERT_DELETE_CATEGORY_TEXT"),
+								 Alert.YES | Alert.NO,
+								 deleteCategory);
+			 }
+			 
+			 private function deleteCategory(closeEvent:CloseEvent):void
+			{
+				if(closeEvent.detail == Alert.YES)
+				{
+					var virtualImageEvent:VirtualImageEvent = new VirtualImageEvent(VirtualImageEvent.DELETE_CATEGORY);
+					virtualImageEvent.category = CategoryRenderer(CategoryRenderer(virtualImagesAccordion.selectedChild)).category;
+					dispatchEvent(virtualImageEvent);
+				}
+			}
+		
+			 private function closeAddCategory(event:Event):void
+			 {
+			 	PopUpManager.removePopUp(this._categoryAdd);
+			 }
+			 
+			 private function closeAddVirtualImage(event:Event):void
+			 {
+			 	PopUpManager.removePopUp(this._virtualImageAdd);
+			 }
+			 
+			 private function closeVirtualImageEdit(event:Event):void
+			{
+				PopUpManager.removePopUp(this._virtualImageEdit);
+			}
+		]]>
+	</mx:Script>
+	
+	<!-- addButton's data provider -->		
+	<mx:XMLList id="addButtonDataProvider">
+        <node label="@Resource(bundle='VirtualImage', key='LABEL_VIRTUALIMAGE')" id="addVirtualImage"/>
+        <node label="@Resource(bundle='VirtualImage', key='LABEL_CATEGORY')" id="addCategory"/>
+   	</mx:XMLList>
+	
+	<!-- Repositories list -->
+	<mx:HBox x="0" y="0" width="200" height="18" styleName="cabeceraPanel" paddingLeft="5" verticalAlign="middle">
+		<mx:Label text="@Resource(bundle='Common', key='LABEL_PANEL')" styleName="titlePanel" height="14"/>
+	</mx:HBox>
+	
+	<mx:Canvas left="0" height="100%" width="200"
+			   verticalScrollPolicy="off" horizontalScrollPolicy="off" top="17">
+		
+
+		
+		<mx:List id="repositoriesList"
+				 bottom="31" width="100%"
+				 click="onClickRepositoriesList()"
+				 itemRenderer="net.undf.abicloud.view.virtualimage.components.RepositoryListRenderer" top="0" left="0" borderStyle="none"/>
+		
+		<!-- Tool Bar -->
+		<mx:HBox bottom="0" width="100%" height="32" verticalAlign="middle" styleName="bajo" paddingLeft="6" paddingRight="6">
+		
+			<mx:Button id="addRepositoryButton"
+						click="addRepository()" styleName="bAgregar"
+						toolTip="@Resource(bundle='Common', key='BUTTON_NEW_TOOLTIP')"
+						enabled="false"/>
+				
+			<mx:Button id="deleteButton"
+					   click="askRepositoryDeletion()"
+					   enabled="false" styleName="bNoAgregar"
+					   toolTip="@Resource(bundle='Common', key='BUTTON_DEL_TOOLTIP')"/>
+			<mx:Spacer width="100%" height="10"/>
+					   
+			<mx:Button id="editButton"
+					   click="editRepository()"
+					   enabled="{repositoriesList.selectedIndex > -1}" styleName="bConfig"
+					   toolTip="@Resource(bundle='Common', key='BUTTON_EDIT_TOOLTIP')"/>
+
+		</mx:HBox>
+								
+	</mx:Canvas>
+	
+	
+	
+	<!-- Virtual Images Accordion -->
+	<mx:HBox x="210" y="0" width="100%" height="18" styleName="cabeceraPanel" paddingLeft="5" verticalAlign="middle">
+		<mx:Label text="@Resource(bundle='Common', key='LABEL_DATA_PANEL')" styleName="titlePanel" height="14"/>
+	</mx:HBox>
+	
+	<components:VirtualImageAccordion id="virtualImagesAccordion"
+									  right="0" left="210" top="18" bottom="32"
+									  sizeMultiplier="1.5"
+									  editable="true"/>
+	
+	<mx:HBox bottom="0" left="210" right="0" height="32" verticalAlign="middle" styleName="bajoGris" paddingLeft="6" paddingRight="6">
+				   
+		<mx:PopUpMenuButton id="addButton" styleName="bNewPlus"
+						    dataProvider="{addButtonDataProvider}"
+						    label=""
+						    labelField="@label"
+						    itemClick="onClickAddButton(event)" width="40" height="22"
+						    toolTip="@Resource(bundle='Common', key='BUTTON_NEW_TOOLTIP')"
+						    closeDuration="0"/>
+						    
+		<mx:Button id="deleteCategoryButton"
+					   click="askCategoryDeletion()"
+					   enabled="{virtualImagesAccordion.selectedIndex > -1}" 
+					   styleName="bNoAgregar"
+					   toolTip="@Resource(bundle='Common', key='BUTTON_DEL_TOOLTIP')"/>						    
+	</mx:HBox>
+</mx:Canvas>

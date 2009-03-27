@@ -1,0 +1,276 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" 
+		  styleName="alertPopUp"
+		  minWidth="300" minHeight="150" width="100%" height="100%">
+	
+	<!-- AbiCLoudAlert 
+	
+		This class uses constants from Flex's Alert class, to let user to set 4 different buttons
+		and to retreive the apropiate response from the user, when the Alert is closed
+	-->
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.core.UIComponent;
+			import mx.controls.Alert;
+			import mx.core.Application;
+			import mx.managers.PopUpManager;
+			import mx.events.CloseEvent;
+			
+			[Bindable]
+			private var _titleText:String;
+			
+			[Bindable]
+			private var _headerText:String;
+			
+			[Bindable]
+			private var _mainText:String;
+			
+			[Bindable]
+			private var _mainHtmlText:String;
+			
+			private static var _yesLabel:String = "Yes";
+			public static function set yesLabel(value:String):void
+			{
+				_yesLabel = value;
+			}
+			
+			private static var _noLabel:String = "No";
+			public static function set noLabel(value:String):void
+			{
+				_noLabel = value;
+			}
+			
+			private static var _okLabel:String = "Accept";
+			public static function set okLabel(value:String):void
+			{
+				_okLabel = value;
+			}
+			
+			private static var _cancelLabel:String = "Cancel";
+			public static function set cancelLabel(value:String):void
+			{
+				_cancelLabel = value;
+			}
+			
+			[Bindable]
+			private var _customAlertIconPath:String;
+			
+			private var _flags:uint;
+			
+			private var _responseHandler:Function;
+			
+			public static function showAlert(title:String, header:String, main:String, flags:uint = 0x4, responseHandler:Function = null):void
+			{
+				var customAlert:AbiCloudAlert = new AbiCloudAlert;
+				
+				customAlert._titleText = title;
+				customAlert._headerText = header;
+				customAlert._mainText = main;
+				customAlert._responseHandler = responseHandler;
+				customAlert._flags = flags;
+				customAlert._customAlertIconPath = "assets/general/icon_alert.png";
+				
+				customAlert.create();
+			}
+			
+			public static function showError(title:String, header:String, main:String, flags:uint = 0x4, responseHandler:Function = null):void
+			{
+				var customAlert:AbiCloudAlert = new AbiCloudAlert();
+				
+				customAlert._titleText = title;
+				customAlert._headerText = header;
+				customAlert._mainText = main;
+				customAlert._responseHandler = responseHandler;
+				customAlert._flags = flags;
+				customAlert._customAlertIconPath = "assets/general/icon_error.png";
+				
+				customAlert.create();
+			}
+			
+			
+			private function create():void
+			{
+				if(this._responseHandler != null)
+					this.addEventListener(CloseEvent.CLOSE, _responseHandler);
+				
+				//Registering Keyboard events, for standard application behaivor
+				this.addEventListener(KeyboardEvent.KEY_UP, keyboardHandler);
+				
+				PopUpManager.addPopUp(this, Application.application.appContainer, true);
+				
+				//Making the AbiCloudAlert bigger if mainTextArea does not fit
+				this.height = this.height + (mainTextArea.textHeight - 56);
+				
+				//Showing or hidding buttons
+				createButtons();
+				
+				PopUpManager.centerPopUp(this);
+				
+			}
+			
+			/**
+			 * Creates the apropiate buttons, using constants from Flex's Alert class
+			 */
+			private function createButtons():void
+			{
+				//Showing buttons
+				if(this._flags & Alert.OK)
+				{
+					okButton.visible = true;
+					okButton.includeInLayout = true;
+					okButton.label = _okLabel;
+				}
+				
+				if(this._flags & Alert.YES)
+				{
+					yesButton.visible = true;
+					yesButton.includeInLayout = true;
+					yesButton.label = _yesLabel;
+				}
+				
+				if(this._flags & Alert.NO)
+				{
+					noButton.visible = true;
+					noButton.includeInLayout = true;
+					noButton.label = _noLabel;
+				}
+				
+				if(this._flags & Alert.CANCEL)
+				{
+					cancelButton.visible = true;
+					cancelButton.includeInLayout = true;
+					cancelButton.label = _cancelLabel;
+				}
+				
+				//Setting focus on the button, with an order
+				if(cancelButton.visible)
+					cancelButton.setFocus();
+				else if(noButton.visible)
+					noButton.setFocus();
+				else if(yesButton.visible)
+					yesButton.setFocus();
+				else if(okButton.visible)
+					okButton.setFocus();
+			}
+			
+			/**
+			 * Closes this AbiCloudAlert dispatching the apropiate event
+			 * depending on the pressed button
+			 */
+			private function close(mouseEvent:MouseEvent):void
+			{
+				var closeEvent:CloseEvent = new CloseEvent(CloseEvent.CLOSE);
+				
+				if(mouseEvent.target == okButton)
+					closeEvent.detail = Alert.OK;
+				else if(mouseEvent.target == yesButton)
+					closeEvent.detail = Alert.YES;
+				else if(mouseEvent.target == noButton)
+					closeEvent.detail = Alert.NO;
+				else if(mouseEvent.target == cancelButton || mouseEvent.target == closeButton)
+					closeEvent.detail = Alert.CANCEL;
+				
+				dispatchEvent(closeEvent);
+				
+				if(this._responseHandler != null)
+					this.removeEventListener(CloseEvent.CLOSE, _responseHandler);
+					
+				//Unregistering Keyboard events
+				this.removeEventListener(KeyboardEvent.KEY_UP, keyboardHandler);
+				
+				PopUpManager.removePopUp(this);
+			}
+			
+			/**
+			 * We replicate here the behaivor described in AbiCloud.mxml, since Events dispatched from a PopUp
+			 * do not propagate outside
+			 **/
+			private function keyboardHandler(keyboardEvent:KeyboardEvent):void
+			{
+				if(keyboardEvent.keyCode == 13)
+				{
+					//When users presses the Enter key, it is like a click
+					keyboardEvent.target.dispatchEvent(new MouseEvent(MouseEvent.CLICK));
+				}
+			}
+		]]>
+	</mx:Script>
+			  
+	<mx:Label left="32" top="5" id="titleLabel"
+			  text="{_titleText}" styleName="titleAlert"/>
+	
+	
+	<mx:Button right="4" top="0" id="closeButton"
+			   click="close(event)" styleName="closeAlertPopUp"/>
+	
+	
+	<mx:Image top="38" left="23" id="customAlertIcon" source="{_customAlertIconPath}"/>
+	
+	
+	<mx:Label top="36" left="70" id="headerLabel"
+			  text="{_headerText}" styleName="subTitleAlert"/>
+	
+	
+    <mx:Text  id="mainTextArea"
+			 top="58" left="70" right="30" bottom="76" minHeight="45"
+			 fontSize="12"
+			 htmlText="{_mainText}"/>
+	
+	
+	<mx:HBox left="0" verticalAlign="middle" horizontalAlign="center" right="0" bottom="46">
+	
+		<mx:Button id="okButton" height="18"
+				   click="close(event)"
+				   visible="false" includeInLayout="false"/>
+		
+		<mx:Button id="yesButton" height="18"
+				   click="close(event)"
+				   visible="false" includeInLayout="false"/>
+		
+		<mx:Button id="noButton" height="18"
+				   click="close(event)" styleName="buttonGris"
+				   visible="false" includeInLayout="false" />
+		
+		<mx:Button id="cancelButton" height="18"
+				   click="close(event)" styleName="buttonGris"
+				   visible="false" includeInLayout="false" />
+	</mx:HBox>
+	
+
+</mx:Canvas>

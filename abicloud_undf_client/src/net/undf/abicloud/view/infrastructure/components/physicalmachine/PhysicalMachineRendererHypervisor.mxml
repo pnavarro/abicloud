@@ -1,0 +1,207 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 height="100%" width="100%" verticalCenter="0"
+		 paddingBottom="0" paddingTop="0" paddingLeft="0" paddingRight="0"
+		 verticalScrollPolicy="off" horizontalScrollPolicy="off"
+		 label="@Resource(bundle='Infrastructure', key='TAB_GENERAL_INFO')" xmlns:utils="net.undf.abicloud.utils.*">
+   
+   <mx:Script>
+   	<![CDATA[
+   		import net.undf.abicloud.events.InfrastructureEvent;
+   		import net.undf.abicloud.vo.infrastructure.HyperVisorType;
+   		import net.undf.abicloud.vo.infrastructure.NetworkModule;
+   		import mx.collections.ArrayCollection;
+   		import net.undf.abicloud.vo.infrastructure.HyperVisor;
+   		import mx.utils.ObjectUtil;
+   		import net.undf.abicloud.model.AbiCloudModel;
+   		import net.undf.abicloud.vo.infrastructure.PhysicalMachine;
+   		
+   		[Bindable]
+   		private var _hypervisorSelected:HyperVisor;
+   		
+   		[Bindable]
+   		private var _editMode:Boolean;
+   		/**
+   		 * @private
+   		 */
+   		public function set editMode(value:Boolean):void
+   		{
+   			this._editMode = value;
+   			if(this._editMode)
+   			{
+   				//Set the values that can be edited
+   				hypervisorList.dispatchEvent(new MouseEvent(MouseEvent.CLICK));
+   			}
+   		}
+   		
+   		[Bindable]
+   		private var _physicalMachine:PhysicalMachine;
+   		/**
+   		 * @private
+   		 */
+   		public function set physicalMachine(value:PhysicalMachine):void
+   		{
+   			this._physicalMachine = value;
+   			this._physicalMachineEdited = ObjectUtil.copy(value) as PhysicalMachine;
+   			
+   			hypervisorList.dataProvider = new ArrayCollection(AbiCloudModel.getInstance().infrastructureManager.getHyperVisorsByPhysicalMachine(this._physicalMachine));
+   			this._hypervisorSelected = new HyperVisor();
+			
+   		}
+   		
+   		private var _physicalMachineEdited:PhysicalMachine;
+   		/**
+   		 * Returns a copy (not original) of _physicalMachine, with the changes that can be made in this component
+   		 */
+   		public function get physicalMachineEdited():PhysicalMachine
+   		{	
+   			return this._physicalMachineEdited;
+   		}
+   		
+   		private function onClickHypervisorList():void
+		{
+			if(hypervisorList.selectedIndex > -1)
+			{
+				this._hypervisorSelected = null;
+				this._hypervisorSelected = hypervisorList.selectedItem as HyperVisor;
+				
+				typeInput.selectedIndex = -1;
+				ipInput.selectedIndex = -1;
+			}
+		}
+		
+		private function ipInputLabelFunction(item:Object):String
+		 {
+		 	var networkModule:NetworkModule = item as NetworkModule;
+		 	if(networkModule.dhcp)
+		 		return "DHCP";
+		 	else
+		 		return networkModule.ip;
+		 }
+		 
+		private function onChangeTypeInput():void
+		{
+			if(typeInput.selectedIndex > -1)
+			{
+				portInput.text = HyperVisorType(typeInput.selectedItem).defaultPort.toString();
+			}
+		}
+		
+		/**
+		 * Saves the changes made to the selected hypervisor
+		 */
+		public function saveSelectedHypervisor():void
+		{
+			//Saving changes without modifying the original hypervisor until changes are saved in server
+			
+			if(hypervisorList.selectedIndex > -1)
+			{
+				var hypervisorToEdit:HyperVisor = ObjectUtil.copy(this._hypervisorSelected) as HyperVisor;
+				
+				if(typeInput.selectedIndex > -1)
+					hypervisorToEdit.type = typeInput.selectedItem as HyperVisorType;
+				if(ipInput.selectedIndex > -1)
+					hypervisorToEdit.ip = NetworkModule(ipInput.selectedItem).dhcp ? "DHCP" : NetworkModule(ipInput.selectedItem).ip;
+				
+				hypervisorToEdit.port = Number(portInput.text);
+				
+				if(ipInput.selectedIndex > -1)
+				{
+					hypervisorToEdit.shortDescription = hypervisorToEdit.type.name + " - " + 
+														((NetworkModule(ipInput.selectedItem).dhcp) ? "DHCP" : hypervisorToEdit.ip) + ":" + 
+														hypervisorToEdit.port;
+				}
+				else
+				{
+					hypervisorToEdit.shortDescription = hypervisorToEdit.type.name + " - " + 
+														ipInput.prompt + ":" + 
+														hypervisorToEdit.port;
+				}
+				
+				//Announcing that user wants to edit an hypervisor
+				var infrastructureEvent:InfrastructureEvent = new InfrastructureEvent(InfrastructureEvent.EDIT_HYPERVISOR);
+				infrastructureEvent.oldInfrastructureElement = this._hypervisorSelected;
+				infrastructureEvent.infrastructureElement = hypervisorToEdit;
+				dispatchEvent(infrastructureEvent);				
+			}
+		}
+   	]]>
+   </mx:Script>
+   
+   <!-- Hypervisors information -->
+   <mx:List id="hypervisorList" width="170" height="100"
+			labelField="shortDescription"
+			click="onClickHypervisorList()"/>
+			 		 
+   	<mx:Form verticalGap="5" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" fontSize="11">	
+   		
+		<mx:FormItem label="@Resource(bundle='Infrastructure', key='LABEL_HYPERVISOR_TYPE')" height="20">
+			<mx:Label text="{this._hypervisorSelected.type.name}" 
+					  visible="{! this._editMode}" includeInLayout="{! this._editMode}"/>
+			
+			<mx:ComboBox id="typeInput" height="18"
+						 visible="{this._editMode}" includeInLayout="{this._editMode}" enabled="{hypervisorList.selectedIndex > -1}"
+						 dataProvider="{AbiCloudModel.getInstance().infrastructureManager.hypervisorTypes}"
+						 prompt="{this._hypervisorSelected.type.name}"
+						 labelField="name"
+						 change="onChangeTypeInput()"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_IP')" height="20">
+			<mx:Label text="{this._hypervisorSelected.ip}"
+					  visible="{! this._editMode}" includeInLayout="{! this._editMode}"/>
+			
+			<mx:ComboBox id="ipInput" height="18"
+						 visible="{this._editMode}" includeInLayout="{this._editMode}" enabled="{hypervisorList.selectedIndex > -1}"
+						 dataProvider="{this._physicalMachine.networkModuleList}"
+						 prompt="{this._hypervisorSelected.ip}"
+						 labelFunction="ipInputLabelFunction"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_PORT')" height="20">
+			<mx:Label text="{this._hypervisorSelected.port}"
+					  visible="{! this._editMode}" includeInLayout="{! this._editMode}"/>
+			
+			<mx:TextInput id="portInput" height="20"
+						  visible="{this._editMode}" includeInLayout="{this._editMode}" enabled="{hypervisorList.selectedIndex > -1}"
+						  text="{this._hypervisorSelected.port.toString()}"
+						  restrict="0-9" maxChars="5"/>
+		</mx:FormItem>
+	</mx:Form>
+   
+</mx:HBox>

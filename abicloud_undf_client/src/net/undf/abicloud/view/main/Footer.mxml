@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		   width="100%" height="23" styleName="footerSkin" xmlns:utils="net.undf.abicloud.utils.*"
+		   paddingLeft="8" paddingRight="6" paddingTop="3"
+		   horizontalGap="0" verticalAlign="middle"
+		   creationComplete="onCreationComplete()">
+		   
+	<mx:Script>
+		<![CDATA[
+			import mx.core.Application;
+			import mx.resources.ResourceBundle;
+			import mx.managers.PopUpManager;
+			import net.undf.abicloud.view.main.components.notification.NotificationList;
+			import mx.effects.Resize;
+			import mx.binding.utils.BindingUtils;
+			import net.undf.abicloud.model.AbiCloudModel;
+			
+			private var _numUnreadNotifications:int = 0;
+			
+			private var _notificationList:NotificationList;
+			
+			[ResourceBundle("Main")]
+			private var rb:ResourceBundle;
+			
+			private function onCreationComplete():void
+			{
+				this._notificationList = new NotificationList();
+				this._notificationList.addEventListener("closeNotificationList", closeNotificationList);
+				
+				BindingUtils.bindSetter(numUnreadNotificationsChanged, AbiCloudModel.getInstance().notificationManager, "numUnreadNotifications");
+			}
+			
+			private function numUnreadNotificationsChanged(value:int):void
+			{
+				if(this._numUnreadNotifications < value)
+					//There is a new unread notification. Animating the alert icon
+					glowImage.play([alertIcon]);
+					
+				this._numUnreadNotifications = value;
+			}
+			
+			private function onClickNotificationsLabel():void
+			{
+				PopUpManager.addPopUp(this._notificationList, Application.application.document as DisplayObject, true);
+				PopUpManager.centerPopUp(this._notificationList);
+			}
+			
+			private function closeNotificationList(event:Event):void
+			{
+				PopUpManager.removePopUp(this._notificationList);
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:Glow id="glowImage" duration="1000" 
+        alphaFrom="1.0" alphaTo="0.3" 
+        blurXFrom="0.0" blurXTo="50.0" 
+        blurYFrom="0.0" blurYTo="50.0" 
+        color="#FFBF00"/>
+	
+	<mx:Label text="Todos los derechos reservados por Abiquo, S.L." styleName="gris" height="18"/>
+	
+	<mx:Spacer width="100%" />
+	
+	<mx:HBox id="notificationsBox"
+			 paddingTop="0" paddingLeft="0" paddingRight="0" paddingBottom="0"
+			 horizontalGap="0"
+			 height="100%" verticalAlign="middle">
+			 
+		<utils:SmoothImage id="alertIcon"
+						   source="assets/general/alert.png"
+						   visible="{AbiCloudModel.getInstance().notificationManager.numUnreadNotifications > 0}"/>
+		
+		<mx:Label id="notificationsLabel" useHandCursor="true" mouseChildren="false" buttonMode="true"
+				  styleName="gris"
+				  rollOver="notificationsLabel.setStyle('textDecoration', 'underline')"
+				  rollOut="notificationsLabel.setStyle('textDecoration', 'none')"
+				  click="onClickNotificationsLabel()"
+				  text="{AbiCloudModel.getInstance().notificationManager.numUnreadNotifications + '  ' +
+						 ResourceManager.getInstance().getString('Main', 'LABEL_UNREAD_NOTIFICATIONS')}"/>
+	</mx:HBox>
+	
+	<mx:HBox height="100%"
+			 verticalAlign="middle" horizontalGap="0" paddingTop="0" paddingLeft="6"
+			 visible="{AbiCloudModel.getInstance().countdownManager.clockRunning}"
+			 includeInLayout="{AbiCloudModel.getInstance().countdownManager.clockRunning}">
+	
+		<mx:VRule height="90%" strokeColor="#999999" strokeWidth="1"/>
+		
+		<mx:Spacer width="6"/>
+	 
+		<mx:SWFLoader source="assets/general/clock.swf"
+					  width="16" height="15" />
+		
+		<mx:Label id="countdownLabel"
+				  text="{AbiCloudModel.getInstance().countdownManager.currentSeconds.toFixed(0)}" styleName="gris" height="16" width="18"
+				  toolTip="@Resource(bundle='Main', key='LABEL_NEXT_DATA_UPDATE')"/>
+	</mx:HBox>
+			 
+	
+	
+	
+
+	
+</mx:HBox>

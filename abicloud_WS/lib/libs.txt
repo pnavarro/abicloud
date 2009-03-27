@@ -1,0 +1,31 @@
+activation.jar Common Development and Distribution License
+axis-ant.jar Apache Software License, Version 1.1
+axis.jar Apache Software License, Version 1.1
+bcel-5.2.jar ASL 2.0
+catalina-ant.jar ASL 2.0
+commons-collections-3.2.1.jar ASL 2.0
+commons-configuration-1.6.jar ASL 2.0
+commons-discovery-0.2.jar ASL 2.0
+commons-lang-2.4.jar ASL 2.0
+commons-logging-1.1.1.jar ASL 2.0
+jaxrpc.jar Common Development and Distribution License
+junit.jar Common Public License 1.0
+logback-access-0.9.11.jar GNU Lesser General Public License 
+logback-classic-0.9.11.jar GNU Lesser General Public License 
+logback-core-0.9.11.jar GNU Lesser General Public License 
+mAccessor.jar ASL 2.0
+mailapi.jar Common Development and Distribution License
+saaj.jar Apache Software License, Version 1.1
+servlet-api.jar Apache License, 2.0
+slf4j-api-1.5.6.jar identical MIT License
+vboxws_java16.jar
+velocity-1.4.jar ASL 2.0
+velocity-dep-1.4.jar ASL 2.0
+vim25_axis.jar nuestro propio jar
+wiseman-client.jar ASL 2.0
+wiseman.jar ASL 2.0
+wiseman_src.jar ASL 2.0
+wiseman_test.jar ASL 2.0
+wiseman-tools.jar ASL 2.0
+wsdl4j-1.5.1.jar Common Public License 1.0
+wsdl4j.jar Apache Software License, Version 1.1

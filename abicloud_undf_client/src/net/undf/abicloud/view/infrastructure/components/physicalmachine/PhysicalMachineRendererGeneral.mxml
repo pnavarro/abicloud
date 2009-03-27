@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 height="100%" width="100%" verticalCenter="0"
+		 paddingBottom="0" paddingTop="0" paddingLeft="0" paddingRight="0"
+		 verticalScrollPolicy="off" horizontalScrollPolicy="off"
+		 xmlns:utils="net.undf.abicloud.utils.*">
+   
+   <mx:Script>
+   	<![CDATA[
+   		import net.undf.abicloud.vo.infrastructure.SO;
+   		import mx.utils.ObjectUtil;
+   		import net.undf.abicloud.model.AbiCloudModel;
+   		import net.undf.abicloud.vo.infrastructure.PhysicalMachine;
+   		
+   		[Bindable]
+   		private var _editMode:Boolean;
+   		/**
+   		 * @private
+   		 */
+   		public function set editMode(value:Boolean):void
+   		{
+   			this._editMode = value;
+   			
+   			if(this._editMode)
+   			{
+	   			//Set the values that can be edited
+	   			soInput.selectedIndex = -1;
+	   			soInput.prompt = this._physicalMachine.hostSO.description;
+	   			ramInput.value = this._physicalMachine.ram;
+	   			cpuInput.value = this._physicalMachine.cpu;
+	   			hdInput.value = this._physicalMachine.hd / AbiCloudModel.GB_TO_BYTES;
+	   			descriptionInput.text = this._physicalMachine.description;
+   			}
+   		}
+   		
+   		[Bindable]
+   		private var _physicalMachine:PhysicalMachine;
+   		/**
+   		 * @private
+   		 */
+   		public function set physicalMachine(value:PhysicalMachine):void
+   		{
+   			this._physicalMachine = value;
+   			this._physicalMachineEdited = ObjectUtil.copy(value) as PhysicalMachine;
+   		}
+   		
+   		private var _physicalMachineEdited:PhysicalMachine;
+   		/**
+   		 * Returns a copy (not original) of _physicalMachine, with the changes that can be made in this component
+   		 */
+   		public function get physicalMachineEdited():PhysicalMachine
+   		{	
+   			if(soInput.selectedIndex > -1)
+   				this._physicalMachineEdited.hostSO = soInput.selectedItem as SO;
+   			this._physicalMachineEdited.ram = ramInput.value;
+   			this._physicalMachineEdited.cpu = cpuInput.value;
+   			this._physicalMachineEdited.hd = hdInput.value * AbiCloudModel.GB_TO_BYTES;
+   			this._physicalMachineEdited.description = descriptionInput.text;
+   			
+   			return this._physicalMachineEdited;
+   		}
+   		
+   	]]>
+   </mx:Script>
+	<!-- Physical Machine information -->
+	<mx:HBox height="100%" width="50%" verticalAlign="top" horizontalGap="0">
+		
+		<mx:VBox height="100%" width="100%" verticalGap="0" paddingTop="4">
+
+			<mx:Form verticalGap="5" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" fontSize="11">
+			
+				<mx:FormItem label="@Resource(bundle='Infrastructure', key='COMBOBOX_LABEL_SO')" height="18">
+					<mx:Label text="{this._physicalMachine.hostSO.description}" 
+							  visible="{! _editMode}" includeInLayout="{! _editMode}"/>
+							  
+					<mx:ComboBox id="soInput" 
+								 labelField="description"
+								 dataProvider="{AbiCloudModel.getInstance().operatingSystems}"
+								 height="18"
+								 visible="{_editMode}" includeInLayout="{_editMode}"/>							  
+				</mx:FormItem>
+				
+				<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_RAM')" height="18"
+						 direction="horizontal">
+						 
+					<mx:Label id="ramLabel" width="40"
+							  text="{_physicalMachine.ram.toString()}"
+							  visible="{! _editMode}" includeInLayout="{! _editMode}"/>
+							  
+					<mx:NumericStepper id="ramInput" height="17" width="75"
+							   		   minimum="0" maximum="32768" stepSize="256"
+							   		   visible="{_editMode}" includeInLayout="{_editMode}"/>							  
+				</mx:FormItem>
+				
+				<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_CPU')" height="18"
+						 direction="horizontal">
+						 
+					<mx:Label id="cpuLabel" width="40"
+							  text="{_physicalMachine.cpu.toString()}" 
+							  visible="{! _editMode}" includeInLayout="{! _editMode}"/>
+					
+					<mx:NumericStepper id="cpuInput" height="17" width="75"
+							   		   minimum="1" maximum="32" stepSize="1"
+							   		   visible="{_editMode}" includeInLayout="{_editMode}"/>
+				</mx:FormItem>
+				
+				<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_HD')" height="18"
+							 direction="horizontal">
+							 
+					<mx:Label id="hdLabel" width="40"
+							  text="{(_physicalMachine.hd / AbiCloudModel.GB_TO_BYTES).toString()}" 
+							  visible="{! _editMode}" includeInLayout="{! _editMode}"/>
+							  
+					<mx:NumericStepper id="hdInput" height="17" width="75"
+							   		   minimum="0" maximum="10000" stepSize="10"
+							   		   visible="{_editMode}" includeInLayout="{_editMode}"/>		  
+				</mx:FormItem>
+			</mx:Form>
+		</mx:VBox>
+	</mx:HBox>
+	
+	<mx:VRule width="1" height="100%" strokeColor="#CCCCCC" horizontalCenter="0"/>
+	
+	<!-- PhysicalMachine description -->
+	<mx:VBox height="100%" width="50%" verticalGap="0">
+	
+		<mx:Label text="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_DESCRIPTION')"
+				  fontSize="14" fontWeight="bold" paddingTop="4"/>
+		
+		<mx:Label text="{this._physicalMachine.description}" 
+				  visible="{! _editMode}" includeInLayout="{! _editMode}"/>
+				  
+		<mx:TextArea id="descriptionInput" maxChars="99"
+					 visible="{_editMode}" includeInLayout="{_editMode}"/>
+	</mx:VBox>
+</mx:HBox>

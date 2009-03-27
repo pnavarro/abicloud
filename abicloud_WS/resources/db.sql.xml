@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <comment>
+        Properties for the DB class 
+    </comment>
+    
+    <!--
+    ==================================================================
+    Information on  the Derby database
+    ==================================================================  
+     -->
+    <entry key="db.driver">org.apache.derby.jdbc.EmbeddedDriver</entry>
+    
+    <entry key="db.name">abicloud_ws</entry>
+    
+    <entry key="db.url">jdbc:derby:abicloud_ws</entry>
+
+
+    <!-- Print out the sql statements true/false -->
+    <entry key="showSQL">false</entry>
+    
+    
+    <!--  The list of tables to be created, separated by a comma  -->
+    <entry key="db.tables">virtualApp,virtualAppMachineState</entry>
+    
+    
+    <!--  
+    	The list of indexes to for each table : separated by commas 
+    	
+    	Format: db.table.[TABLE_NAME].indexes 
+    	where TABLE_NAME is one of the values in the list from the entry "db.tables"
+    	each value separated by a comma corresponds to an "entry" key in this file
+    -->
+    <entry key="db.table.virtualApp.indexes">virtualApp.createIndex</entry>
+    
+    
+    
+    
+    <!--
+    ===================================================================================
+    Operations that are pertinent to the table "virtualApp"
+    
+    These are:
+    	1. Creation of the table
+    	2. Creation of the index
+    	3. Addition of a new entry 
+    	4. Retrieval of all the entries
+    	5. Modification of the state of the virtual appliance
+    	6. Deletion of a virtual appliance
+    =================================================================================== 
+     -->    
+    <!-- Creates the virtualapp table -->
+    <entry key="virtualApp.createTable">
+        CREATE TABLE "virtualApp"(
+            "idVirtualApp" VARCHAR(200) NOT NULL ,
+            "virtualAppState" CHAR(1) NOT NULL DEFAULT 'F',
+            "xmlDoc" long VARCHAR,
+            PRIMARY KEY("idVirtualApp")
+        )     
+    </entry>  
+    
+    <!-- Creation of an index on the virtualAppState column -->
+    <entry key="virtualApp.createIndex">
+        CREATE index "virtualapp_idx_virtualAppState" ON "virtualApp"("virtualAppState")     
+    </entry>
+
+    <entry key="virtualApp.addNewEntry">
+        INSERT
+        INTO "virtualApp"(
+            "idVirtualApp",
+            "xmlDoc"
+        )
+        values(
+            ''{0}'',
+            ''{1}''
+        )
+    </entry>
+
+
+    <entry key="virtualApp.getEntries">
+        SELECT * FROM "virtualApp"
+    </entry>
+
+
+    <entry key="virtualApp.updateState">
+        UPDATE "virtualApp" SET "virtualAppState"=''{0}'' WHERE "idVirtualApp"=''{1}''
+    </entry>
+
+
+    <entry key="virtualApp.deleteEntry">
+        DELETE FROM "virtualApp" WHERE "idVirtualApp"=''{0}''
+    </entry>
+
+
+    <!-- entry key="virtualApp.updateXML">
+        UPDATE "virtualApp" SET "xmlDoc"=''{0}'' WHERE "idVirtualApp"=''{1}''
+    </entry-->
+    
+    
+    
+    <!--
+    ====================================================================================
+    Operations for the table virtualAppMachineState
+    This is a basically a lookup table
+    ==================================================================================== 
+     -->
+
+    <!-- Creates the virtualAppMachineState table -->
+    <entry key="virtualAppMachineState.createTable">
+        CREATE TABLE "virtualAppMachineState"(
+            "idVirtualAppMachine" VARCHAR(200) NOT NULL ,
+            "machineState" VARCHAR(10) NOT NULL DEFAULT 'PowerOff',
+            PRIMARY KEY("idVirtualAppMachine")   	           	
+        )     
+    </entry>     
+    
+    <entry key="virtualAppMachineState.addEntry">
+    	INSERT INTO "virtualAppMachineState"("idVirtualAppMachine") VALUES(''{0}'')
+    </entry>
+    
+     <entry key="virtualAppMachineState.updateEntry">
+    	UPDATE "virtualAppMachineState" SET "machineState"=''{0}'' WHERE "idVirtualAppMachine"=''{1}''
+    </entry>
+    
+       
+    <entry key="virtualAppMachineState.getEntries">
+        SELECT * FROM "virtualAppMachineState"
+    </entry>   
+
+    
+    <entry key="virtualAppMachineState.deleteEntries">
+    	DELETE FROM "virtualAppMachineState" WHERE "idVirtualAppMachine" IN ({0})
+    </entry>
+    
+</properties>

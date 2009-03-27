@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<AbiCloudPopUp xmlns="net.undf.abicloud.view.common.*" xmlns:mx="http://www.adobe.com/2006/mxml"
+			   titleText="@Resource(bundle='Infrastructure', key='POPUP_TITLE_NETWORKMODULEFORM')">
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.vo.infrastructure.DNS;
+			import mx.collections.ArrayCollection;
+			import net.undf.abicloud.vo.infrastructure.NetworkModule;
+			
+			[Bindable]
+			private var _networkModule:NetworkModule;
+			
+			[Bindable]
+			private var _dnss:ArrayCollection;
+			
+			public function set networkModule(networkM:NetworkModule):void
+			{
+				if(networkM == null)
+				{
+					//User wants to create a brand new network module
+					this._networkModule = new NetworkModule();
+					this._dnss = new ArrayCollection();
+					
+					//Cleaning the form
+					dhcpNoInput.selected = true;
+					ipInput.text = "";
+					subnetMaskInput.text = "";
+					gatewayInput.text = "";
+					bwInput.text = "";
+					dnsInput.text = "";
+				}
+				else
+				{
+					//User wants to edit an existing network module
+					this._networkModule = networkM;
+					this._dnss = networkM.dns;
+				}
+				
+				ipInput.setFocus();
+			}
+			
+			public function get networkModule():NetworkModule
+			{
+				return this._networkModule;
+			}
+			
+			/**
+			 * When user wants to add a new DNS
+			 **/
+			 private function onClickAddDNS():void
+			 {
+			 	var dns:DNS = new DNS();
+			 	dns.dns = dnsInput.text;
+			 	_dnss.addItem(dns);
+			 	
+			 	dnsInput.text = "";
+			 }
+			
+			/**
+			 * When user wants to delete a created DNS
+			 **/
+			 private function onClickDeleteDNS():void
+			 {
+			 	var index:int = _dnss.getItemIndex(dnsList.selectedItem);
+			 	_dnss.removeItemAt(index);
+			 }
+			 
+			 /**
+			 * When user wants to save changes made to a Network Module
+			 **/
+			 private function onAccept():void
+			 {
+			 	_networkModule.dhcp = dhcpYesInput.selected;
+			 	_networkModule.ip = ipInput.text;
+			 	_networkModule.subNetMask = subnetMaskInput.text;
+			 	_networkModule.gateway = gatewayInput.text;
+			 	_networkModule.bw = Number(bwInput.text);
+			 	_networkModule.dns = _dnss;
+			 	
+			 	dispatchEvent(new Event("networkModuleFormAccept"));
+			 }
+			 
+			 /**
+			 * When users wants to cancel
+			 **/
+			 private function onCancel():void
+			 {
+			 	dispatchEvent(new Event("networkModuleFormCancel"));
+			 }
+			 
+			 /**
+			 * Basic behaivour is as follows:
+			 * If user presses the Enter, in any part of this Pop Up (except buttons), it would be
+			 * like Accept Button has been pressed
+			 */
+			override protected function keyboardHandler(keyboardEvent:KeyboardEvent):void
+			{
+				if(keyboardEvent.target == acceptButton || keyboardEvent.target == cancelButton)
+					super.keyboardHandler(keyboardEvent);
+				else
+				{
+					if(keyboardEvent.keyCode == 13 && acceptButton.enabled)
+						onAccept();
+				}
+			}
+			 
+		]]>
+	</mx:Script>
+	
+	<mx:Form paddingTop="3">	
+		<mx:FormItem label="@Resource(bundle='Infrastructure', key='CHECKBOX_LABEL_DHCP')"
+							 direction="horizontal">
+				<mx:RadioButton id="dhcpYesInput" groupName="dhcpRadioButtons" selected="{_networkModule.dhcp}"
+								label="@Resource(bundle='Common', key='ALERT_YES_LABEL')" />
+								
+				<mx:RadioButton id="dhcpNoInput" groupName="dhcpRadioButtons"
+							    label="@Resource(bundle='Common', key='ALERT_NO_LABEL')" selected="{!_networkModule.dhcp}"/>
+		</mx:FormItem>
+		
+		<mx:FormItem enabled="{dhcpNoInput.selected}"
+					 label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_IP')">
+			<mx:TextInput id="ipInput" text="{(dhcpYesInput.selected) ? '' : _networkModule.ip}" height="20"
+						  maxChars="39"
+						  restrict="0-9.:A-F"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_SUBNETMASK')" enabled="{dhcpNoInput.selected}">
+			<mx:TextInput id="subnetMaskInput" text="{(dhcpYesInput.selected) ? '' : _networkModule.subNetMask}" height="20"
+						 maxChars="39"
+						  restrict="0-9.:A-F"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_GATEWAY')" enabled="{dhcpNoInput.selected}">
+			<mx:TextInput id="gatewayInput" text="{(dhcpYesInput.selected) ? '' : _networkModule.gateway}" height="20"
+						  maxChars="39"
+						  restrict="0-9.:A-F"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_BW')">
+			<mx:TextInput id="bwInput" restrict="0-9" text="{_networkModule.bw.toString()}" height="20"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='Infrastructure', key='FORM_LABEL_DNS')"
+					 direction="horizontal">
+					 
+			<mx:VBox verticalGap="0">
+				<mx:List id="dnsList" width="100" height="75"
+						 dataProvider="{_dnss}"
+						 labelField="dns"/>
+				<mx:Spacer width="6" height="6"/>
+						 
+				<mx:Button id="deleteDNSButton"	
+						   click="onClickDeleteDNS()"
+						   enabled="{dnsList.selectedIndex > -1}" styleName="bNoAgregar"
+						   toolTip="@Resource(bundle='Common', key='BUTTON_DEL_TOOLTIP')"/>
+			</mx:VBox>
+			
+			
+			<mx:TextInput id="dnsInput"  height="20"
+						  restrict="0-9.:A-F"/>
+			
+			<mx:Button id="dnsButton"
+					   label="@Resource(bundle='Common', key='BUTTON_ACCEPT')"
+					   enabled="{dnsInput.text.length > 0}"
+					   click="onClickAddDNS()" height="18" styleName="buttonGris"/>	 
+			
+		</mx:FormItem>
+		
+		<mx:FormItem direction="horizontal">
+			<mx:Button id="acceptButton" label="@Resource(bundle='Common', key='BUTTON_ACCEPT')" 
+					   enabled="{ipInput.text.length > 0 || dhcpYesInput.selected}"
+					   click="onAccept()" height="18"/>
+			
+			<mx:Button id="cancelButton" label="@Resource(bundle='Common', key='BUTTON_CANCEL')"
+					   click="onCancel()"  height="18" styleName="buttonGris"/>
+		</mx:FormItem>
+	</mx:Form>
+
+</AbiCloudPopUp>

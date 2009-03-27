@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 16-oct-2008 16:52:14 by Hibernate Tools 3.2.1.GA -->
+<hibernate-mapping>
+  <class catalog="kinton" name="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.RackHB" table="rack">
+    <id name="idRack" type="java.lang.Integer">
+      <column name="idRack"/>
+      <generator class="identity"/>
+    </id>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.UserHB" fetch="select" name="userHBByIdUserLastModification">
+      <column name="idUser_lastModification"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.DatacenterHB" fetch="select" name="datacenter">
+      <column name="idDataCenter" not-null="true"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.UserHB" fetch="select" name="userHBByIdUserCreataion">
+      <column name="idUserCreataion" not-null="true"/>
+    </many-to-one>
+    <property name="name" type="string">
+      <column length="20" name="name" not-null="true"/>
+    </property>
+    <property name="shortDescription" type="string">
+      <column length="30" name="shortDescription"/>
+    </property>
+    <property name="largeDescription" type="string">
+      <column length="100" name="largeDescription"/>
+    </property>
+    <property name="creatioNdate" type="timestamp">
+      <column length="0" name="creatioNDate" not-null="true"/>
+    </property>
+    <property name="lastModificationDate" type="timestamp">
+      <column length="0" name="lastModificationDate"/>
+    </property>
+    <set inverse="true" lazy="true" name="physicalmachines" order-by="name">
+      <key>
+        <column name="idRack" not-null="true"/>
+      </key>
+      <one-to-many class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.PhysicalmachineHB"/>
+    </set>
+  </class>
+</hibernate-mapping>

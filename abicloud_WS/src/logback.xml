@@ -1,0 +1,25 @@
+<configuration>
+
+  <appender name="FILE" class="ch.qos.logback.core.FileAppender">
+    <file>${catalina.home}/logs/abicloud_WS.log</file>
+
+    <layout class="ch.qos.logback.classic.PatternLayout">
+      <Pattern>%date %level [%thread] %logger{10} [%file:%line] %msg%n</Pattern>
+    </layout>
+  </appender>
+
+  <appender name="STDOUT"
+    class="ch.qos.logback.core.ConsoleAppender">
+   <layout class="ch.qos.logback.classic.PatternLayout">
+     <Pattern>
+       %d{HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n 
+      </Pattern>
+    </layout>
+  </appender>
+
+  <root>
+    <level value="info" />
+    <appender-ref ref="FILE" />
+    <appender-ref ref="STDOUT" />
+  </root>
+</configuration>

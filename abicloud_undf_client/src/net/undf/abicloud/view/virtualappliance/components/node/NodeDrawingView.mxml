@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<NodeConnectionSurface xmlns:mx="http://www.adobe.com/2006/mxml"
+		   xmlns="net.undf.abicloud.view.virtualappliance.components.node.connection.*"
+		   implements="net.undf.abicloud.view.virtualappliance.components.node.INodeView"
+		   width="100%" height="100%"
+		   verticalScrollPolicy="off" horizontalScrollPolicy="off"
+		   styleName="DrawingArea"
+		   borderSkin="net.undf.abicloud.view.virtualappliance.components.node.NodeDrawingViewBackground"
+		   backgroundAlpha="0"
+		   initialize="onInitialize()">
+	
+	<mx:Script>
+		<![CDATA[
+			import flash.sampler.stopSampling;
+			import net.undf.abicloud.view.virtualappliance.components.node.NodeRendererEvent;
+			import net.undf.abicloud.view.virtualappliance.components.node.NodeRenderer;
+			import mx.utils.ObjectUtil;
+			import mx.events.ItemClickEvent;
+			import net.undf.abicloud.vo.virtualappliance.Node;
+			import net.undf.abicloud.vo.virtualimage.VirtualImage;
+			import mx.managers.DragManager;
+			import mx.events.DragEvent;
+			import mx.collections.ArrayCollection;
+			
+			
+			private var _halfX:int;
+			private var _halfY:int;
+		
+			private var _nodeDrawTimer:Timer;
+			
+			//Flag that indicates if this component is called to display Nodes
+			//When false, this component will take any action against NodeRendererEvents
+			private var _isDisplayingNodes:Boolean = false;
+			
+			//The INodeViewController that contains and controls this INodeView
+			private var _iNodeViewController:INodeViewController = null;
+			
+			private function onInitialize():void
+			{
+				//This timer is used to give time to Nodes to be drawn, before we draw connections
+				this._nodeDrawTimer = new Timer(10, 1);
+				this._nodeDrawTimer.addEventListener(TimerEvent.TIMER_COMPLETE, onNodeDrawTimerComplete);
+			}
+
+			/////////////////////////////////////////////////
+			//DRAWING FUNCTIONALITY & INodeView implementation
+			
+			public function set nodeViewController(inodeViewController:INodeViewController):void
+			{
+				if(this._iNodeViewController != null)
+				{
+					//Unregistering events from the old INodeViewController
+					EventDispatcher(this._iNodeViewController).removeEventListener(NodeRendererEvent.NODERENDERER_ERASED, onNodeRendererErased);
+					EventDispatcher(this._iNodeViewController).removeEventListener(NodeRendererEvent.NODERENDERER_ADDED, onNodeRendererAdded);
+				}
+				
+				this._iNodeViewController = inodeViewController;
+				
+				//Registering events
+				EventDispatcher(this._iNodeViewController).addEventListener(NodeRendererEvent.NODERENDERER_ERASED, onNodeRendererErased);
+				EventDispatcher(this._iNodeViewController).addEventListener(NodeRendererEvent.NODERENDERER_ADDED, onNodeRendererAdded);
+			}
+			
+			public function get isDisplayingNodes():Boolean
+			{
+				return this._isDisplayingNodes;
+			}
+			
+			public function set isDisplayingNodes(value:Boolean):void
+			{
+				this._isDisplayingNodes = value;
+			}
+			
+			public function fromINodeViewToNode(point:Point):Point
+			{
+				point.x = (point.x - this._halfX);
+				point.y = (point.y - this._halfY);
+				
+				return point;
+			}
+			
+			public function fromNodeToINodeView(point:Point):Point
+			{
+				point.x = point.x + this._halfX;
+				point.y = point.y + this._halfY;
+				
+				return point;
+			}
+			
+			/**
+			 * Removes all Nodes that this component may be drawing
+			 */
+			public function cleanNodes():void
+			{
+				super.cleanAll();
+				removeAllChildren();
+			}
+			
+			public function drawNodes(nodes:ArrayCollection, nodeConnections:XML):void
+			{
+				this._nodeConnections = nodeConnections;
+				 
+				//Acquiring DrawingArea size for proper coordenates conversion, every time we draw nodes
+				//If we still do not have a width or height, we take them from our parent
+				this._halfX = (width > 0) ? width / 2 : parent.width / 2;
+				this._halfY = (height > 0) ? height / 2 : parent.height / 2;
+				
+				var length:int = nodes.length;
+				var i:int;
+				for(i = 0; i < length; i++)
+				{
+					//We do not draw erased nodes
+					if(NodeRenderer(nodes.getItemAt(i)).node.modified != Node.NODE_ERASED)
+						drawNode(nodes.getItemAt(i) as NodeRenderer);
+				}
+				
+				//We give 10ms to Nodes to be drawn, before we draw the connections
+				this._nodeDrawTimer.start();
+			}
+			
+			private function onNodeDrawTimerComplete(timerevent:TimerEvent):void
+			{
+				super.buildNodeConnections();
+			}
+			
+			/**
+			 * Draws a Node Renderer in the Drawing Area
+			 **/
+			private function drawNode(nodeRenderer:NodeRenderer):void
+			{
+				//Setting the point where the NodeRender will be drawn in the DrawingArea
+				var point:Point = new Point(nodeRenderer.node.posX, nodeRenderer.node.posY);
+				point = fromNodeToINodeView(point);
+				nodeRenderer.x = point.x;
+				nodeRenderer.y = point.y;
+				
+				//Quickfix
+				nodeRenderer.setStyle("backgroundAlpha", 1);
+				
+				//Adding the new NodeRenderer to the Drawing Area
+				this.addChild(nodeRenderer);
+				
+				//Since NodeDrawingView is inside a NodeConnectionSurface, NodeRenderers must
+				//register their connectors
+				nodeRenderer.registerConnector();
+			}
+			
+			/**
+			 * Captures whenever user has added a new NodeRenderer
+			 */
+			private function onNodeRendererAdded(event:NodeRendererEvent):void
+			{
+				if(this._isDisplayingNodes)
+					drawNode(event.nodeRenderer);
+			}
+
+			
+			/**
+			 * Captues whenever user wants to erase a NodeRenderer
+			 **/
+			private function onNodeRendererErased(event:NodeRendererEvent):void
+			{
+				if(this._isDisplayingNodes)
+					eraseNodeRenderer(event.nodeRenderer);	
+			}
+
+			
+			/**
+			 * Erases the given Node from the DrawingArea, marking it as erased
+			 **/
+			private function eraseNodeRenderer(nodeRenderer:NodeRenderer):void
+			{
+				//Deleting the NodeRenderer from the DrawingArea
+				removeChild(nodeRenderer);
+			}
+		]]>
+	</mx:Script>
+</NodeConnectionSurface>

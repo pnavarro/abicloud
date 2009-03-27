@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+
+<EventMap xmlns:mx="http://www.adobe.com/2006/mxml" xmlns="http://mate.asfusion.com/">
+
+	<!-- ABICLOUD SERVICES DEFINITION FILE  -->
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.model.AbiCloudModel;
+		]]>
+	</mx:Script>
+	
+	<mx:RemoteObject id="mainService"
+					 destination="mainService"
+					 channelSet="{AbiCloudModel.getInstance().configurationManager.channelSet}"
+					 showBusyCursor="false"/>
+	
+	<mx:RemoteObject id="infrastructureService"
+					 destination="infrastructureService"
+					 channelSet="{AbiCloudModel.getInstance().configurationManager.channelSet}"
+					 showBusyCursor="false"/>
+					 
+					 
+	<mx:RemoteObject id="loginService"
+					 destination="loginService"
+					 channelSet="{AbiCloudModel.getInstance().configurationManager.config.USE_SECURE_CHANNEL_LOGIN == 1 ? AbiCloudModel.getInstance().configurationManager.secureChannelSet :
+					 																						              AbiCloudModel.getInstance().configurationManager.channelSet}"
+					 showBusyCursor="false"/>
+					 
+	<mx:RemoteObject id="userService"
+					 destination="userService"
+					 channelSet="{AbiCloudModel.getInstance().configurationManager.channelSet}"
+					 showBusyCursor="false"/>
+					 
+	<mx:RemoteObject id="virtualApplianceService"
+					 destination="virtualApplianceService"
+					 channelSet="{AbiCloudModel.getInstance().configurationManager.channelSet}"
+					 showBusyCursor="false"/>
+					 
+	<mx:RemoteObject id="virtualImageService"
+					 destination="virtualImageService"
+					 channelSet="{AbiCloudModel.getInstance().configurationManager.channelSet}"
+					 showBusyCursor="false"/>
+	
+	<mx:RemoteObject id="nonBlockingService"
+					 destination="nonBlockingService"
+					 channelSet="{AbiCloudModel.getInstance().configurationManager.channelSet}"
+					 showBusyCursor="false"/>
+</EventMap>

@@ -1,0 +1,37 @@
+Open Virtualization Format Bindings ovf-binding.jar
+WISEMAN CORE:
+mAccessor.jar
+mViewer.jar
+servlet-api.jar
+velocity-1.4.jar
+velocity-dep-1.4.jar
+wiseman-client.jar
+wiseman-client-src.jar
+wiseman-core.jar
+wiseman.jar
+wiseman_src.jar
+wiseman_test.jar
+wiseman-tools.jar
+wsdl4j.jar
+JAXWS:
+activation.jar
+FastInfoset.jar
+http.jar
+jaxb-api.jar
+jaxb-impl.jar
+jaxb-xjc.jar
+jaxws-api.jar
+jaxws-rt.jar
+jaxws-tools.jar
+jaxws.txt
+jsr173_api.jar
+jsr181-api.jar
+jsr250-api.jar
+mimepull.jar
+resolver.jar
+saaj-api.jar
+saaj-impl.jar
+sjsxp.jar
+stax-ex.jar
+streambuffer.jar
+

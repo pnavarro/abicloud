@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<AbiCloudPopUp xmlns="net.undf.abicloud.view.common.*" xmlns:mx="http://www.adobe.com/2006/mxml" 
+		   	   titleText="@Resource(bundle='User', key='POPUP_TITLE_USERADD')">
+	
+	<mx:Metadata>
+		[Event(name="userAddClose", type="flash.events.Event")]		
+	</mx:Metadata>
+	
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.vo.user.Enterprise;
+			import mx.resources.ResourceManager;
+			import net.undf.abicloud.business.managers.UserManager;
+			import mx.binding.utils.BindingUtils;
+			import net.undf.abicloud.events.UserEvent;
+			import net.undf.abicloud.vo.user.Role;
+			import net.undf.abicloud.vo.user.User;
+			import net.undf.abicloud.model.AbiCloudModel;
+			
+			//Flag to indicate when this component is listening for new user creation
+			private var _listenerRegistered:Boolean;
+			
+			//The Enterprise to which the User will be assigned
+			private var _enterprise:Enterprise;
+			
+			/**
+			 * Initializes this form to create a new user
+			 **/
+			public function init(enterprise:Enterprise):void
+			{
+				this._enterprise = enterprise;
+				
+				enterpriseInput.text = this._enterprise.name;
+				nameInput.text = "";
+				surnameInput.text = "";
+				roleInput.selectedIndex = -1;
+				userInput.text = "";
+				passwordInput.text = "";
+				passwordRepeatInput.text = "";
+				emailInput.text = "";
+				descriptionInput.text = "";
+				activeInput.selected = true;
+				
+				_listenerRegistered = false;
+				labelPasswordInvalid.visible = false;
+				acceptButton.enabled = false;
+				
+				nameInput.setFocus();
+			}
+			
+			/**
+			 * To save the new user
+			 **/
+			private function onAccept():void
+			{
+				var newUser:User = new User();
+				
+				newUser.name = nameInput.text;
+				newUser.surname = surnameInput.text;
+				newUser.role = roleInput.selectedItem as Role;
+				newUser.user = userInput.text;
+				newUser.pass = passwordInput.text;
+				newUser.email = emailInput.text;
+				newUser.description = descriptionInput.text;
+				newUser.active = activeInput.selected;
+				newUser.locale = ResourceManager.getInstance().localeChain[0];
+				newUser.enterprise = this._enterprise;
+				
+				//Registering listener, if it is not, to know when the user has been created
+				if(!this._listenerRegistered)
+				{
+					AbiCloudModel.getInstance().userManager.addEventListener(UserManager.USERS_UPDATED, onUserCreated);
+					this._listenerRegistered = true;
+				}
+				
+				//Announcing that user wants to create a new user
+				var userEvent:UserEvent = new UserEvent(UserEvent.CREATE_USER);
+				userEvent.user = newUser;
+				dispatchEvent(userEvent);
+			}
+			
+			
+			/**
+			 * Cancels the User Creation
+			 **/
+			private function onCancel():void
+			{
+				//Unregistering listener, if registered
+				if(this._listenerRegistered)
+					AbiCloudModel.getInstance().userManager.removeEventListener(UserManager.USERS_UPDATED, onUserCreated);
+					
+				dispatchEvent(new Event("userAddClose"));
+			}
+			
+			/**
+			 * Handler for success in new user creation
+			 **/
+			private function onUserCreated(event:Event):void
+			{	
+				//Now that user has been successfully created, we can close this Pop Up
+				onCancel();	
+			}
+			
+			 /**
+			 * Activates the Accept Button if the form is valid
+			 **/
+			 private function validateForm():void
+			 {
+			 	if(nameInput.text.length > 0 	 && surnameInput.text.length > 0  &&
+			 	   roleInput.selectedIndex > -1  && passwordInput.text.length > 0 && 
+			 	   emailInput.text.length > 0	 && userInput.text.length > 0)
+			 	 {
+			 	 	if(passwordInput.text == passwordRepeatInput.text)
+			 	 	{
+			 	 		labelPasswordInvalid.visible = false;
+			 	 		acceptButton.enabled = true;
+			 	 	}
+			 	 	else
+			 	 	{
+			 	 		labelPasswordInvalid.visible = true;
+			 	 		acceptButton.enabled = false;
+			 	 	}
+			 	 		
+			 	 }
+			 	    
+			 	else
+			 		acceptButton.enabled = false;
+			 }
+			 
+			 /**
+			 * Basic behaivour is as follows:
+			 * If user presses the Enter, in any part of this Pop Up (except buttons), it would be
+			 * like Accept Button has been pressed
+			 */
+			override protected function keyboardHandler(keyboardEvent:KeyboardEvent):void
+			{
+				if(keyboardEvent.target == acceptButton || keyboardEvent.target == cancelButton)
+					super.keyboardHandler(keyboardEvent);
+				else
+				{
+					if(keyboardEvent.keyCode == 13 && acceptButton.enabled)
+						onAccept();
+				}
+			}
+			 
+		]]>
+	</mx:Script>
+	
+	<mx:Form paddingTop="3">
+	
+		<mx:FormItem label="@Resource(bundle='User', key='LABEL_ENTERPRISE')">
+			<mx:TextInput id="enterpriseInput" height="20"
+					      editable="false"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='Common', key='TEXTINPUT_LABEL_NAME')" required="true">
+			<mx:TextInput id="nameInput" maxChars="29" height="20"
+					      change="validateForm()" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='User', key='TEXTINPUT_LABEL_SURNAME')" required="true">
+			<mx:TextInput id="surnameInput" maxChars="49" height="20"
+						  change="validateForm()"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='User', key='LABEL_ROLE')" required="true">
+			<mx:ComboBox id="roleInput" height="18"
+						 prompt="@Resource(bundle='User', key='COMBOBOX_PROMPT_ROLE')"
+						 dataProvider="{AbiCloudModel.getInstance().userManager.roles}"
+						 labelField="shortDescription"
+						 change="validateForm()"/>
+		</mx:FormItem>
+		
+		
+		<mx:FormItem label="@Resource(bundle='User', key='TEXTINPUT_LABEL_USER')" required="true" direction="horizontal">
+			<mx:TextInput id="userInput" maxChars="19" height="20"
+						  change="validateForm()"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='User', key='TEXTINPUT_LABEL_PASSWORD')" required="true">
+			<mx:TextInput id="passwordInput" maxChars="14" displayAsPassword="true" height="20"
+						  change="validateForm()" />
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='User', key='TEXTINPUT_LABEL_PASSWORDREPEAT')" required="true" direction="horizontal">
+			<mx:TextInput id="passwordRepeatInput" maxChars="14" displayAsPassword="true" height="20"
+						  change="validateForm()"/>
+			
+			<mx:Label id="labelPasswordInvalid"
+					  text="@Resource(bundle='User', key='LABEL_PASSWORDINVALID')"
+					  color="#FF0000" fontWeight="bold"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='User', key='TEXTINPUT_LABEL_EMAIL')" required="true">
+			<mx:TextInput id="emailInput" maxChars="29" height="20"
+						  change="validateForm()"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='User', key='TEXTINPUT_LABEL_DESCRIPTION')">
+			<mx:TextArea id="descriptionInput" maxChars="99"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='User', key='LABEL_ACTIVATED')">
+			<mx:CheckBox id="activeInput" />
+		</mx:FormItem>
+		
+		<!-- BUTTONS -->
+		<mx:FormItem direction="horizontal">
+			<mx:Button id="acceptButton" label="@Resource(bundle='Common', key='BUTTON_ACCEPT')" 
+					   click="onAccept()" height="18"/>
+			
+			<mx:Button id="cancelButton" label="@Resource(bundle='Common', key='BUTTON_CANCEL')"
+					   click="onCancel()"  height="18" styleName="buttonGris"/>
+		</mx:FormItem>
+	</mx:Form>
+</AbiCloudPopUp>

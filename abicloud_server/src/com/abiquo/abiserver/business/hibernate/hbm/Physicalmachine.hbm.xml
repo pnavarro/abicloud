@@ -1,0 +1,68 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 16-oct-2008 16:52:14 by Hibernate Tools 3.2.1.GA -->
+<hibernate-mapping>
+  <class catalog="kinton" name="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.PhysicalmachineHB" table="physicalmachine">
+    <id name="idPhysicalMachine" type="java.lang.Integer">
+      <column name="idPhysicalMachine"/>
+      <generator class="identity"/>
+    </id>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.UserHB" fetch="select" name="userHBByIdUserLastModification">
+      <column name="idUser_lastModification"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.SoHB" fetch="select" name="so">
+      <column name="host_SO" not-null="true"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.UserHB" fetch="select" name="userHBByIdUserCreation">
+      <column name="idUserCreation" not-null="true"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.RackHB" fetch="select" name="rack">
+      <column name="idRack" not-null="false"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.DatacenterHB" fetch="select" name="dataCenter">
+      <column name="idDataCenter" not-null="true"/>
+    </many-to-one>
+    <property name="name" type="string">
+      <column length="30" name="name" not-null="true"/>
+    </property>
+    <property name="description" type="string">
+      <column length="100" name="description"/>
+    </property>
+    <property name="ram" type="int">
+      <column name="ram" not-null="true"/>
+    </property>
+    <property name="cpu" type="int">
+      <column name="cpu" not-null="true"/>
+    </property>
+    <property name="hd" type="java.lang.Long">
+      <column name="hd" not-null="true"/>
+    </property>
+    <property name="ramUsed" type="int">
+      <column name="ramUsed" not-null="true"/>
+    </property>
+    <property name="cpuUsed" type="int">
+      <column name="cpuUsed" not-null="true"/>
+    </property>
+    <property name="hdUsed" type="java.lang.Long">
+      <column name="hdUsed" not-null="true"/>
+    </property>
+    <property name="creationDate" type="timestamp">
+      <column length="0" name="creationDate" not-null="true"/>
+    </property>
+    <property name="lastModificationDate" type="timestamp">
+      <column length="0" name="lastModificationDate"/>
+    </property>
+    <set inverse="true" lazy="true" name="hypervisors">
+      <key>
+        <column name="idPhysicalMachine" not-null="true"/>
+      </key>
+      <one-to-many class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.HypervisorHB"/>
+    </set>
+    <set inverse="true" name="networkmodules">
+      <key>
+        <column name="idPhysicalMachine" not-null="true"/>
+      </key>
+      <one-to-many class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.NetworkmoduleHB"/>
+    </set>
+  </class>
+</hibernate-mapping>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 16-oct-2008 16:52:14 by Hibernate Tools 3.2.1.GA -->
+<hibernate-mapping>
+  <class catalog="kinton" name="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.DnsHB" table="dns">
+    <composite-id class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.DnsIdHB" name="id">
+      <key-property name="idDns" type="int">
+        <column name="idDns"/>
+      </key-property>
+      <key-property name="idNetworkModule" type="int">
+        <column name="idNetworkModule"/>
+      </key-property>
+      <key-property name="idPhysicalMachine" type="int">
+        <column name="idPhysicalMachine"/>
+      </key-property>
+    </composite-id>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.UserHB" fetch="select" name="userHBByIdUserLastModification">
+      <column name="idUser_lastModification"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.UserHB" fetch="select" name="userHBByIdUserCreation">
+      <column name="idUserCreation"/>
+    </many-to-one>
+    <property name="dns" type="string">
+      <column length="39" name="dns"/>
+    </property>
+    <property name="creationDate" type="timestamp">
+      <column length="0" name="creationDate"/>
+    </property>
+    <property name="lastModificationDate" type="timestamp">
+      <column length="0" name="lastModificationDate"/>
+    </property>
+  </class>
+</hibernate-mapping>

@@ -1,0 +1,67 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<params>
+
+	<param>
+		<!-- A valid KEY provided by Google is required to run the built in Google Maps API.
+			 To obtain a Google Maps Key please follow this link: http://code.google.com/apis/maps/signup.html -->
+		<name>GOOGLE_MAPS_KEY</name>
+		<value>0</value>
+	</param>
+
+	<param>
+		<!-- Time interval in seconds -->
+		<name>VIRTUAL_MACHINES_UPDATE_INTERVAL</name>
+		<value>30</value>
+	</param>
+	
+	<param>
+		<!-- Time interval in seconds -->
+		<name>VIRTUAL_APPLIANCES_UPDATE_INTERVAL</name>
+		<value>30</value>
+	</param>
+	
+	<param>
+		<!-- Number of users per page that will appear in User Management -->
+		<name>NUMBER_USERS_PER_PAGE</name>
+		<value>25</value>
+	</param>
+	
+	<param>
+		<!-- Number of enterprises per page that will appear in User Management -->
+		<name>NUMBER_ENTERPRISES_PER_PAGE</name>
+		<value>25</value>
+	</param>
+	
+	<param>
+		<!-- Set to 1 to use an secure amf channel (requires a valid and authenticated HTTPS service from the server) -->
+		<name>USE_SECURE_CHANNEL_LOGIN</name>
+		<value>0</value>
+	</param>
+	
+	<param>
+		<!-- Currently, only amf and amfsecure channel types are recognised -->
+		<name>channels</name>
+		<value>
+			<channels>
+				<channel>
+					<id>my-amf</id>
+					<type>amf</type>
+					<endpoint>http://localhost:8080/abicloud_server/messagebroker/amf</endpoint>
+				</channel>
+				
+				<channel>
+					<id>my-secure-amf</id>
+					<type>amfsecure</type>
+					<endpoint>https://localhost:8443/abicloud_server/messagebroker/amfsecure</endpoint>
+				</channel>
+			</channels>
+		</value>
+	</param>
+	
+	<param>
+		<!-- Set to 1 to show an Alert with the text found in Startup_Alert.txt file -->
+		<name>SHOW_START_UP_ALERT</name>
+		<value>0</value>
+	</param>
+</params>

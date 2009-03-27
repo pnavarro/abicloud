@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC "-//Hibernate/Hibernate Configuration DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+  <session-factory>
+    <property name="hibernate.connection.driver_class">
+			com.mysql.jdbc.Driver
+		</property>
+    <property name="hibernate.dialect">
+			org.hibernate.dialect.MySQL5InnoDBDialect
+		</property>
+    <property name="hibernate.bytecode.use_reflection_optimizer">
+			false
+		</property>
+    <property name="hibernate.order_updates">true</property>
+    <property name="hibernate.current_session_context_class">
+			thread
+		</property>
+    <property name="hibernate.show_sql">false</property>
+    <property name="hibernate.format_sql">true</property>
+    <property name="hibernate.transaction.factory_class">
+			org.hibernate.transaction.JDBCTransactionFactory
+		</property>
+    <property name="hibernate.default_entity_mode">pojo</property>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Role.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/User.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Category.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Icon.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Repository.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/State.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Datacenter.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/So.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Rack.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Hypervisor.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/HypervisorType.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Physicalmachine.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Virtualmachine.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Networkmodule.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Node.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/NodeType.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Virtualmachinenetworkmodule.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Virtualapp.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Virtualimage.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/VirtualimageTypeHB.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Dns.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Session.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/AuthGroup.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/AuthServerresource.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/AuthServerresourceException.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/AuthClientresource.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/AuthClientresourceException.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Enterprise.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/VirtualDataCenter.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Log.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/Datacenters_IP.hbm.xml"/>
+    <mapping resource="com/abiquo/abiserver/business/hibernate/hbm/VirtualMachineIP.hbm.xml"/>
+  </session-factory>
+</hibernate-configuration>

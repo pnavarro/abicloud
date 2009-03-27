@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="(abicloud_WS)" default="post-automatic-compile" basedir=".">
+
+	<property file="project.properties"/>
+	
+	<target name="war">
+		<mkdir dir="dist"/>
+		<war destfile="${basedir}/${dist.dir}/${war.filename}"
+	         webxml="${basedir}/${webcontent.dir}/WEB-INF/web.xml"
+	         index="true" update="false">
+			<!-- <webinf dir="${webcontent.dir}/WEB-INF"/> -->
+			<zipfileset dir="${basedir}/${webcontent.dir}" includes="*/**" />						
+		</war>
+	</target>	
+
+    <!-- Convenience method for users following default installation instructions.  -->
+	<!--  =================================================  -->
+	<!--   "deploy" - Deploys the jar to a webapp's lib dir  -->
+	<!--  =================================================  -->
+	<path id="deployer.classpath">
+		<pathelement path="${lib.dir}/catalina-ant.jar" />
+	</path>
+
+	<target name="deploy" depends="war">
+		<taskdef name="deploy" 
+			     classname="org.apache.catalina.ant.DeployTask" 
+			     classpathref="deployer.classpath" />
+		<deploy url="${catalina.manager.url}" 
+			    username="${catalina.manager.username}" 
+			    password="${catalina.manager.password}"
+		        path="${war.context.path}" 
+			    war="${basedir}/${dist.dir}/${war.filename}" 
+			    update="true" />
+	</target>
+
+	
+	<!--
+	   This target is invoked right after automatic compilation by eclipse 
+	   Do the following in order to have this configured in Eclipse:
+	   1. Right click on the project 
+	   2. Click on "Properties"
+	   3. Select the "Builders" 
+	   4. Click on the "Import" button 
+	   5. Select this ant target from the list, this is should have the following format
+	   		i. [PROJECT_NAME] build.xml[TARGET_NAME]
+	   		ii. [PROJECT_NAME] build.xml  
+	   		Note that option (ii) appears for a build file's default target, 
+	   		select this option if this ant target is the default
+	   6. From the "Builders" section select the recently added build target and click on "edit"
+	   7. Select the "Refresh" tab and check the "Refresh resources upon completion" box 
+	   	  and then select the "The entire workspace" option.
+	   8. From the JRE tab select "Run in the same JRE as the workspace"
+	   9. Click on OK and all should be fine, of course if you are fed up there is always http://netbeans.org :)
+	   		    
+	-->
+	<target name="post-automatic-compile">
+		
+		<echo>
+			Project directory: ${project.dir}
+		</echo>
+		<copy todir="${webcontent.dir}/WEB-INF/classes">
+		
+			<!-- Copy the conf directory to the classes directory but ommitting log4j files -->
+			
+			<fileset dir="${project.dir}" 
+			         includes="conf/**,resources/**" 
+			         excludes="resources/binding.properties,resources/wiseman.properties" />
+			
+			<fileset dir="${project.dir}/resources" 
+			         includes="binding.properties,wiseman.properties" />			
+			
+		</copy>
+
+		<copy todir="${webcontent.dir}/WEB-INF/lib" >
+			<fileset dir ="${project.dir}/lib" includes="*.jar" />
+		</copy>
+		
+		<copy todir="${webcontent.dir}">
+			<fileset dir="${basedir}" includes="xsd/**,wsdls/**/"/>
+		</copy>
+		
+		<!-- <eclipse.refreshLocal resource="${basedir}" depth="infinite"/> -->
+		
+	</target>
+
+</project>

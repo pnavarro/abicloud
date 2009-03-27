@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<params>
+
+	<param>
+		<name>GOOGLE_MAPS_KEY</name>
+		<value>ABQIAAAAgu5h6Aped0XTQm4Shy8teRS0d6vs2y_oF9EDJQ9E8DS1lsnMXBT46uJSqpSpkgvX5Kbas9WMqkTq2w</value>
+	</param>
+
+	<param>
+		<name>VIRTUAL_MACHINES_UPDATE_INTERVAL</name>
+		<value>30000</value>
+	</param>
+	
+	<param>
+		<name>USE_SECURE_CHANNEL_LOGIN</name>
+		<value>0</value>
+	</param>
+	
+	<param>
+		<name>channels</name>
+		<value>
+			<channels>
+				<channel>
+					<id>my-amf</id>
+					<type>amf</type>
+					<endpoint>http://localhost:##tomcatPort##/abicloud_server/messagebroker/amf</endpoint>
+				</channel>
+				
+				<channel>
+					<id>my-secure-amf</id>
+					<type>amfsecure</type>
+					<endpoint>https://localhost:8443/abicloud_server/messagebroker/amfsecure</endpoint>
+				</channel>
+			</channels>
+		</value>
+	</param>
+</params>

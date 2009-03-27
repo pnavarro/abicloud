@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="(abiServer)" default="deploy" basedir=".">
+
+	<!-- Test that a valid ant version is being used -->
+	<condition property="valid.ant.version">
+		<or>
+		  <contains substring="1.6.5" string="${ant.version}" />	
+		  <contains substring="1.7." string="${ant.version}" />	
+		</or>
+	</condition>
+	<fail message="You should be using ant 1.6.5 or better."
+	      unless="valid.ant.version"/>
+	
+	<property file="project.properties"/>
+	<property file="/home/mmorata/abiquo/cloud/installer_source/template/abi.config.xml"/>
+
+	<!-- Project properties check: There should be no CHANGE* set -->
+	<condition property="property.check">
+		<or>
+		  <contains substring="CHANGE" string="${webcontent.dir}" />
+		  <contains substring="CHANGE" string="${lib.dir}" />
+	      <contains substring="CHANGE" string="${dist.dir}" />	
+		</or>
+	</condition>
+	<fail message="You did not set a required property. Please check project.properties 
+		and/or etc/bindings.properties configuration."
+	      if="property.check"/>	
+	
+    <!-- Convenience method for users following default installation instructions.  -->
+	<!--  =================================================  -->
+	<!--   "deploy" - Deploys the jar to a webapp's lib dir  -->
+	<!--  =================================================  -->
+	<path id="deployer.classpath">
+		<pathelement path="${lib.dir}/catalina-ant.jar" />
+	</path>
+
+	<target name="deploy" depends="war">
+		<taskdef name="deploy" 
+			     classname="org.apache.catalina.ant.DeployTask" 
+			     classpathref="deployer.classpath" />
+		<deploy url="${catalina.manager.url}" 
+			    username="${catalina.manager.username}" 
+			    password="${catalina.manager.password}"
+		        path="${war.context.path}" 
+			    war="${basedir}/${dist.dir}/${war.filename}" 
+			    update="true" />
+	</target>
+
+	
+	<!--  =================================================  -->
+	<!--   "war" - Create the war file                       -->
+	<!--  =================================================  -->
+	<target name="war">
+		<war destfile="${basedir}/${dist.dir}/${war.filename}"
+	         webxml="${basedir}/${webcontent.dir}/WEB-INF/web.xml"
+	         index="true">
+			<!-- <webinf dir="${webcontent.dir}/WEB-INF"/> -->
+			<zipfileset dir="${basedir}/${webcontent.dir}" includes="*/**" />
+			<classes dir="${basedir}" includes="resources/**"/>
+		</war>
+	</target>
+	
+    <target name="javadoc" description="Create javadocumentation">
+        <delete dir="javadoc"/>
+        <mkdir dir="javadoc"/>
+        <javadoc destdir="javadoc" private="true" charset="UTF-8">
+            <fileset dir="${basedir}/src" defaultexcludes="yes">
+                <include name="**/*.java"/>
+            </fileset>
+        </javadoc>
+    </target>
+
+    <scriptdef name="load-xml-properties" language="beanshell">
+	<classpath path="/usr/share/ant/lib/bsh-2.0b4.jar"/>
+   	<attribute name="file"/>
+    	<attribute name="prefix"/>
+    </scriptdef>
+    <target name="db.session_clean">
+
+    <echo file="XMLImport.java">
+	public class XMLImport{
+	public static void main(String[] args){
+	System.out.println("Hola mundo");
+	}
+	}
+    </echo>
+
+    <javac srcdir="." includes="XMLImport.java"/>
+    <java classname="XMLImport"/>
+
+    <delete file="XMLImport.java"/>
+    <delete file="XMLImport.class"/>
+
+    	<sql driver="com.mysql.jdbc.Driver"
+    		url="jdbc:mysql://${db.url}"
+    		userid="root" password="" ><![CDATA[
+
+		delete from session;
+		delete from virtualapp;
+		]]>
+    		<classpath>
+    			<pathelement path="/opt/linux/tomcat/lib/mysql-connector-java-5.0.8-bin.jar"/>
+    		</classpath>
+    	</sql>
+    </target>	    
+
+    	
+</project>

@@ -1,0 +1,181 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+
+<AbiCloudPopUp xmlns="net.undf.abicloud.view.common.*" xmlns:mx="http://www.adobe.com/2006/mxml"
+		       titleText="@Resource(bundle='Main', key='LABEL_SERVER_NOTIFICATIONS')" xmlns:utils="net.undf.abicloud.utils.*">
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.business.managers.notification.Notification;
+			import net.undf.abicloud.model.AbiCloudModel;
+			
+			
+			private function onClickCloseButton():void
+			{
+				dispatchEvent(new Event("closeNotificationList"));
+			}
+			
+			
+			private function dateLabelFunction(item:Object, column:DataGridColumn):String
+			{
+				var date:Date = Notification(item).date
+				return date.getDate() + "/" + (date.getMonth() + 1) + "/" + date.getFullYear() + " " + 
+					   date.getHours() + ":" + date.getMinutes();
+			}
+			
+			private function onClickDataGrid():void
+			{
+				if(notificationsDataGrid.selectedIndex > -1)
+				{
+					AbiCloudModel.getInstance().notificationManager.markNotificationAsRead(notificationsDataGrid.selectedItem as Notification);
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:Form paddingTop="3">
+		<mx:DataGrid id="notificationsDataGrid" width="322" height="200"
+					  dataProvider="{AbiCloudModel.getInstance().notificationManager.notifications}"
+					  click="onClickDataGrid()" selectable="true">
+		
+		<mx:columns>
+			
+			<mx:DataGridColumn id="dateDGColumn" width="100"
+							   dataField="date" sortable="true"
+							   labelFunction="dateLabelFunction"
+							   headerText="@Resource(bundle='Main', key='LABEL_DATE')">
+				<mx:itemRenderer>
+					<mx:Component>
+						<mx:Canvas width="100%" height="100%"
+								   verticalScrollPolicy="off" horizontalScrollPolicy="off">
+							<mx:Script>
+								<![CDATA[
+									import net.undf.abicloud.business.managers.notification.Notification;
+									
+									[Bindable]
+									private var _notification:Notification;
+									
+									override public function set data(value:Object):void
+									{
+										super.data = value;
+										this._notification = value as Notification;
+										
+										
+									}
+								]]>
+							</mx:Script>
+							<mx:Label id="dateLabel" verticalCenter="0" horizontalCenter="0"
+									  text="{this._notification.date.getDate() + '/' + (this._notification.date.getMonth() + 1) + '/' + this._notification.date.getFullYear() + ' ' + 
+					   						 this._notification.date.getHours() + ':' + this._notification.date.getMinutes()}"
+									  fontWeight="{this._notification.read ? 'normal' : 'bold'}"/>
+						</mx:Canvas>
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+									   
+			<mx:DataGridColumn width="200"
+							   headerText="@Resource(bundle='Main', key='LABEL_MESSAGE')"
+							   sortable="false">
+				<mx:itemRenderer>
+					<mx:Component>
+						<mx:Canvas width="100%" height="100%" 
+								   verticalScrollPolicy="off" horizontalScrollPolicy="off">
+							<mx:Script>
+								<![CDATA[
+									import net.undf.abicloud.business.managers.notification.Notification;
+									
+									[Bindable]
+									private var _notification:Notification;
+									
+									override public function set data(value:Object):void
+									{
+										super.data = value;
+										this._notification = value as Notification;
+									}
+								]]>
+							</mx:Script>
+							<mx:Label id="dateLabel" verticalCenter="0" truncateToFit="true" width="100%"
+									  text="{this._notification.message}"
+									  fontWeight="{this._notification.read ? 'normal' : 'bold'}"/>
+						</mx:Canvas>
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>							   
+			
+			<mx:DataGridColumn width="22" resizable="false" sortable="false">
+				<mx:itemRenderer>
+					<mx:Component>
+						<mx:Canvas width="100%" height="100%"
+								  verticalScrollPolicy="off" horizontalScrollPolicy="off">
+							
+							<mx:Script>
+								<![CDATA[
+									import net.undf.abicloud.model.AbiCloudModel;
+									import net.undf.abicloud.business.managers.notification.Notification;
+									
+									private var _notification:Notification;
+									
+									override public function set data(value:Object):void
+									{
+										super.data = value;
+										this._notification = value as Notification;
+									}
+									
+									private function onClickDeleteButton():void
+									{
+										AbiCloudModel.getInstance().notificationManager.markNotificationAsRead(this._notification);
+										AbiCloudModel.getInstance().notificationManager.clearNotification(this._notification);
+									}
+									
+								]]>
+							</mx:Script>
+							<mx:Button width="19" height="19" styleName="deleteButton"
+									   click="onClickDeleteButton()"/>
+									   
+						</mx:Canvas>
+					</mx:Component>
+				</mx:itemRenderer>
+			</mx:DataGridColumn>
+		</mx:columns>
+	</mx:DataGrid>
+	
+	<mx:Button id="closeButton"
+			   label="@Resource(bundle='Common', key='BUTTON_CLOSE')"
+			   click="onClickCloseButton()" height="18" styleName="buttonGris"/>
+	</mx:Form>
+   
+</AbiCloudPopUp>

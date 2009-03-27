@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		   styleName="alertPopUpNew"
+		   verticalScrollPolicy="off" horizontalScrollPolicy="off"
+		   paddingTop="7" paddingLeft="21" paddingRight="10" paddingBottom="30"
+		   preinitialize="onPreInitialize()" verticalGap="6">
+		   
+	<!-- *****************************
+		Base components for Pop Ups
+		All Pop Ups used in the application should extend this component,
+		so they can inherit all CSS attributes and common style for Pop Ups
+		****************************** -->
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.core.Application;
+			import mx.controls.Label;
+			import mx.controls.Image;
+			import mx.containers.HBox;
+			
+			private var _popUpIcon:Image;
+			private var _title:Label;
+			
+			private var _titleText:String = "The title for this Pop Up has not been set!";
+			private var _iconSource:String = ""; //TODO: Set default icon source
+			
+			/**
+			 * When a Pop Up preinitializes, we add the common information that will be present
+			 * in all Pop Ups: an Icon and a Title
+			 **/
+			private final function onPreInitialize():void
+			{
+				//Creating Icon
+				_popUpIcon = new Image();
+				_popUpIcon.source =  _iconSource;
+				
+				//Creating Title
+				_title = new Label();
+				_title.text = _titleText;
+ 				_title.styleName = "titleAlert";
+				
+				//Adding it to the view
+				var header:HBox = new HBox();
+				header.addChild(_popUpIcon);
+				header.addChild(_title);
+				
+				this.addChildAt(header, 0);
+				
+				//Registering Keyboard events, for standard application behaivor
+				this.addEventListener(KeyboardEvent.KEY_UP, keyboardHandler);
+			}
+			
+			public function set titleText(text:String):void
+			{
+				this._titleText = text;
+				if(this._title)
+					this._title.text = this._titleText;
+			}
+			
+			public function set iconSource(source:String):void
+			{
+				this._iconSource = source;
+			}
+			
+			/**
+			 * We replicate here the behaivor described in AbiCloud.mxml, since Events dispatched from a PopUp
+			 * do not propagate outside
+			 **/
+			protected function keyboardHandler(keyboardEvent:KeyboardEvent):void
+			{
+				if(keyboardEvent.keyCode == 13)
+				{
+					//When users presses the Enter key, it is like a click
+					keyboardEvent.target.dispatchEvent(new MouseEvent(MouseEvent.CLICK));
+				}
+			}
+		]]>
+	</mx:Script>	
+		
+</mx:VBox>

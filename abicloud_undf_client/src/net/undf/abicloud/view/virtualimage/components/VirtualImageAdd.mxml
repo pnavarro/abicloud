@@ -1,0 +1,354 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<AbiCloudPopUp xmlns="net.undf.abicloud.view.common.*" xmlns:mx="http://www.adobe.com/2006/mxml"
+			   titleText="@Resource(bundle='VirtualImage', key='POPUP_TITLE_VIRTUALIMAGE_ADD')"
+			   creationComplete="onCreationComplete()">
+	
+	<mx:Metadata>
+		[Event(name="virtualImageAddClose", type="flash.events.Event")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.resources.ResourceBundle;
+			import mx.resources.ResourceManager;
+			import net.undf.abicloud.view.common.AbiCloudAlert;
+			import mx.events.CloseEvent;
+			import net.undf.abicloud.vo.virtualimage.VirtualImageType;
+			import mx.managers.PopUpManager;
+			import net.undf.abicloud.vo.infrastructure.SO;
+			import net.undf.abicloud.vo.virtualimage.Repository;
+			import mx.collections.ArrayCollection;
+			import mx.binding.utils.BindingUtils;
+			import net.undf.abicloud.vo.virtualimage.Icon;
+			import net.undf.abicloud.model.AbiCloudModel;
+			import net.undf.abicloud.vo.virtualimage.Category;
+			import net.undf.abicloud.events.VirtualImageEvent;
+			import net.undf.abicloud.vo.virtualimage.VirtualImage;
+			
+			[ResourceBundle("Common")]
+			private var rb:ResourceBundle;
+			[ResourceBundle("VirtualImage")]
+			private var rb2:ResourceBundle;
+			
+			private var _iconForm:IconForm;
+			
+			private function onCreationComplete():void
+			{
+				//Creating auxiliary form
+				this._iconForm = new IconForm();
+				this._iconForm.addEventListener("IconFormClose", closeAddIconForm);
+				
+				//Listening for updates in icons list
+				BindingUtils.bindSetter(setIconsRepeater, AbiCloudModel.getInstance().virtualImageManager, "icons");
+			}
+			
+			private function setIconsRepeater(value:ArrayCollection):void
+			{
+				iconsList.dataProvider = value;
+				validateForm();
+				//markSelectedIcon();
+			}
+			
+			/*
+			private function markSelectedIcon():void
+			{
+				//Looking for the first icon marked as default
+				if(iconsList.dataProvider != null)
+				{
+					var length:int = iconsList.dataProvider.length;
+					var i:int;
+					for(i = 0; i < length; i++)
+					{
+						if(Icon(iconsList.dataProvider.getItemAt(i)).isDefault)
+						{
+							iconsList.selectedIndex = i;
+							break;
+						}
+					}
+				}
+			} */
+			
+			/**
+			 * Initializes this component to create a new Repository
+			 **/
+			public function init():void
+			{
+				nameInput.text = "";
+				descriptionInput.text = "";
+				virtualImageTypeInput.selectedIndex = -1;
+				pathInput.text = "";
+				categoryInput.selectedIndex = -1;
+				repositoryInput.selectedIndex = -1;
+				soInput.selectedIndex = -1;
+				ramInput.value = ramInput.minimum;
+				cpuInput.value = cpuInput.minimum;
+				hdInput.text = "";
+				iconInput.text = "";
+				iconsList.selectedIndex = -1;
+				
+				iconsList.selectedIndex = -1;
+				acceptButton.enabled = false;
+				nameInput.setFocus();
+			}
+			
+			
+			/**
+			 * When user clicks Accept button, we save the new Virtual Image
+			 **/
+			 private function onAccept():void
+			 {
+			 	//Creating the new Virtual Image
+			 	var virtualImage:VirtualImage = new VirtualImage();
+			 	
+			 	virtualImage.name = nameInput.text;
+			 	virtualImage.description = descriptionInput.text;
+			 	virtualImage.virtualImageType = virtualImageTypeInput.selectedItem as VirtualImageType;
+			 	virtualImage.path = pathInput.text;
+			 	virtualImage.category = categoryInput.selectedItem as Category;
+			 	virtualImage.repository = repositoryInput.selectedItem as Repository;
+			 	virtualImage.so = soInput.selectedItem as SO;
+			 	virtualImage.ramRequired = ramInput.value;
+			 	virtualImage.cpuRequired = cpuInput.value;
+			 	virtualImage.hdRequired = Number(hdInput.text);
+			 	if(iconsList.selectedIndex > -1)
+			 		virtualImage.icon = iconsList.selectedItem as Icon;
+			 	else
+			 		virtualImage.icon = null;
+			 	
+			 	//Announcing that user wants to create a new Virtual Image
+			 	var event:VirtualImageEvent = new VirtualImageEvent(VirtualImageEvent.CREATE_VIRTUAL_IMAGE);
+			 	event.virtualImage = virtualImage;
+			 	dispatchEvent(event);
+			 	
+			 	//Closing the form
+			 	dispatchEvent(new Event("virtualImageAddClose"));
+			 }
+			 
+			 /**
+			 * Cancels Repository creation
+			 **/
+			 private function onCancel():void
+			 {
+			 	//Closing the form
+				dispatchEvent(new Event("virtualImageAddClose"));
+			 }
+			 
+			 /**
+			 * Activates the Accept Button if the form is valid
+			 **/
+			 private function validateForm():void
+			 {
+			 	if(nameInput.text.length > 0 		&& descriptionInput.text.length > 0   && pathInput.text.length > 0  &&
+			 	   categoryInput.selectedIndex > -1 && repositoryInput.selectedIndex > -1 && soInput.selectedIndex > -1 &&
+			 	   virtualImageTypeInput.selectedIndex > -1)
+			 	    acceptButton.enabled = true;
+			 	   
+			 	else
+			 		acceptButton.enabled = false;
+			 }
+			
+			private function addIcon():void
+			{
+				PopUpManager.addPopUp(this._iconForm, this, true);
+				PopUpManager.centerPopUp(this._iconForm);
+				
+				this._iconForm.init();
+			}
+			
+			private function closeAddIconForm(event:Event):void
+			{
+				PopUpManager.removePopUp(this._iconForm);
+			}
+			
+			private function onClickDeleteIcon():void
+			{
+				AbiCloudAlert.showAlert(ResourceManager.getInstance().getString("Common", "ALERT_TITLE_LABEL"),
+									 ResourceManager.getInstance().getString("VirtualImage", "ALERT_DELETE_ICON_HEADER"),
+									 ResourceManager.getInstance().getString("VirtualImage", "ALERT_DELETE_ICON_TEXT"),
+									 Alert.YES | Alert.NO,
+									 onDeleteIconUserResponse);
+			}
+			
+			private function onDeleteIconUserResponse(closeEvent:CloseEvent):void
+			{
+				if(closeEvent.detail == Alert.YES)
+					deleteIcon();
+			}
+			
+			private function deleteIcon():void
+			{
+				var virtualImageEvent:VirtualImageEvent = new VirtualImageEvent(VirtualImageEvent.DELETE_ICON);
+				virtualImageEvent.icon = iconsList.selectedItem as Icon;
+				dispatchEvent(virtualImageEvent);
+			}
+			
+			private function onClickEditIcon():void
+			{
+				PopUpManager.addPopUp(this._iconForm, this, true);
+				PopUpManager.centerPopUp(this._iconForm);
+				
+				this._iconForm.init(iconsList.selectedItem as Icon);
+			}
+			
+			/**
+			 * Basic behaivour is as follows:
+			 * If user presses the Enter, in any part of this Pop Up (except buttons), it would be
+			 * like Accept Button has been pressed
+			 */
+			override protected function keyboardHandler(keyboardEvent:KeyboardEvent):void
+			{
+				if(keyboardEvent.target == acceptButton || keyboardEvent.target == cancelButton)
+					super.keyboardHandler(keyboardEvent);
+				else
+				{
+					if(keyboardEvent.keyCode == 13 && acceptButton.enabled)
+						onAccept();
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:Form paddingTop="3">
+		<mx:FormItem label="@Resource(bundle='Common', key='TEXTINPUT_LABEL_NAME')" required="true">
+			<mx:TextInput id="nameInput" maxChars="19"
+					      change="validateForm()" height="20"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='VirtualImage', key='LABEL_DESCRIPTION')" required="true">
+			<mx:TextArea id="descriptionInput" maxChars="99"
+						 change="validateForm()" height="20"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='VirtualImage', key='LABEL_TYPE')" required="true">
+			<mx:ComboBox id="virtualImageTypeInput" 
+						 labelField="extension"
+						 dataProvider="{AbiCloudModel.getInstance().virtualImageManager.virtualImageTypes}"
+						 prompt="@Resource(bundle='VirtualImage', key='LABEL_TYPE')"
+						 change="validateForm()" height="18"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='VirtualImage', key='LABEL_FILE_NAME')" required="true">
+			<mx:TextInput id="pathInput" maxChars="99"
+						  change="validateForm()" height="20"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='VirtualImage', key='LABEL_CATEGORY')" required="true">
+			<mx:ComboBox id="categoryInput" 
+						 labelField="name"
+						 dataProvider="{AbiCloudModel.getInstance().virtualImageManager.categories}"
+						 prompt="@Resource(bundle='VirtualImage', key='LABEL_CATEGORY')"
+						 change="validateForm()" height="18"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='VirtualImage', key='LABEL_REPOSITORY')" required="true">
+			<mx:ComboBox id="repositoryInput" 
+						 labelField="name"
+						 dataProvider="{AbiCloudModel.getInstance().virtualImageManager.repositories}"
+						 prompt="@Resource(bundle='VirtualImage', key='LABEL_REPOSITORY')"
+						 change="validateForm()" height="18"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='Infrastructure', key='COMBOBOX_LABEL_SO')" required="true">
+			<mx:ComboBox id="soInput" 
+						 labelField="description"
+						 dataProvider="{AbiCloudModel.getInstance().operatingSystems}"
+						 prompt="@Resource(bundle='Infrastructure', key='COMBOBOX_LABEL_SO')"
+						 change="validateForm()" height="18"/>
+		</mx:FormItem>
+		
+		
+		<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_RAM')">
+			<mx:NumericStepper id="ramInput" height="20" width="75"
+							   minimum="0" maximum="32768" stepSize="256"/>
+			
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_CPU')">
+			<mx:NumericStepper id="cpuInput" height="20" width="75"
+							   minimum="1" maximum="32" stepSize="1"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='VirtualImage', key='LABEL_HD')">
+			<!-- <mx:NumericStepper id="hdInput" height="20" width="75"
+							   minimum="0" maximum="10000" stepSize="10"/> -->
+				 <mx:TextInput id="hdInput" height="20"
+				 			   restrict="0-9"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='VirtualImage', key='LABEL_ICON')">
+			
+			<mx:TextInput id="iconInput" editable="false" height="18"
+						  text="{Icon(iconsList.selectedItem).name}"/>
+			
+			<mx:HorizontalList id="iconsList"
+					 		   height="95" width="100%"
+					 		   change="validateForm()"
+					 		   itemRenderer="net.undf.abicloud.view.virtualimage.components.IconListItemRenderer"/>
+				 		   
+			<mx:HBox horizontalGap="3" width="100%" verticalAlign="middle">
+				<mx:Button id="addIconButton"
+							click="addIcon()" styleName="bAgregar"
+							toolTip="@Resource(bundle='Common', key='BUTTON_NEW_TOOLTIP')"/>
+							
+				<mx:Button id="deleteIconButton"
+						       click="onClickDeleteIcon()"
+						       enabled="{iconsList.selectedIndex > -1}" styleName="bNoAgregar"
+						       toolTip="@Resource(bundle='Common', key='BUTTON_DEL_TOOLTIP')"/>
+						       
+				<mx:Spacer width="100%" height="6"/>
+							       
+				<mx:Button id="editIconButton"
+					       click="onClickEditIcon()"
+					       enabled="{iconsList.selectedIndex > -1}" styleName="bConfig"
+					       toolTip="@Resource(bundle='Common', key='BUTTON_EDIT_TOOLTIP')"/>			       		
+			</mx:HBox>						 		   
+			
+			<mx:Spacer width="5"/>
+		</mx:FormItem>
+		
+		<mx:FormItem direction="horizontal">
+			<mx:Button id="acceptButton" label="@Resource(bundle='Common', key='BUTTON_ACCEPT')" 
+					   click="onAccept()" height="18"/>
+			
+			<mx:Button id="cancelButton" label="@Resource(bundle='Common', key='BUTTON_CANCEL')"
+					   click="onCancel()"  height="18" styleName="buttonGris"/>
+		</mx:FormItem>
+	</mx:Form>
+
+</AbiCloudPopUp>

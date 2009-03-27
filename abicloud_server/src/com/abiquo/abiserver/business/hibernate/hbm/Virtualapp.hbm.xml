@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 16-oct-2008 16:52:14 by Hibernate Tools 3.2.1.GA -->
+<hibernate-mapping>
+  <!-- VirtualappHB 
+  	   This entity does not include the list of nodes
+  	   Useful to retrieve a list of Virtual Appliance, when the nodes list may not be necessary
+  	   Better performance -->
+  <class catalog="kinton" entity-name="VirtualappHB" name="com.abiquo.abiserver.business.hibernate.pojohb.virtualappliance.VirtualappHB" table="virtualapp">
+    <id name="idVirtualApp" type="java.lang.Integer">
+      <column name="idVirtualApp"/>
+      <generator class="identity"/>
+    </id>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.UserHB" fetch="select" name="userHBByIdUserLastModification">
+      <column name="idUser_lastModification"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.StateHB" fetch="select" name="state" lazy="false">
+      <column name="idState" not-null="true"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.UserHB" fetch="select" name="userHBByIdUserCreation">
+      <column name="idUserCreation" not-null="true"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.virtualappliance.VirtualDataCenterHB" fetch="select" name="virtualDataCenterHB">
+      <column name="idVirtualDataCenter" not-null="true"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.EnterpriseHB" fetch="select" name="enterpriseHB">
+      <column name="idEnterprise" not-null="false"/>
+    </many-to-one>
+    <property name="name" type="string">
+      <column length="30" name="name" not-null="true"/>
+    </property>
+    <property name="public_" type="int">
+      <column name="public" not-null="true">
+        <comment>0-No 1-Yes</comment>
+      </column>
+    </property>
+    <property name="highDisponibility" type="int">
+      <column name="high_disponibility" not-null="true">
+        <comment>0-No 1-Yes</comment>
+      </column>
+    </property>
+    <property name="creationDate" type="timestamp">
+      <column length="0" name="creationDate" not-null="true"/>
+    </property>
+    <property name="lastModificationDate" type="timestamp">
+      <column length="0" name="lastModificationDate"/>
+    </property>
+    <property name="error" type="int">
+      <column name="error" not-null="true">
+        <comment>0-No 1-Yes</comment>
+      </column>
+    </property>
+    <property name="nodeConnections" type="string">
+      <column name="nodeconnections" not-null="false"/>
+    </property>
+    <set inverse="true" lazy="true" name="logsHB" order-by="date DESC">
+      <key>
+        <column name="idVirtualApp" not-null="true"/>
+      </key>
+      <one-to-many class="com.abiquo.abiserver.business.hibernate.pojohb.virtualappliance.LogHB"/>
+    </set>
+  </class>
+  <!-- VirtualappExtendedHB 
+  	   Same fields than VirtualappHB, with the addition of the nodes list
+  	   Use this entity to retrieve only once Virtual Appliance at the same time
+  	   Not recommended to retrieve a list of Virtual Appliances -->
+  <class catalog="kinton" entity-name="VirtualappExtendedHB" name="com.abiquo.abiserver.business.hibernate.pojohb.virtualappliance.VirtualappHB" table="virtualapp">
+    <id name="idVirtualApp" type="java.lang.Integer">
+      <column name="idVirtualApp"/>
+      <generator class="identity"/>
+    </id>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.UserHB" fetch="select" name="userHBByIdUserLastModification">
+      <column name="idUser_lastModification"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.StateHB" fetch="select" name="state" lazy="false">
+      <column name="idState" not-null="true"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.UserHB" fetch="select" name="userHBByIdUserCreation">
+      <column name="idUserCreation" not-null="true"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.virtualappliance.VirtualDataCenterHB" fetch="select" name="virtualDataCenterHB">
+      <column name="idVirtualDataCenter" not-null="true"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.EnterpriseHB" fetch="select" name="enterpriseHB">
+      <column name="idEnterprise" not-null="false"/>
+    </many-to-one>
+    <property name="name" type="string">
+      <column length="30" name="name" not-null="true"/>
+    </property>
+    <property name="public_" type="int">
+      <column name="public" not-null="true">
+        <comment>0-No 1-Yes</comment>
+      </column>
+    </property>
+    <property name="highDisponibility" type="int">
+      <column name="high_disponibility" not-null="true">
+        <comment>0-No 1-Yes</comment>
+      </column>
+    </property>
+    <property name="creationDate" type="timestamp">
+      <column length="0" name="creationDate" not-null="true"/>
+    </property>
+    <property name="lastModificationDate" type="timestamp">
+      <column length="0" name="lastModificationDate"/>
+    </property>
+    <property name="error" type="int">
+      <column name="error" not-null="true">
+        <comment>0-No 1-Yes</comment>
+      </column>
+    </property>
+    <property name="nodeConnections" type="string">
+      <column name="nodeconnections" not-null="false"/>
+    </property>
+    <set inverse="true" lazy="true" name="logsHB" order-by="date DESC">
+      <key>
+        <column name="idVirtualApp" not-null="true"/>
+      </key>
+      <one-to-many class="com.abiquo.abiserver.business.hibernate.pojohb.virtualappliance.LogHB"/>
+    </set>
+    <set inverse="true" lazy="true" name="nodesHB">
+      <key>
+        <column name="idVirtualApp" not-null="true"/>
+      </key>
+      <one-to-many class="com.abiquo.abiserver.business.hibernate.pojohb.virtualappliance.NodeHB"/>
+    </set>
+  </class>
+</hibernate-mapping>

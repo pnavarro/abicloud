@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+
+<mx:Application xmlns:mx="http://www.adobe.com/2006/mxml" 
+				layout="absolute"
+				initialize="onInitialize()"
+				creationComplete="onCreationComplete()"
+				xmlns:model="net.undf.abicloud.model.*" 
+				xmlns:controller="net.undf.abicloud.controller.*"
+				xmlns:controllerInfr="net.undf.abicloud.controller.infrastructure.*" 
+				xmlns:controllerLogin="net.undf.abicloud.controller.login.*"
+				xmlns:controllerVirtualAppliance="net.undf.abicloud.controller.virtualappliance.*" 
+				xmlns:controllerVirtualImage="net.undf.abicloud.controller.virtualimage.*"
+				xmlns:controllerUser="net.undf.abicloud.controller.user.*"
+				width="100%" height="100%"
+				backgroundColor="#000000"
+				preloader="assets.CustomPreloader">
+	
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.resources.ResourceBundle;
+			import net.undf.abicloud.view.common.AbiCloudAlert;
+			import net.undf.abicloud.events.LoginEvent;
+			import net.undf.abicloud.business.managers.FullScreenManager;
+			import mx.controls.Alert;
+			import mx.resources.ResourceManager;
+			import mx.binding.utils.BindingUtils;
+			import net.undf.abicloud.view.main.Main;
+			import net.undf.abicloud.view.login.Login;
+			import mx.events.PropertyChangeEvent;
+			import net.undf.abicloud.model.AbiCloudModel;
+			
+			[ResourceBundle("Common")]
+			private var rb:ResourceBundle;
+			
+			private var loginView:Login;
+			//private var mainView:Main;
+			
+			private function onInitialize():void
+			{
+				//Creating Login component
+				loginView = new Login();
+				loginView.setStyle("verticalCenter", 0);
+				loginView.setStyle("horizontalCenter", 0);
+				appContainer.styleName = "loginBackground";
+				
+				//Registering global keyboard interactions
+				application.addEventListener(KeyboardEvent.KEY_UP, keyboardHandler);
+				
+				//We need to know when the user has logged in or logged out from the application
+				BindingUtils.bindSetter(trackUserLogged, AbiCloudModel.getInstance().loginManager, "userLogged");
+			}
+			
+			private function onCreationComplete():void
+			{
+				//Once the application is created, we add the full screen container on the top of the view
+				this.addChild(FullScreenManager.getInstance().fullScreenContainer);
+			}
+			
+			/**
+			 * Handler to define standard application behaivor when user uses the keyboard
+			 **/
+			private function keyboardHandler(keyboardEvent:KeyboardEvent):void
+			{
+				if(keyboardEvent.keyCode == 13)
+				{
+					//When users presses the Enter key, it is like a click
+					keyboardEvent.target.dispatchEvent(new MouseEvent(MouseEvent.CLICK));
+				}
+			}
+			
+			/**
+			 * Handler to catch when the user makes logout
+			 **/
+			public function trackUserLogged(logged:Boolean):void
+			{
+	
+				if(logged)
+				{
+					var main:Main = new Main();
+		
+					appContainer.removeAllChildren();
+					appContainer.styleName = "mainBackground";
+					appContainer.addChild(main);
+					main.initMain();
+					
+					loadStartUpAlert();
+				}
+				else
+				{	
+					appContainer.removeAllChildren();
+					appContainer.styleName = "loginBackground";
+					appContainer.addChild(loginView);
+					loginView.init();
+				}
+				 
+			}
+			
+			private function loadStartUpAlert():void
+			{
+				if(AbiCloudModel.getInstance().configurationManager.config['SHOW_START_UP_ALERT'] == 1)
+				{
+					//Loading the text file
+					var loader:URLLoader = new URLLoader();
+					loader.addEventListener(Event.COMPLETE, loadAlertFileCompleteHandler);
+					loader.addEventListener(IOErrorEvent.IO_ERROR, loadAlertFileIOErrorHandler);
+					loader.load(new URLRequest("config/Startup_Alert.txt"));
+				}
+			}
+			
+			private function loadAlertFileCompleteHandler(event:Event):void
+			{
+				//Showing the text included in the file
+				AbiCloudAlert.showAlert(ResourceManager.getInstance().getString("Common", "ALERT_TITLE_LABEL"),
+								 ResourceManager.getInstance().getString("Common", "LABEL_WELCOME"),
+								 URLLoader(event.currentTarget).data.toString(),
+								 Alert.OK,
+								 null);
+			}
+			
+			private function loadAlertFileIOErrorHandler(ioErrorEvent:IOErrorEvent):void
+			{
+				//Startup_Alert.txt file not found. Well, it could be worse, couldn't it?
+			}
+		]]>
+	</mx:Script>
+	
+	<!-- CSS file -->
+	<mx:Style source="/css/abicloud.css"/>
+	
+	<!-- Event Maps that handel communications between model, view and controller -->
+	<controller:MainEventMap />
+	<controllerInfr:InfrastructureEventMap />
+	<controllerLogin:LoginEventMap />
+	<controllerVirtualAppliance:VirtualApplianceEventMap />
+	<controllerVirtualImage:VirtualImageEventMap />
+	<controllerUser:UserEventMap />
+	
+	<!-- Application's container, that contains all the views -->
+	<mx:Canvas id="appContainer" width="100%" height="100%"/>
+</mx:Application>

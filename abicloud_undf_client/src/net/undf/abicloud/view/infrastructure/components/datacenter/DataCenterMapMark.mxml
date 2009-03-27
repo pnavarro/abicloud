@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+			height="35" width="38" verticalScrollPolicy="off" horizontalScrollPolicy="off"
+		   useHandCursor="true" buttonMode="true"
+		   click="onClickMapMark()"
+		   styleName="GoogleMapMark"
+		   initialize="onInitialize()">
+	
+	<mx:Metadata>
+		[Event(name="DataCenterMapMarkClicked", type="mx.events.ItemClickEvent")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.EffectEvent;
+			import mx.effects.Effect;
+			import mx.effects.Resize;
+			import mx.events.ItemClickEvent;
+			import com.google.maps.overlays.Marker;
+			import com.google.maps.services.Placemark;
+			import net.undf.abicloud.vo.infrastructure.DataCenter;
+			
+			//Data Center that respresents this mark
+			[Bindable]
+			private var _dataCenter:DataCenter;
+			
+			[Bindable]
+			private var _isClicked:Boolean = false;
+			
+			private var _resizeEffect:Resize;
+			
+			//Data center number
+			[Bindable]
+			private var _dataCenterNumber:int;
+			
+			/**
+			 * To initialize this component
+			 */
+			private function onInitialize():void
+			{
+				//Creating an resize effect
+				this._resizeEffect = new Resize();
+				this._resizeEffect.duration = 500; 
+			}
+			
+			public function set dataCenter(dC:DataCenter):void
+			{
+				this._dataCenter = dC;
+			}
+			
+			public function get dataCenter():DataCenter
+			{
+				return this._dataCenter;
+			}
+			
+			public function set dataCenterNumber(num:int):void
+			{
+				this._dataCenterNumber = num;	
+			}
+			
+			public function get isClicked():Boolean
+			{
+				return this._isClicked;
+			}
+			
+			/**
+			 * When user clicks on a map mark, we dispatch an event announcing which data center has been clicked
+			 **/
+			public function onClickMapMark():void
+			{	
+				var event:ItemClickEvent = new ItemClickEvent("DataCenterMapMarkClicked");
+				event.item = this;
+				dispatchEvent(event);
+					
+				if(this._isClicked)
+					contractDataCenterMapMark();
+				else			
+					expandDataCenterMapMark();
+			}
+			
+			private function expandDataCenterMapMark():void
+			{
+				
+				this._resizeEffect.widthFrom = width;
+				this._resizeEffect.heightFrom = height;
+				this._resizeEffect.widthTo = 200;
+				this._resizeEffect.heightTo = 150;
+				
+				this._resizeEffect.addEventListener(EffectEvent.EFFECT_END, onEndResizeEffect);
+				this._resizeEffect.play([this]);
+				
+				this.useHandCursor = false;
+				this.buttonMode = false;
+		
+			}
+			
+			public function onEndResizeEffect(effectEvent:EffectEvent):void
+			{
+				this._resizeEffect.removeEventListener(EffectEvent.EFFECT_END, onEndResizeEffect);
+				this._isClicked = true;
+			}
+			
+			public function contractDataCenterMapMark():void
+			{
+				this._isClicked = false;
+				this.useHandCursor = true;
+				this.buttonMode = true;
+				
+				this._resizeEffect.widthFrom = width;
+				this._resizeEffect.heightFrom = height;
+				this._resizeEffect.widthTo = 38;
+				this._resizeEffect.heightTo = 35;
+				
+				this._resizeEffect.play([this]);
+			}
+			
+			private function onClickAccessDataCenter():void
+			{
+				//If the Application is in full screen, switch to normal
+				if(systemManager.stage.displayState == StageDisplayState.FULL_SCREEN)
+					systemManager.stage.displayState = StageDisplayState.NORMAL;
+					
+				//Event type defined in DataCenterManagement.mxml
+				var event:ItemClickEvent = new ItemClickEvent("dataCenterSelected", true);
+				event.item = this._dataCenter
+				dispatchEvent(event);
+			}
+		]]>
+	</mx:Script>
+	
+	
+	<mx:Label verticalCenter="0" horizontalCenter="0" paddingLeft="5"
+			text="{_dataCenterNumber}" fontWeight="bold" fontSize="12"
+			visible="{!this._isClicked}" buttonMode="true" useHandCursor="true"/>
+			
+	<mx:Label top="20" left="20"
+			  text="{_dataCenter.name}" fontSize="12" fontWeight="bold"
+			  truncateToFit="true" visible="{this._isClicked}"  includeInLayout="{this._isClicked}"/>
+			  
+	<mx:TextArea top="40" left="20" right="20" bottom="60"
+				 editable="false" borderStyle="none"
+				 text="{_dataCenter.situation}" fontSize="11"
+				 visible="{this._isClicked}" includeInLayout="{this._isClicked}"/>
+				 
+	<mx:Button bottom="20" right="20"
+			   label="@Resource(bundle='Common', key='BUTTON_ENTER_TOOLTIP')"
+			   click="onClickAccessDataCenter()"
+			   visible="{this._isClicked}" includeInLayout="{this._isClicked}"/>
+</mx:Canvas>

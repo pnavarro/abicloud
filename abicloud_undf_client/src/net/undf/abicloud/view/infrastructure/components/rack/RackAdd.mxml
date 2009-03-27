@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<AbiCloudPopUp xmlns="net.undf.abicloud.view.common.*" xmlns:mx="http://www.adobe.com/2006/mxml"
+			   titleText="@Resource(bundle='Infrastructure', key='POPUP_TITLE_RACKADD')">
+	
+	<mx:Metadata>
+		[Event(name="rackAddClose", type="flash.events.Event")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.events.InfrastructureEvent;
+			import net.undf.abicloud.vo.infrastructure.Rack;
+			import net.undf.abicloud.vo.infrastructure.DataCenter;
+			
+			//The new rack that will be created
+			private var _rack:Rack;
+			
+			/**
+			 * Initializes this component, with the data center to which the new rack will be assigned
+			 **/
+			public function init(dataCenter:DataCenter):void
+			{
+				nameInput.text = "";
+				shortDescriptionInput.text = "";
+				largeDescriptionInput.text = "";
+				
+				_rack = new Rack();
+				_rack.dataCenter = dataCenter;
+				
+				acceptButton.enabled = false;
+				nameInput.setFocus();
+			}
+			
+			
+			/**
+			 * When user clicks Accept button, we save the new rack
+			 **/
+			 private function onAccept():void
+			 {
+			 	//Saving the new rack's attributes
+			 	_rack.name = nameInput.text;
+			 	_rack.shortDescription = shortDescriptionInput.text;
+			 	_rack.largeDescription = largeDescriptionInput.text;
+			 	
+			 	//Announcing that user wants to create a new Rack
+			 	var event:InfrastructureEvent = new InfrastructureEvent(InfrastructureEvent.CREATE_RACK);
+			 	event.infrastructureElement = _rack;
+			 	dispatchEvent(event);
+			 	
+			 	//Closing the form
+			 	dispatchEvent(new Event("rackAddClose"));
+			 }
+			 
+			 /**
+			 * Cancels Rack creation
+			 **/
+			 private function onCancel():void
+			 {
+			 	//Closing the form
+				dispatchEvent(new Event("rackAddClose"));
+			 }
+			 
+			 /**
+			 * Activates the Accept Button if the form is valid
+			 **/
+			 private function validateForm():void
+			 {
+			 	if(nameInput.text.length > 0)
+			 	    acceptButton.enabled = true;
+			 	   
+			 	else
+			 		acceptButton.enabled = false;
+			 }
+			 
+			 /**
+			 * Basic behaivour is as follows:
+			 * If user presses the Enter, in any part of this Pop Up (except buttons), it would be
+			 * like Accept Button has been pressed
+			 */
+			override protected function keyboardHandler(keyboardEvent:KeyboardEvent):void
+			{
+				if(keyboardEvent.target == acceptButton || keyboardEvent.target == cancelButton)
+					super.keyboardHandler(keyboardEvent);
+				else
+				{
+					if(keyboardEvent.keyCode == 13 && acceptButton.enabled)
+						onAccept();
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:Form paddingTop="3">
+		<mx:FormItem label="@Resource(bundle='Common', key='TEXTINPUT_LABEL_NAME')" required="true">
+			<mx:TextInput id="nameInput" maxChars="19"
+					      change="validateForm()" height="20"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_SHORTDESCRIPTION')">
+			<mx:TextArea id="shortDescriptionInput" maxChars="29"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_LARGEDESCRIPTION')">
+			<mx:TextArea id="largeDescriptionInput" maxChars="99"/>
+		</mx:FormItem>
+		
+		<mx:FormItem direction="horizontal">
+			<mx:Button id="acceptButton" label="@Resource(bundle='Common', key='BUTTON_ACCEPT')" 
+					   click="onAccept()" height="18"/>
+			
+			<mx:Button id="cancelButton" label="@Resource(bundle='Common', key='BUTTON_CANCEL')"
+					   click="onCancel()"  height="18" styleName="buttonGris"/>
+		</mx:FormItem>
+	</mx:Form>
+
+</AbiCloudPopUp>

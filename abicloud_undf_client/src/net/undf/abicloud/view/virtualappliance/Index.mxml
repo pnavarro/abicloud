@@ -1,0 +1,141 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		 xmlns:virtualappliance="net.undf.abicloud.view.virtualappliance.*"
+		 implements="net.undf.abicloud.view.main.IBodyComponent"
+		 width="100%" height="100%"
+		 verticalScrollPolicy="off" horizontalScrollPolicy="off"
+		 creationComplete="onCreationComplete()"
+		 show="onShow()"
+		 hide="onHide()">
+		   
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.events.VirtualApplianceEvent;
+			
+			/////////////////////////////////////
+			//IBodyComponent implementation
+			
+			public function hasUnsavedChanges():Boolean
+			{
+				return virtualApplianceManagement.isVirtualApplianceModified;
+			}
+			
+			public function saveChanges():void
+			{
+				virtualApplianceManagement.saveVirtualAppliance();
+			}
+			
+			public function discardUnsavedChanges():void
+			{
+				virtualApplianceManagement.virtualAppliance = null;
+			}
+			
+			/**
+			 * When this component is created
+			 */
+			private function onCreationComplete():void
+			{
+				//Listening for VirtualAppliance selections
+				addEventListener(VirtualApplianceEvent.VIRTUAL_APPLIANCE_SELECTED, onVirtualApplianceSelected);
+				
+				//Listening for "goBackToVirtualDataCenters" event
+				virtualApplianceManagement.addEventListener("goBackToVirtualDataCenters", goBackToVirtualDataCenters);
+				
+			}
+			
+			/**
+			 * When this component is shown
+			 **/	
+			private function onShow():void
+			{
+				//When this component is shown, the component in the viewstack is also shown
+				virtualApplianceVS.selectedIndex = 0;
+				virtualDataCenterManagement.onShow();
+				virtualDataCenterManagement.startBackgroundUpdates();
+				virtualApplianceManagement.virtualAppliance = null;
+			}
+			
+			/**
+			 * When this component hides
+			 * It is important that this function is called when this component
+			 * is not longer being showed, since there are components with background calls to server
+			 * that should be stopped when they are no longer necesary
+			 */
+			private function onHide():void
+			{
+				virtualDataCenterManagement.stopBackgroundUpdates();
+				
+				virtualApplianceManagement.virtualAppliance = null;
+			}	
+
+			/**
+			 * VirtualAppliance selection handler
+			 */
+			private function onVirtualApplianceSelected(virtualApplianceEvent:VirtualApplianceEvent):void
+			{
+				//When a VirtualAppliance has been selected, we show it using a VirtualApplianceManagement component
+				virtualDataCenterManagement.stopBackgroundUpdates();
+				
+				virtualApplianceVS.selectedIndex = 1;
+				virtualApplianceManagement.virtualAppliance = virtualApplianceEvent.virtualAppliance;
+			}
+			
+			/**
+			 * Shows again the Data Centers management component
+			 **/
+			private function goBackToVirtualDataCenters(event:Event = null):void
+			{
+				virtualApplianceManagement.virtualAppliance = null;
+				
+				virtualApplianceVS.selectedIndex = 0;
+				virtualDataCenterManagement.startBackgroundUpdates();
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:ViewStack id="virtualApplianceVS"
+				  width="100%" height="100%" creationPolicy="all">
+		
+		<virtualappliance:VirtualDataCenterManagement id="virtualDataCenterManagement" />
+		
+		<virtualappliance:VirtualApplianceManagement id="virtualApplianceManagement" />
+	</mx:ViewStack>
+	
+</mx:Canvas>

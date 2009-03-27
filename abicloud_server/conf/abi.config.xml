@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE properties SYSTEM "http://java.sun.com/dtd/properties.dtd">
+<properties>
+    <comment>
+        Properties files containing configuration properties for abicloud_server
+    </comment>
+    
+    <!--AbiCloud destination -->
+    <entry key="destination">http://localhost:8080/abicloud_WS/</entry>
+
+
+    <!-- Timeout in milliseconds-->
+    <entry key="timeout">60000</entry>
+
+
+    <!--Datacenter name-->
+    <entry key="dataCenterName">myDatacenter</entry>
+
+
+    <!--
+      Database properties
+      192.168.1.45:3306
+      kinton
+      s0ng0ku
+    -->
+    <entry key="db.driver">com.mysql.jdbc.Driver</entry>
+    <entry key="db.url">jdbc:mysql://localhost:3306/kinton</entry>
+    <entry key="db.username">kinton</entry>
+    <entry key="db.password">s0ng0ku</entry>
+
+
+    <!--  Session timeout in minutes -->
+    <entry key="sessionTimeout">5</entry>
+    
+    
+    <!-- Maximum number of session. A value of 0 means no limit -->
+    <entry key="maxNumSessions">1</entry>
+    
+    <!-- Number of Virtual Machines per Datacenter -->
+    <entry key="virtualMachinesDatacenter">1024</entry>
+    
+
+</properties>

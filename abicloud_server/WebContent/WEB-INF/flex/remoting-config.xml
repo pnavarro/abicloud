@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<service id="remoting-service" 
+    class="flex.messaging.services.RemotingService">
+
+    <adapters>
+        <adapter-definition id="java-object" class="flex.messaging.services.remoting.adapters.JavaAdapter" default="true"/>
+    </adapters>
+
+    <default-channels>
+        <channel ref="my-amf"/>
+    </default-channels>
+    
+    <!-- ******** Main Services ******** -->
+    <destination id="mainService">
+	    <properties>
+	        <source>com.abiquo.abiserver.services.flex.MainService</source>
+	        <scope>application</scope>
+	    </properties>
+	    <channels>
+	        <channel ref="my-amf"/>
+	    </channels>
+	</destination>
+    
+    <!-- ******** Infrastructure Services ******** -->
+    <destination id="infrastructureService">
+	    <properties>
+	        <source>com.abiquo.abiserver.services.flex.InfrastructureService</source>
+	        <scope>application</scope>
+	    </properties>
+	    <channels>
+	        <channel ref="my-amf"/>
+	    </channels>
+	</destination>
+	
+	
+	<!-- ******** Login Services ******** -->
+    <destination id="loginService">
+	    <properties>
+	        <source>com.abiquo.abiserver.services.flex.LoginService</source>
+	        <scope>application</scope>
+	    </properties>
+	    <channels>
+	    	<channel ref="my-amf"/>
+	        <channel ref="my-secure-amf"/>
+	    </channels>
+	</destination>
+	
+	
+	<!-- ******** User Services ******** -->
+    <destination id="userService">
+	    <properties>
+	        <source>com.abiquo.abiserver.services.flex.UserService</source>
+	        <scope>application</scope>
+	    </properties>
+	    <channels>
+	        <channel ref="my-amf"/>
+	    </channels>
+	</destination>
+	
+	
+	<!-- ******** Virtual Appliance Services ******** -->
+    <destination id="virtualApplianceService">
+	    <properties>
+	        <source>com.abiquo.abiserver.services.flex.VirtualApplianceService</source>
+	        <scope>application</scope>
+	    </properties>
+	    <channels>
+	        <channel ref="my-amf"/>
+	    </channels>
+	</destination>
+	
+	
+	<!-- ******** Virtual Image Services ******** -->
+    <destination id="virtualImageService">
+	    <properties>
+	        <source>com.abiquo.abiserver.services.flex.VirtualImageService</source>
+	        <scope>application</scope>
+	    </properties>
+	    <channels>
+	        <channel ref="my-amf"/>
+	    </channels>
+	</destination>
+
+	<!-- ******** Non blocking Services ******** -->
+	<destination id="nonBlockingService">
+	    <properties>
+	        <source>com.abiquo.abiserver.services.flex.NonBlockingService</source>
+	        <scope>application</scope>
+	    </properties>
+	    <channels>
+	        <channel ref="my-amf"/>
+	    </channels>
+	</destination>
+</service>

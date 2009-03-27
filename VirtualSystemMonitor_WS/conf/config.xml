@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<vsm-config>
+	<hypervisors>
+		<vmware>
+			<!-- <datacenter>ha-datacenter</datacenter> -->
+			<user>root</user>
+			<password>voycruzand0elrio</password>
+			<ignorecert>true</ignorecert>
+		</vmware>
+	</hypervisors>
+</vsm-config>

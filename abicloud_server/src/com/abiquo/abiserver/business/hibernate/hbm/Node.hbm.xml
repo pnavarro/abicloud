@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 16-oct-2008 16:52:14 by Hibernate Tools 3.2.1.GA -->
+<hibernate-mapping>
+  <class catalog="kinton" name="com.abiquo.abiserver.business.hibernate.pojohb.virtualappliance.NodeHB" table="node">
+    <id name="idNode" type="java.lang.Integer">
+      <column name="idNode"/>
+      <generator class="identity"/>
+    </id>
+    <discriminator column="idNodeType" insert="false" type="string"/>
+    <property name="name" type="string">
+      <column length="20" name="name" not-null="false"/>
+    </property>
+    <property name="idVirtualApp" type="java.lang.Integer">
+      <column name="idVirtualApp" not-null="true"/>
+    </property>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.virtualappliance.NodeTypeHB" fetch="select" name="nodeTypeHB">
+      <column name="idNodeType" not-null="true"/>
+    </many-to-one>
+    <property name="posX" type="int">
+      <column name="posX" not-null="true"/>
+    </property>
+    <property name="posY" type="int">
+      <column name="posY" not-null="true"/>
+    </property>
+    <!-- Node Virtual Image -> idNodeType = 1 -->
+    <subclass discriminator-value="1" entity-name="NodeVirtualImageHB" lazy="false" name="com.abiquo.abiserver.business.hibernate.pojohb.virtualappliance.NodeVirtualImageHB">
+      <join catalog="kinton" fetch="select" table="nodevirtualimage">
+        <key column="idNode"/>
+        <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.VirtualmachineHB" fetch="select" name="virtualMachineHB">
+          <column name="idVM"/>
+        </many-to-one>
+        <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.virtualimage.VirtualimageHB" fetch="select" name="virtualImageHB">
+          <column name="idImage" not-null="true"/>
+        </many-to-one>
+      </join>
+    </subclass>
+    <!-- Node Storage -> idNodeType = 2 -->
+    <subclass discriminator-value="2" entity-name="NodeStorageHB" lazy="false" name="com.abiquo.abiserver.business.hibernate.pojohb.virtualappliance.NodeStorageHB">
+      <join catalog="kinton" fetch="select" table="nodestorage">
+        <key column="idNode"/>
+      </join>
+    </subclass>
+    <!-- Node Storage -> idNodeType = 3 -->
+    <subclass discriminator-value="3" entity-name="NodeNetworkHB" lazy="false" name="com.abiquo.abiserver.business.hibernate.pojohb.virtualappliance.NodeNetworkHB">
+      <join catalog="kinton" fetch="select" table="nodenetwork">
+        <key column="idNode"/>
+      </join>
+    </subclass>
+  </class>
+</hibernate-mapping>

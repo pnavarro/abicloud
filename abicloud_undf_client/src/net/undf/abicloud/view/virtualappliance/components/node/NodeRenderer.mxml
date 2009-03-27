@@ -1,0 +1,469 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		   xmlns:utils="net.undf.abicloud.utils.*"
+		   width="100" height="100"
+		   verticalScrollPolicy="off" horizontalScrollPolicy="off"
+		   styleName="NodeRenderer"
+		   mouseDown="onMouseDown(event)" mouseUp="onMouseUp(event)"
+		   rollOver="onRollOver()" rollOut="onRollOut()"
+		   borderThickness="1" borderColor="#cccccc" borderStyle="none">
+	
+	
+	<!-- Effects shown by this component, to better user interaction -->
+	<mx:Glow id="glowEffect" duration="100" 
+        alphaFrom="1.0" alphaTo="0.3" 
+        blurXFrom="0.0" blurXTo="20.0" 
+        blurYFrom="0.0" blurYTo="20.0" 
+        color="#444444"/>
+        
+    <mx:Glow id="unglowEffect" duration="100"
+        alphaFrom="0.3" alphaTo="1.0" 
+        blurXFrom="20.0" blurXTo="0.0" 
+        blurYFrom="20.0" blurYTo="0.0" 
+        color="#222222"/>
+
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.resources.ResourceBundle;
+			import mx.resources.ResourceManager;
+			import mx.controls.Alert;
+			import net.undf.abicloud.view.common.AbiCloudAlert;
+			import net.undf.abicloud.view.virtualappliance.components.virtualappliance.DrawToolsManager;
+			import net.undf.abicloud.view.virtualappliance.components.node.connection.ConnectionEvent;
+			import net.undf.abicloud.view.virtualappliance.components.node.connection.Connector;
+			import mx.core.UITextField;
+			import mx.core.Application;
+			import net.undf.abicloud.vo.virtualappliance.NodeVirtualImage;
+			import net.undf.abicloud.business.managers.VirtualImageManager;
+			import mx.managers.CursorManager;
+			import mx.events.ItemClickEvent;
+			import mx.managers.DragManager;
+			import mx.core.DragSource;
+			import net.undf.abicloud.vo.virtualappliance.Node;
+			
+			public static const NODERENDERER_SIZE:int = 100;
+			
+			//To save the mouse position
+			private var _pointClick:Point = new Point();
+			
+			//The node that represents this NodeRenderer
+			[Bindable]
+			private var _node:Node;
+			
+			//The Image source for the node icon
+			[Bindable]
+			private var _nodeIconSource:String;
+			
+			//The bounds within this NodeRenderer can be dragged
+			private var _bounds:Rectangle;
+			
+			//Flag that indicates if this NodeRenderer is currently the only one selected
+			//NodeRenderer is not the responsible to set this property.
+			private var _isSelected:Boolean = false;
+						
+			//The Connector that is inside this NodeRenderer
+			private var _connector:Connector = null;
+			
+			[ResourceBundle("Common")]
+			private var rb:ResourceBundle;
+			[ResourceBundle("VirtualAppliance")]
+			private var rb2:ResourceBundle;
+			
+			/**
+			 * Register a Connector for this NodeRenderer, so Connections
+			 * can be created from and to this NodeRenderer
+			 * 
+			 * The Connector can only be registered when this NodeRenderer is inside a ConnectionSurface
+			 */
+			public function registerConnector():void
+			{
+				//First, we need to create the point where the Connector will be centered
+				var point:Point = new Point();
+				point.x = x + (NODERENDERER_SIZE / 2);
+				point.y = y + (NODERENDERER_SIZE / 2);
+				
+				//Second, we create the Connector for this NodeRenderer, and register it in the Node Connection Surface
+				this._connector	= new Connector(point, this._node);
+				
+				
+				//Announcing that we want to register a new Connector
+				var connectionEvent:ConnectionEvent = new ConnectionEvent(ConnectionEvent.REGISTER_CONNECTOR, true);
+				connectionEvent.connector = this._connector;
+				dispatchEvent(connectionEvent);
+			}
+			
+			/**
+			 * Sets de node that will render this NodeRenderer
+			 **/
+			public function set node(value:Node):void
+			{
+				this._node = value;
+				
+				//Setting the source for the nodeIcon, depending of the type of
+				//the node that has been setted
+				if(this._node is NodeVirtualImage)
+					this._nodeIconSource = NodeVirtualImage(this._node).virtualImage.icon.path;
+			}
+			
+			public function get node():Node
+			{
+				return this._node;
+			}
+			
+			/**
+			 * Sets the bounds within this NodeRenderer can be dragged
+			 **/
+			public function set bounds(bnd:Rectangle):void
+			{
+				this._bounds = bnd;
+			}
+		
+			public function set isSelected(value:Boolean):void
+			{
+				this._isSelected = value;
+				
+				if(this._isSelected)
+					isSelectedShowFeedback();
+				else
+					isSelectedHideFeedback();
+			}
+			
+			/**
+			 * Shows visual feedback when this NodeRenderer is setted as selected
+			 */
+			private function isSelectedShowFeedback():void
+			{
+				setStyle("borderStyle", "solid");
+			}
+			
+			/**
+			 * Hides visual feedback when this NodeRenderer is no longer setted as selected
+			 */
+			private function isSelectedHideFeedback():void
+			{
+				setStyle("borderStyle", "none");
+			}
+			
+			//////////////////////////////////////////
+			// DRAG FUNCTIONALITY
+			/**
+			 * Captures whenever the makes click over this NodeRenderer
+			 **/
+			private function onMouseDown(event:MouseEvent):void
+			{
+				switch(DrawToolsManager.getInstance().currentTool)
+				{
+					case DrawToolsManager.SELECTION_TOOL:						
+						//Starting the drag operation
+						this.startDrag(false, this._bounds);
+						addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+						
+						//Saving the current absolute position of the mouse
+						this._pointClick = new Point(event.stageX, event.stageY);
+						
+						break;
+						
+					case DrawToolsManager.DRAW_CONNECTION_TOOL:
+						if(this._node.id != 0)
+						{
+							//We use our Connector to ask for a new Connection to begin
+							var connectionEvent:ConnectionEvent = new ConnectionEvent(ConnectionEvent.BEGIN_CONNECTION);
+							connectionEvent.connector = this._connector;
+							this._connector.dispatchEvent(connectionEvent);
+						}
+						else
+						{
+							//This NodeRenderer can not start connections untils its Node has a valid id
+							AbiCloudAlert.showAlert(ResourceManager.getInstance().getString("Common", "ALERT_TITLE_LABEL"),
+											 ResourceManager.getInstance().getString("VirtualAppliance", "ALERT_NODE_UNABLE_MAKE_CONNECTION_HEADER"),
+											 ResourceManager.getInstance().getString("VirtualAppliance", "ALERT_NODE_UNABLE_MAKE_CONNECTION_TEXT"),
+											 Alert.OK);
+						}
+						break;
+				}				
+			}
+			
+			/**
+			 * Captures whenever the user releases the mouse button
+			 **/
+			private function onMouseUp(event:MouseEvent):void
+			{
+				var connectionEvent:ConnectionEvent;
+				var nodeRendererEvent:NodeRendererEvent;
+				
+				switch(DrawToolsManager.getInstance().currentTool)
+				{
+					case DrawToolsManager.NO_TOOL:
+						//Dispatching event to inform that this NodeRenderer has been selected by the user
+						nodeRendererEvent = new NodeRendererEvent(NodeRendererEvent.NODERENDERER_SELECTED);
+						nodeRendererEvent.nodeRenderer = this;
+						dispatchEvent(nodeRendererEvent);
+						break;
+						
+					case DrawToolsManager.SELECTION_TOOL:						
+						//Stoping the drag operation
+						this.stopDrag();
+						removeEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+						
+						if(this._pointClick.equals(new Point(event.stageX, event.stageY)))
+							//The user has clicked over the Node Renderer, since the mouse has not been moved
+							//Dispatching event to inform that this NodeRenderer has been selected by the user
+							nodeRendererEvent = new NodeRendererEvent(NodeRendererEvent.NODERENDERER_SELECTED);
+						else
+						{
+							//The user has dragged the NodeRenderer, since the mouse has been moved
+							nodeRendererEvent = new NodeRendererEvent(NodeRendererEvent.NODERENDERER_CHANGED);
+							
+							//Updating the Connector position
+							var point:Point = new Point();
+							point.x = x + (NODERENDERER_SIZE / 2);
+							point.y = y + (NODERENDERER_SIZE / 2);
+							
+							this._connector.position = point;
+							
+							//Announcing that our Connector has moved
+							connectionEvent = new ConnectionEvent(ConnectionEvent.CONNECTOR_MOVED);
+							connectionEvent.connector = this._connector;
+							this._connector.dispatchEvent(connectionEvent);
+						}
+	
+						nodeRendererEvent.nodeRenderer = this;
+						dispatchEvent(nodeRendererEvent);
+						
+						break;
+						
+					case DrawToolsManager.DRAW_CONNECTION_TOOL:
+						if(this._node.id != 0)
+						{
+							//We stop event propagation, so Mouse_Up event does not arrive to NodeConnectionSurface
+							event.stopPropagation();
+							
+							//We use our Connector to accept a new Connection
+							connectionEvent = new ConnectionEvent(ConnectionEvent.ACCEPT_CONNECTION);
+							connectionEvent.connector = this._connector;
+							this._connector.dispatchEvent(connectionEvent);
+						}
+						else
+						{
+							//This NodeRenderer can not accept connections untils its Node has a valid id
+							AbiCloudAlert.showAlert(ResourceManager.getInstance().getString("Common", "ALERT_TITLE_LABEL"),
+											 ResourceManager.getInstance().getString("VirtualAppliance", "ALERT_NODE_UNABLE_MAKE_CONNECTION_HEADER"),
+											 ResourceManager.getInstance().getString("VirtualAppliance", "ALERT_NODE_UNABLE_MAKE_CONNECTION_TEXT"),
+											 Alert.OK);
+						}
+						break;
+				}	
+			}
+			
+			/**
+			 * Captures whenever the mouse has moved, while this NodeRenderer is being dragged
+			 */
+			private function onMouseMove(mouseEvent:MouseEvent):void
+			{
+				//When this NodeRenderer is being moved, we have to update the position of our Connector
+				var point:Point = new Point();
+				point.x = x + (NODERENDERER_SIZE / 2);
+				point.y = y + (NODERENDERER_SIZE / 2);
+				
+				this._connector.position = point;
+				
+				//Announcing that our Connector has moved
+				var connectionEvent:ConnectionEvent = new ConnectionEvent(ConnectionEvent.CONNECTOR_MOVED);
+				connectionEvent.connector = this._connector;
+				this._connector.dispatchEvent(connectionEvent);
+			}
+			
+			/**
+			 * When user rolls over the NodeRenderer, we show more options
+			 **/
+			private function onRollOver():void
+			{
+				eraseNodeButton.visible = true;
+			}
+			
+			/**
+			 * When user rolls out the NodeRenderer, we hide the options
+			 **/
+			private function onRollOut():void
+			{
+				eraseNodeButton.visible = false;	
+			}
+			
+			/**
+			 * Announces that user wants to delete this node
+			 **/
+			private function onClickEraseNodeButton():void
+			{
+				if(this._isSelected)
+				{
+					isSelected = false;
+				}
+				
+				//We have to Unregister the Connector for this NodeRenderer
+				if(this._connector)
+				{
+					var connectionEvent:ConnectionEvent = new ConnectionEvent(ConnectionEvent.UNREGISTER_CONNECTOR);
+					connectionEvent.connector = this._connector;
+					this._connector.dispatchEvent(connectionEvent);
+				}
+				
+				var nodeRendererEvent:NodeRendererEvent = new NodeRendererEvent(NodeRendererEvent.NODERENDERER_ERASE);
+				nodeRendererEvent.nodeRenderer = this;
+				dispatchEvent(nodeRendererEvent);
+			}
+			
+			/**
+			 * To give feedback when user rolls over the Image
+			 **/
+			private function onRollOverImage():void
+			{
+				//We change the mouse cursor depending on the current selected tool
+				switch(DrawToolsManager.getInstance().currentTool)
+				{
+					case DrawToolsManager.SELECTION_TOOL:
+						//When the SELECTION_TOOL is active, NodeRenderer can be dragged
+						DrawToolsManager.getInstance().setToolCursor(DrawToolsManager.MOVE_NODE_TOOL);
+						break;
+					
+					case DrawToolsManager.DRAW_CONNECTION_TOOL:
+						//When DRAW_CONNECTION_TOOL is active, Connections can be drawn from and to this NodeRenderer
+						DrawToolsManager.getInstance().setToolCursor(DrawToolsManager.DRAW_CONNECTION_TOOL);
+						break;
+				}
+			}
+			
+			/**
+			 * To quit feedback
+			 **/
+			private function onRollOutImage():void
+			{
+				//When users roll outs image, we always leave the default mouse cursor
+				DrawToolsManager.getInstance().setToolCursor(DrawToolsManager.NO_TOOL);
+			}
+			
+			private function onDoubleClickNameLabel():void
+			{
+				//Hidding the label, and showing the TextInput
+				nameLabel.visible = false;
+				nameInput.visible = true;
+				nameInput.text = this._node.name;
+				
+				//Registering keyboard events
+				nameInput.addEventListener(KeyboardEvent.KEY_UP, onKeyBoardKeyUp);
+				nameInput.setFocus();
+			 	Application.application.systemManager.addEventListener(MouseEvent.CLICK, onApplicationMouseClick);
+			}
+			
+			private function onApplicationMouseClick(mouseEvent:MouseEvent):void
+			{
+				if(mouseEvent.target.parent != nameInput)
+				{
+					Application.application.systemManager.removeEventListener(MouseEvent.CLICK, onApplicationMouseClick);
+					var keyboardEvent:KeyboardEvent = new KeyboardEvent(KeyboardEvent.KEY_UP, false, false, 0, 13);
+					nameInput.dispatchEvent(keyboardEvent);
+				}
+			}
+			
+			private function onKeyBoardKeyUp(keyboardEvent:KeyboardEvent):void
+			{
+				//When user presses Enter key, means that name edition is finished
+				if(keyboardEvent.keyCode == 13)
+				{
+					//We do not need this listener
+					nameInput.removeEventListener(KeyboardEvent.KEY_UP, onKeyBoardKeyUp);
+					
+					//Setting the new name, and showing again the name label
+					this._node.name = nameInput.text;
+					nameInput.visible = false;
+					nameLabel.visible = true;
+					
+					//Announcing that this NodeRenderer has changed
+					var nodeRendererEvent:NodeRendererEvent = new NodeRendererEvent(NodeRendererEvent.NODERENDERER_CHANGED);
+					nodeRendererEvent.nodeRenderer = this;
+					dispatchEvent(nodeRendererEvent);
+				}
+			}
+			
+			/**
+			 * This function prevents NodeRenderer to dispatch 
+			 * the event NodeRendererEvent.CLICKED
+			 */
+			private function stopMouseDownUpPropagation(event:Event):void
+			{
+				event.stopImmediatePropagation();
+				event.stopPropagation();
+			}
+		]]>
+	</mx:Script>
+	
+	
+	<utils:ImageDefault id="nodeIcon" verticalCenter="0" horizontalCenter="0"
+					   source="{this._nodeIconSource}"
+					   defaultImagePath="{VirtualImageManager.DEFAULT_ICON_IMAGE_PATH}"
+					   top="5" bottom="20" left="30" right="10"
+					   rollOver="onRollOverImage()" rollOut="onRollOutImage()"/>
+			  
+	
+	<mx:Label id="nameLabel"
+			  horizontalCenter="0" bottom="5"
+			  text="{_node.name}"
+			  truncateToFit="true" 
+			  fontWeight="bold" fontSize="10"
+			  mouseDown="stopMouseDownUpPropagation(event)"
+			  mouseUp="stopMouseDownUpPropagation(event)"
+			  doubleClickEnabled="true" doubleClick="onDoubleClickNameLabel()"/>
+			  
+	<mx:TextInput id="nameInput"
+				  width="95%" height="18" maxChars="29"
+				  horizontalCenter="0" bottom="5"
+				  fontWeight="bold" fontSize="10"
+				  visible="false"
+				  mouseDown="stopMouseDownUpPropagation(event)"
+			  	  mouseUp="stopMouseDownUpPropagation(event)"/>
+			  
+	
+	<!-- More options for the NodeRenderer --> 
+	
+	<mx:Button id="eraseNodeButton" 
+			   top="3" right="5" visible="false"
+			   mouseDown="stopMouseDownUpPropagation(event)"
+			   mouseUp="stopMouseDownUpPropagation(event)"
+			   click="onClickEraseNodeButton()"
+			   styleName="eraseNodeButton"/>
+</mx:Canvas>

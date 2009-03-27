@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 16-oct-2008 16:52:14 by Hibernate Tools 3.2.1.GA -->
+<hibernate-mapping>
+  <class catalog="kinton" name="com.abiquo.abiserver.business.hibernate.pojohb.virtualappliance.VirtualDataCenterHB" table="virtualdatacenter">
+    <id name="idVirtualDataCenter" type="java.lang.Integer">
+      <column name="idVirtualDataCenter"/>
+      <generator class="identity"/>
+    </id>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.UserHB" fetch="select" name="userHBByIdUserLastModification">
+      <column name="idUser_lastModification"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.UserHB" fetch="select" name="userHBByIdUserCreation">
+      <column name="idUserCreation" not-null="true"/>
+    </many-to-one>
+    <property name="name" type="string">
+      <column length="40" name="name" not-null="true"/>
+    </property>
+    <property name="creationDate" type="timestamp">
+      <column length="0" name="creationDate" not-null="true"/>
+    </property>
+    <property name="lastModificationDate" type="timestamp">
+      <column length="0" name="lastModificationDate"/>
+    </property>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.EnterpriseHB" fetch="select" name="enterpriseHB">
+      <column name="idEnterprise"/>
+    </many-to-one>
+  </class>
+</hibernate-mapping>

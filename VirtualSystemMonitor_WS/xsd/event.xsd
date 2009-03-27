@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" targetNamespace="http://abiquo.com/abicloud/vsm/event.xsd" xmlns:tns="http://abiquo.com/abicloud/vsm/event.xsd" elementFormDefault="qualified" blockDefault="#all">
+<xs:simpleType name="EventTypeEnumeration">
+	<xs:restriction base="xs:string">
+		<xs:enumeration value="PoweredOn" />
+		<xs:enumeration value="PoweredOff" />
+		<xs:enumeration value="Suspended" />
+	</xs:restriction>
+</xs:simpleType>
+<xs:simpleType name="EventKindEnumeration">
+	<xs:restriction base="xs:string">
+		<xs:enumeration value="alert" />
+		<xs:enumeration value="error" />
+		<xs:enumeration value="warning" />
+		<xs:enumeration value="info" />
+		<xs:enumeration value="user" />
+	</xs:restriction>
+</xs:simpleType>
+<xs:complexType name="Event">
+	<xs:attribute name="virtualSystemID" type="xs:anyURI" />
+	<xs:attribute name="createdTime" type="xs:dateTime"/>
+	<xs:attribute name="user" type="xs:string" use="optional"/>
+	<xs:attribute name="eventKind" type="tns:EventKindEnumeration" />
+	<xs:attribute name="eventType" type="tns:EventTypeEnumeration" />
+</xs:complexType>
+</xs:schema>

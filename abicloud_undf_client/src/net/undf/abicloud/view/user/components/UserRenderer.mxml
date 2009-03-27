@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" 
+		   width="100%" height="100%" xmlns:utils="net.undf.abicloud.utils.*"
+		   styleName="UserRenderer" 
+		   verticalScrollPolicy="off" horizontalScrollPolicy="off">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.resources.ResourceBundle;
+			import mx.resources.ResourceManager;
+			import net.undf.abicloud.vo.user.User;
+			
+			
+			//The user being rendered
+			[Bindable]
+			private var _user:User;
+			
+			[ResourceBundle("User")]
+			private var rb2:ResourceBundle;
+			public function init(user:User):void
+			{
+				this._user = user;
+			}
+			
+			private function labelActiveColor(value:Boolean):uint
+			{
+				if(value)
+					return 0x009A00;
+				else
+					return 0xFF0000;
+			}
+			
+			private function labelActiveText(value:Boolean):String
+			{
+				if(value)
+					return ResourceManager.getInstance().getString("User", "LABEL_ACTIVATED");
+				else
+					return ResourceManager.getInstance().getString("User", "LABEL_DESACTIVATED");
+			}
+			
+		]]>
+	</mx:Script>
+	
+	<mx:HBox width="100%" height="100%" verticalAlign="middle">
+		<utils:SmoothImage id="userIcon"
+						  source="assets/user/Usuarios.png" maintainAspectRatio="true" 
+						  height="120" width="120"/>
+								  
+		<mx:VBox height="100%" width="50%" verticalGap="0" paddingTop="4"
+				 verticalScrollPolicy="off" horizontalScrollPolicy="off">
+					
+			<mx:Label text="{this._user.name + ' ' + this._user.surname}" 
+					  fontSize="22" fontWeight="bold"/>
+			
+			<mx:Label text="{this._user.enterprise ? this._user.enterprise.name : ''}"
+					  fontSize="18" fontStyle="italic"/>
+			
+			<mx:Label text="{this._user.email}" />
+			
+			<mx:Label id="labelActive" 
+					  color="{labelActiveColor(this._user.active)}"
+					  text="{labelActiveText(this._user.active)}"/>
+			
+			<mx:Label text="{this._user.role.shortDescription}" />
+					
+		</mx:VBox>
+		
+		<mx:VRule width="1" height="100%" strokeColor="#CCCCCC" horizontalCenter="0"/>
+		
+		<!-- User description -->
+		<mx:VBox height="100%" width="40%" verticalGap="0"
+				 verticalScrollPolicy="off" horizontalScrollPolicy="off">
+		
+			<mx:Label text="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_DESCRIPTION')"
+					  fontSize="14" fontWeight="bold" paddingTop="4"/>
+			
+			<mx:Label text="{this._user.description}" />
+			
+		</mx:VBox>
+	
+	</mx:HBox>
+</mx:Canvas>

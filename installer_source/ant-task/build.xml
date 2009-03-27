@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="(abiServer)" default="db.session_clean" basedir=".">
+    <target name="db.session_clean">
+      <echo file="XMLtoProperties.java">
+        import java.io.InputStream;
+        import java.util.Properties;
+        import java.io.PrintWriter;
+
+      public class XMLtoProperties{
+        public static void main(String[] args){
+        Properties properties = new Properties();
+
+            try{
+               InputStream inStream = XMLtoProperties.class.getClassLoader().getResourceAsStream("../tomcat/abiserver/WEB-INF/classes/conf/abi.config.xml");
+
+               if(inStream != null)
+                   properties.loadFromXML(inStream);
+
+               properties.store(new PrintWriter("build.properties"),"");
+
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+         }  
+      }  
+    </echo>
+
+    <javac srcdir="." includes="XMLtoProperties.java"/>
+    <java classname="XMLtoProperties" classpath="."/>
+
+    <property file="build.properties"/>
+
+    <!-- Borramos los ficheros generados -->
+    <delete file="XMLtoProperties.java"/>
+    <delete file="XMLtoProperties.class"/>
+    <delete file="build.properties"/>
+
+    	<sql driver="com.mysql.jdbc.Driver"
+    		url="${db.url}"
+    		userid="${db.username}" password="${db.password}" 
+		classpath="mysql-connector-java-5.0.8-bin.jar">
+		<![CDATA[
+		delete from session;
+		delete from virtualapp;
+		]]>
+    	</sql>
+    </target>	    
+</project>

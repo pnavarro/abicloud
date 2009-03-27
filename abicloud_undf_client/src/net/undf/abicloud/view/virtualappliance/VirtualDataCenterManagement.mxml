@@ -1,0 +1,878 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 xmlns:utils="net.undf.abicloud.utils.*"
+		 xmlns:componentsVA="net.undf.abicloud.view.virtualappliance.components.virtualappliance.*"
+		  width="100%" height="100%"
+		  creationComplete="creationCompleteHandler()"
+		  horizontalGap="0" verticalGap="0" paddingTop="0" paddingLeft="0" paddingRight="0" paddingBottom="0" verticalAlign="middle" >
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.utils.ObjectUtil;
+			import net.undf.abicloud.vo.infrastructure.State;
+			import net.undf.abicloud.business.managers.VirtualApplianceManager;
+			import net.undf.abicloud.business.managers.CountdownManager;
+			import mx.events.EffectEvent;
+			import mx.effects.Resize;
+			import mx.core.Application;
+			import mx.core.UIComponent;
+			import mx.managers.DragManager;
+			import mx.controls.Image;
+			import mx.core.DragSource;
+			import net.undf.abicloud.view.virtualappliance.components.virtualappliance.VirtualApplianceForm;
+			import net.undf.abicloud.vo.virtualappliance.VirtualAppliance;
+			import net.undf.abicloud.view.virtualappliance.components.virtualappliance.VirtualApplianceMiniature;
+			import net.undf.abicloud.vo.user.Enterprise;
+			import mx.collections.ArrayCollection;
+			import net.undf.abicloud.model.AbiCloudModel;
+			import mx.binding.utils.BindingUtils;
+			import mx.resources.ResourceBundle;
+			import mx.resources.ResourceManager;
+			import net.undf.abicloud.view.common.AbiCloudAlert;
+			import net.undf.abicloud.events.VirtualApplianceEvent;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import net.undf.abicloud.vo.virtualappliance.VirtualDataCenter;
+			import mx.managers.PopUpManager;
+			import net.undf.abicloud.view.virtualappliance.components.virtualdatacenter.VirtualDataCenterForm;
+			
+			
+			[ResourceBundle("Common")]
+			private var rb:ResourceBundle;
+			[ResourceBundle("VirtualAppliance")]
+			private var rb2:ResourceBundle;
+			
+			//Pop Ups
+			private var _virtualDataCenterForm:VirtualDataCenterForm;
+			private var _virtualApplianceForm:VirtualApplianceForm;
+			
+			//VirtualDataCenter list with the VirtualDataCenter available in model
+			private var _virtualDataCenters:ArrayCollection;
+			
+			//VirtualAppliance list with the VirtualAppliance available in model
+			private var _virtualAppliances:ArrayCollection;
+			
+			private var _resizeEffect:Resize;
+			
+			//The selected VirtualAppliance (from the DataGrid or from the TileList)
+			[Bindable]
+			private var _selectedVirtualAppliance:VirtualAppliance;
+
+			
+			private function creationCompleteHandler():void
+			{
+				//Initializing variables
+				this._virtualDataCenters = new ArrayCollection();
+				this._virtualAppliances = new ArrayCollection();
+				this._selectedVirtualAppliance = null;
+				
+				this._resizeEffect = new Resize();
+				this._resizeEffect.duration = 300;
+				
+				//Creating PopUps
+				this._virtualDataCenterForm = new VirtualDataCenterForm();
+				this._virtualDataCenterForm.addEventListener("VirtualDataCenterFormClose", closeVirtualDataCenterForm);
+				
+				this._virtualApplianceForm = new VirtualApplianceForm();
+				this._virtualApplianceForm.addEventListener("VirtualApplianceFormClose", closeVirtualApplianceForm);
+				
+				//Listening for new VirtualDataCenter available in model
+				BindingUtils.bindSetter(virtualDataCentersUpdated, AbiCloudModel.getInstance().virtualApplianceManager, "virtualDataCenters");
+				
+				//Listening for new VirtualAppliance available in model
+				BindingUtils.bindSetter(setVirtualAppliances, AbiCloudModel.getInstance().virtualApplianceManager, "virtualAppliances");
+				
+				//Listening for updates in Virtual Appliance's list in model
+				AbiCloudModel.getInstance().virtualApplianceManager.addEventListener(VirtualApplianceManager.VIRTUAL_APPLIANCES_UPDATED, onVirtualAppliancesUpdated);
+				
+				//Listening for when a VirtualAppliance has been edited
+				AbiCloudModel.getInstance().virtualApplianceManager.addEventListener(VirtualApplianceEvent.VIRTUAL_APPLIANCE_EDITED, onVirtualApplianceEdited);
+			}
+			
+			/**
+			 * Everytime this component is shown
+			 */
+			public function onShow():void
+			{
+				//Cleaning this component everytime it is shown
+				this._virtualAppliances.removeAll();
+				onClickViewOptions('listMode');
+				hideVirtualApplianceInfo();
+				this._selectedVirtualAppliance = null;
+				virtualDataCenterFilter.text = "";
+				
+				//Requesting the list of VirtualDataCenters, using the enterprise from the logged user
+				var virtualApplianceEvent:VirtualApplianceEvent = new VirtualApplianceEvent(VirtualApplianceEvent.GET_VIRTUAL_DATACENTERS_BY_ENTERPRISE);
+				virtualApplianceEvent.enterprise = AbiCloudModel.getInstance().loginManager.user.enterprise;
+				dispatchEvent(virtualApplianceEvent);
+				
+				//Requesting the list of VirtualAppliance, using the enterprise from the logged user
+				virtualApplianceEvent = new VirtualApplianceEvent(VirtualApplianceEvent.GET_VIRTUALAPPLIANCES_BY_ENTERPRISE);
+				virtualApplianceEvent.enterprise = AbiCloudModel.getInstance().loginManager.user.enterprise;
+				dispatchEvent(virtualApplianceEvent);
+			}
+			
+			/**
+			 * This function is called everytime that new VirtualAppliance are available in model
+			 */
+			private function virtualDataCentersUpdated(value:ArrayCollection):void
+			{
+				this._virtualDataCenters = value;
+				
+				//Setting virtualDataCenterlist's data provider
+				virtualDataCenterList.dataProvider = this._virtualDataCenters;	
+			}
+			
+			/**
+			 * When user clicks in virtualDataCenterList
+			 * This function is also used to set those VirtualAppliance that will be seen on screen
+			 */
+			private function onClickVirtualDataCenterList():void
+			{
+				if(virtualDataCenterList.selectedIndex > -1)
+					//Filtering the VirtualAppliance by the VirtualDataCenter that has been selected
+					filterVirtualAppliancesByVirtualDataCenter(virtualDataCenterList.selectedItem as VirtualDataCenter);
+				else
+					//VirtualAppliance are not filtered
+					filterVirtualAppliancesByVirtualDataCenter(null);
+			}
+			
+			/**
+			 * Opens VirtualDataCenterForm for creation
+			 */
+			private function addVirtualDataCenter():void
+			{
+				PopUpManager.addPopUp(this._virtualDataCenterForm, this, true);
+				PopUpManager.centerPopUp(this._virtualDataCenterForm);
+				
+				this._virtualDataCenterForm.init(null);
+			}
+			
+			/**
+			 * Asks user to confirm a VirtualDataCenter deletion
+			 */
+			private function askVirtualDataCenterDeletion():void
+			{
+				AbiCloudAlert.showAlert(ResourceManager.getInstance().getString("Common", "ALERT_TITLE_LABEL"),
+									 ResourceManager.getInstance().getString("VirtualAppliance", "ALERT_DELETE_VIRTUALDATACENTER_HEADER"),
+									 ResourceManager.getInstance().getString("VirtualAppliance", "ALERT_DELETE_VIRTUALDATACENTER_TEXT"),
+									 Alert.YES | Alert.NO,
+									 virtualDataCenterDeletionResponseHandler);
+			}
+			
+			/**
+			 * Handler for user response when he is asked for a VirtualDataCenter deletion
+			 */
+			private function virtualDataCenterDeletionResponseHandler(closeEvent:CloseEvent):void
+			{
+				if(closeEvent.detail == Alert.YES)
+					deleteVirtualDataCenter();
+			}
+			
+			/**
+			 * Deletes a VirtualDataCenter
+			 */
+			private function deleteVirtualDataCenter():void
+			{
+				var virtualApplianceEvent:VirtualApplianceEvent = new VirtualApplianceEvent(VirtualApplianceEvent.DELETE_VIRTUAL_DATACENTER);
+				virtualApplianceEvent.virtualDataCenter = virtualDataCenterList.selectedItem as VirtualDataCenter;
+				dispatchEvent(virtualApplianceEvent);
+			}
+			
+			/**
+			 * Opens a VirtualDataCenterForm for edition
+			 */
+			private function editVirtualDataCenter():void
+			{
+				PopUpManager.addPopUp(this._virtualDataCenterForm, this, true);
+				PopUpManager.centerPopUp(this._virtualDataCenterForm);
+				
+				this._virtualDataCenterForm.init(virtualDataCenterList.selectedItem as VirtualDataCenter);
+			}
+			
+			/**
+			 * Closes an opened VirtualDataCenterForm
+			 */
+			private function closeVirtualDataCenterForm(event:Event):void
+			{
+				PopUpManager.removePopUp(this._virtualDataCenterForm);
+			}
+			
+			/**
+			 * To filter the VirtualDataCenter list
+			 */
+			private function onChangeVirtualDataCenterFilter():void
+			{
+				var filterText:String = virtualDataCenterFilter.text;
+				
+				if(filterText == null || filterText == "")
+					virtualDataCenterList.dataProvider = this._virtualDataCenters;
+				else
+				{		
+					var filteredArray:ArrayCollection = new ArrayCollection();
+					var length:int = this._virtualDataCenters.length;
+					var i:int;
+					var virtualDataCenter:VirtualDataCenter;
+					
+					for(i = 0; i < length; i++)
+					{
+						virtualDataCenter = this._virtualDataCenters.getItemAt(i) as VirtualDataCenter;
+						if(virtualDataCenter.name.toLocaleLowerCase().indexOf(filterText.toLocaleLowerCase()) > -1)
+							filteredArray.addItem(virtualDataCenter);
+					}
+					
+					virtualDataCenterList.dataProvider = filteredArray;
+				}
+			}
+			
+			//////////////////////////////////////
+			//VIRTUAL APPLIANCE
+			
+			/**
+			 * Called everytime that new VirtualAppliance are available in model
+			 */
+			private function setVirtualAppliances(value:ArrayCollection, preserveState:Boolean = false):void
+			{
+				this._virtualAppliances = value;
+				
+				if(preserveState)
+				{
+					//Trying to get again the virtual appliance that we had selected
+					if(this._selectedVirtualAppliance)
+					{
+						//Looking if the new list of VirtualAppliances still has the Virtual Appliance that we had elected
+						var length:int = this._virtualAppliances.length;
+						var i:int;
+						var virtualApplianceFound:Boolean = false;
+						for(i = 0; i < length; i++)
+						{
+							if(this._selectedVirtualAppliance.id == VirtualAppliance(this._virtualAppliances.getItemAt(i)).id)
+							{
+								this._selectedVirtualAppliance = this._virtualAppliances.getItemAt(i) as VirtualAppliance;
+								virtualApplianceFound = true;
+								break;
+							}
+						}
+						
+						//If we haven't found the selectedVirtualAppliance in the new Virtual Appliance list
+						//means that has been deleted by another user
+						if(! virtualApplianceFound)
+							this._selectedVirtualAppliance = null;
+					}	
+				}
+				else
+					this._selectedVirtualAppliance = null;
+				
+				//Showing againg the VirtualAppliances
+				onClickVirtualDataCenterList();
+			}
+			
+			/**
+			 * Called when the Virtual Appliances has been checked
+			 */
+			private function onVirtualAppliancesUpdated(event:Event):void
+			{
+				setVirtualAppliances(AbiCloudModel.getInstance().virtualApplianceManager.virtualAppliances, true);
+			}
+			
+			/**
+			 * Handler for when a VirtualAppliance has been edited
+			 */
+			private function onVirtualApplianceEdited(virtualApplianceEvent:VirtualApplianceEvent):void
+			{
+				//If we are currently filtering the VirtualAppliances by a certain virtualDataCenter
+				//and the edited VirtualAppliance no longer belongs to that VirtualDataCenter, we remove it
+				//from the view
+				if(virtualDataCenterList.selectedIndex > -1 && 
+				   virtualApplianceEvent.virtualAppliance.virtualDataCenter.id != VirtualDataCenter(virtualDataCenterList.selectedItem).id)
+				{
+					onClickVirtualDataCenterList();
+				}
+			}
+			
+			private function filterVirtualAppliancesByVirtualDataCenter(virtualDataCenter:VirtualDataCenter):void
+			{
+				if(virtualDataCenter == null)
+				{
+					//Virtual Appliances are not filtered. Showing them all
+					virtualApplianceDataGrid.dataProvider = this._virtualAppliances;
+					virtualApplianceTile.dataProvider = this._virtualAppliances;
+				}
+				else
+				{
+					//Filtering virtualAppliances by virtualDataCenter
+					var virtualAppliancesFiltered:ArrayCollection = new ArrayCollection();
+					var virtualAppliance:VirtualAppliance;
+					var length:int = this._virtualAppliances.length;
+					var i:int;
+					for(i = 0; i < length; i++)
+					{
+						virtualAppliance = this._virtualAppliances.getItemAt(i) as VirtualAppliance;
+						if(virtualAppliance.virtualDataCenter.id == virtualDataCenter.id)
+						{
+							virtualAppliancesFiltered.addItem(virtualAppliance);
+						}
+					}
+					
+					//Showing the filtered VirtualAppliances
+					virtualApplianceDataGrid.dataProvider = virtualAppliancesFiltered;
+					virtualApplianceTile.dataProvider = virtualAppliancesFiltered;
+				}
+			}
+			
+			private function onClickVirtualApplianceDataGrid():void
+			{
+				if(virtualApplianceDataGrid.selectedIndex > -1)
+				{
+					this._selectedVirtualAppliance = virtualApplianceDataGrid.selectedItem as VirtualAppliance;
+					
+					//Forcing the virtualApplianceTile to have the same selected VirtualAppliance
+					virtualApplianceTile.selectedIndex = virtualApplianceDataGrid.selectedIndex;
+					
+					//Showing more info for the selected VirtualAppliance
+					showVirtualApplianceInfo();
+				}
+			}
+			
+			private function onDoubleClickVirtualApplianceDataGrid():void
+			{
+				if(virtualApplianceDataGrid.selectedIndex > -1)
+				{
+					var virtualApplianceEvent:VirtualApplianceEvent = new VirtualApplianceEvent(VirtualApplianceEvent.VIRTUAL_APPLIANCE_SELECTED);
+					virtualApplianceEvent.virtualAppliance = virtualApplianceDataGrid.selectedItem as VirtualAppliance;
+					dispatchEvent(virtualApplianceEvent);
+				}
+			}
+			
+			private function onClickVirtualApplianceTile():void
+			{
+				if(virtualApplianceTile.selectedIndex > -1)
+				{	
+					this._selectedVirtualAppliance = virtualApplianceTile.selectedItem as VirtualAppliance;
+					
+					//Forcing the virtualApplianceDataGrid to have the same selected VirtualAppliance
+					virtualApplianceDataGrid.selectedIndex = virtualApplianceTile.selectedIndex;
+					
+					//Showing more info for the selected VirtualAppliance
+					showVirtualApplianceInfo();
+				}
+				else
+					this._selectedVirtualAppliance = null;
+				
+			}
+			
+			private function onDoubleClickVirtualApplianceTile():void
+			{
+				if(virtualApplianceTile.selectedIndex > -1)
+				{
+					var virtualApplianceEvent:VirtualApplianceEvent = new VirtualApplianceEvent(VirtualApplianceEvent.VIRTUAL_APPLIANCE_SELECTED);
+					virtualApplianceEvent.virtualAppliance = virtualApplianceTile.selectedItem as VirtualAppliance;
+					dispatchEvent(virtualApplianceEvent);
+				}
+			}
+			/**
+			 * Opens a VirtualApplianceForm for creation
+			 */
+			private function addVirtualAppliance():void
+			{
+				PopUpManager.addPopUp(this._virtualApplianceForm, this, true);
+				PopUpManager.centerPopUp(this._virtualApplianceForm);
+				
+				this._virtualApplianceForm.init(null);
+			}
+			
+			/**
+			 * Asks user to confirm a VirtualAppliance deletion
+			 */
+			private function askVirtualApplianceDeletion():void
+			{
+				AbiCloudAlert.showAlert(ResourceManager.getInstance().getString("Common", "ALERT_TITLE_LABEL"),
+									 ResourceManager.getInstance().getString("VirtualAppliance", "ALERT_DELETE_VIRTUALAPPLIANCE_HEADER"),
+									 ResourceManager.getInstance().getString("VirtualAppliance", "ALERT_DELETE_VIRTUALAPPLIANCE_TEXT"),
+									 Alert.YES | Alert.NO,
+									 virtualApplianceDeletionResponseHandler);
+			}
+			
+			/**
+			 * Handler to retrieve user's response
+			 */
+			private function virtualApplianceDeletionResponseHandler(closeEvent:CloseEvent):void
+			{
+				if(closeEvent.detail == Alert.YES)
+					deleteVirtualAppliance();
+			}
+			
+			/**
+			 * Deletes a VirtualAppliance, once user has confirmed it
+			 * If the Virtual Appliance is powered on, it will use a non blocking service
+			 */
+			private function deleteVirtualAppliance():void
+			{
+				var virtualApplianceEvent:VirtualApplianceEvent;
+				
+				if(this._selectedVirtualAppliance.state.id == State.RUNNING)
+				{
+					virtualApplianceEvent = new VirtualApplianceEvent(VirtualApplianceEvent.DELETE_VIRTUALAPPLIANCE_NON_BLOCKING);
+					virtualApplianceEvent.oldVirtualAppliance = this._selectedVirtualAppliance;
+					virtualApplianceEvent.virtualAppliance = ObjectUtil.copy(this._selectedVirtualAppliance) as VirtualAppliance;
+				}
+				else
+				{
+					virtualApplianceEvent = new VirtualApplianceEvent(VirtualApplianceEvent.DELETE_VIRTUALAPPLIANCE);
+					virtualApplianceEvent.virtualAppliance = this._selectedVirtualAppliance;
+				}
+				
+				dispatchEvent(virtualApplianceEvent);
+			}
+			
+			/**
+			 * Opens a VirtualApplianceForm for edition
+			 */
+			private function editVirtualAppliance():void
+			{
+				PopUpManager.addPopUp(this._virtualApplianceForm, this, true);
+				PopUpManager.centerPopUp(this._virtualApplianceForm);
+				
+				this._virtualApplianceForm.init(this._selectedVirtualAppliance);
+			}
+			
+			/**
+			 * Closes an opened VirtualApplianceForm
+			 */
+			private function closeVirtualApplianceForm(event:Event):void
+			{
+				PopUpManager.removePopUp(this._virtualApplianceForm);
+			}
+			
+			/**
+			 * Changes the view mode
+			 * Options are listMode (shows a DataGrid) or iconsMode (shows a Tile component with
+			 * VirtualApplianceMiniature components)
+			 */
+			private function onClickViewOptions(viewMode:String):void
+			{
+				if(viewMode == 'listMode')
+				{
+					listButton.selected = true;
+					iconsButton.selected = false;
+					viewModesVS.selectedIndex = 0;
+				}
+				else if(viewMode == 'iconsMode')
+				{
+					listButton.selected = false;
+					iconsButton.selected = true;
+					viewModesVS.selectedIndex = 1;	
+				}
+			}
+			
+			/**
+			 * Shows a VirtualAppliance, using a VirtualApplianceRenderer component
+			 */
+			private function showVirtualApplianceInfo():void
+			{
+				if(this._selectedVirtualAppliance)
+				{
+					if(! virtualApplianceRenderer.visible)
+					{
+						hideButton.visible = true; hideButton.includeInLayout = true;
+						virtualApplianceRenderer.visible = true;
+						this._resizeEffect.heightFrom = 0;
+						this._resizeEffect.heightTo = 143;
+						this._resizeEffect.play([virtualApplianceRenderer]);	
+					}
+				}
+			}
+			
+			/**
+			 * Hides the VirtualApplianceRenderer component
+			 */
+			private function hideVirtualApplianceInfo():void
+			{
+				if(virtualApplianceRenderer.visible)
+				{
+					this._resizeEffect.heightFrom = virtualApplianceRenderer.height;
+					this._resizeEffect.heightTo = 0;
+					this._resizeEffect.addEventListener(EffectEvent.EFFECT_END, onEndResizeEffect);
+					this._resizeEffect.play([virtualApplianceRenderer]);
+				}
+			}
+			
+			private function onEndResizeEffect(effectEvent:EffectEvent):void
+			{
+				this._resizeEffect.removeEventListener(EffectEvent.EFFECT_END, onEndResizeEffect);
+				hideButton.visible = false; hideButton.includeInLayout = false;
+				virtualApplianceRenderer.visible = false;
+			}
+			
+			private function onClickHideButton():void
+			{
+				hideVirtualApplianceInfo();
+			}
+			
+			private function onClickAllVirtualDataCenterLabel():void
+			{
+				virtualDataCenterList.selectedIndex = -1;
+				this._selectedVirtualAppliance = null;
+				virtualDataCenterFilter.text = "";
+				onChangeVirtualDataCenterFilter();
+				onClickVirtualDataCenterList();
+			}
+			
+			
+			////////////////////////////////////////////
+			//BACKGROUND UPDATES
+			
+			/**
+			 * Starts all backgrounds updates that this component may have
+			 * Only this component control when the background updates can start
+			 */
+			public function startBackgroundUpdates():void
+			{
+				//Unregistering previous events that may be registered
+				AbiCloudModel.getInstance().countdownManager.removeEventListener(CountdownManager.COUNTDOWN_COMPLETE_EVENT, checkVirtualAppliances);
+				
+				//Registering new events
+				AbiCloudModel.getInstance().countdownManager.addEventListener(CountdownManager.COUNTDOWN_COMPLETE_EVENT, checkVirtualAppliances);
+				
+				//Starting timer
+				AbiCloudModel.getInstance().countdownManager.startAutoCountdown(AbiCloudModel.getInstance().configurationManager.config.VIRTUAL_APPLIANCES_UPDATE_INTERVAL);
+			}
+			
+			/**
+			 * Stops all background automatic updates that this component may have
+			 * The background updates can be stopped from outside, since this component can not always control
+			 * when they are not longer necessary.
+			 */
+			public function stopBackgroundUpdates():void
+			{
+				//Stopping timer
+				AbiCloudModel.getInstance().countdownManager.stopAutoCountdown();
+				
+				//Unregistering all events for timer
+				AbiCloudModel.getInstance().countdownManager.removeEventListener(CountdownManager.COUNTDOWN_COMPLETE_EVENT, checkVirtualAppliances);
+			}
+			
+			public function checkVirtualAppliances(event:Event):void
+			{
+				var virtualApplianceEvent:VirtualApplianceEvent = new VirtualApplianceEvent(VirtualApplianceEvent.CHECK_VIRTUAL_APPLIANCES_BY_ENTERPRISE);
+				virtualApplianceEvent.enterprise = AbiCloudModel.getInstance().loginManager.user.enterprise;
+				dispatchEvent(virtualApplianceEvent);
+			}
+			
+			
+			//////////////////////////////////////////
+			// DRAG & DROP FUNCTIONALITY
+			//WARNING!!! THIS FUNCTIONALITY IS TEMPORALY DISABLED!
+			
+			/**
+			 * Register Mouse Move events, to know if user wants to start a drag operation
+			 * from the VirtualAppliancesDataGrid
+			 */
+			 /*
+			private function onMouseDownVirtualApplianceDataGrid():void
+			{
+				if(virtualApplianceDataGrid.selectedIndex > -1)
+					virtualApplianceDataGrid.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMoveVirtualApplianceDataGrid);
+			}*/
+			
+			/**
+			 * Initializes a Drag operation from the VirtualAppliancesDataGrid
+			 */
+			 /*
+			private function onMouseMoveVirtualApplianceDataGrid(mouseEvent:MouseEvent):void
+			{
+				//We don't need this handler until user wants to initate another Drag operation
+				virtualApplianceDataGrid.removeEventListener(MouseEvent.MOUSE_MOVE, onMouseMoveVirtualApplianceDataGrid);
+				
+				var dragSource:DragSource = new DragSource();
+				dragSource.addData(virtualApplianceDataGrid.selectedItem, "VirtualAppliance");
+				
+				var dragProxy:Image = new Image();
+				dragProxy.source = "assets/virtualappliance/VirtualAppliance.png";
+				dragProxy.maintainAspectRatio = true;
+				dragProxy.width = 100;
+				dragProxy.height = 100;
+				
+				var position:Point = localToGlobal(new Point(mouseEvent.localX, mouseEvent.localY));
+				DragManager.doDrag(UIComponent(Application.application), dragSource, mouseEvent, dragProxy, -mouseEvent.stageX, -mouseEvent.stageY);
+			} */
+			
+			
+			/**
+			 * Register Mouse Move events, to know if user wants to start a drag operation
+			 * from the VirtualAppliancesTile
+			 */
+			 /*
+			private function onMouseDownVirtualApplianceTile():void
+			{
+				if(virtualApplianceTile.selectedIndex > -1)
+					virtualApplianceTile.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMoveVirtualApplianceTile);
+			}*/
+			
+			/**
+			 * Initializes a Drag operation from the VirtualAppliancesTile
+			 */
+			 /*
+			private function onMouseMoveVirtualApplianceTile(mouseEvent:MouseEvent):void
+			{
+				//We don't need this handler until user wants to initate another Drag operation
+				virtualApplianceTile.removeEventListener(MouseEvent.MOUSE_MOVE, onMouseMoveVirtualApplianceTile);
+				
+				var dragSource:DragSource = new DragSource();
+				dragSource.addData(virtualApplianceTile.selectedItem, "VirtualAppliance");
+				
+				var dragProxy:Image = new Image();
+				dragProxy.source = "assets/virtualappliance/VirtualAppliance.png";
+				dragProxy.maintainAspectRatio = true;
+				dragProxy.width = 100;
+				dragProxy.height = 100;
+				
+				var position:Point = localToGlobal(new Point(mouseEvent.localX, mouseEvent.localY));
+				DragManager.doDrag(UIComponent(Application.application), dragSource, mouseEvent, dragProxy, -mouseEvent.stageX, -mouseEvent.stageY);
+			}*/
+		]]>
+	</mx:Script>
+	<!-- VIRTUAL DATACENTER -->
+	
+	<mx:Canvas 	id="virtualDataCenterContainer"
+				height="100%" width="200" 
+				verticalScrollPolicy="off" horizontalScrollPolicy="off">
+		
+		<!-- Title -->
+		<mx:HBox top="0" width="100%" height="18" styleName="cabeceraPanel" paddingLeft="5" verticalAlign="middle">
+			<mx:Label text="@Resource(bundle='VirtualAppliance', key='LABEL_VIRTUALDATACENTERS')" styleName="titlePanel" height="14"/>
+		</mx:HBox>
+		
+		<mx:HBox width="100%" height="32" top="18" verticalAlign="middle" paddingLeft="10" paddingRight="10" horizontalGap="2" styleName="cabeceraPanelGris">
+			
+			<mx:Image source="assets/buttonsMenu/lupa.png"/>
+			
+			<mx:TextInput id="virtualDataCenterFilter"
+					 	  height="20" width="100%"
+					 	  toolTip="@Resource(bundle='Common', key='BUTTON_FILTER_TOOLTIP')"
+					 	  change="onChangeVirtualDataCenterFilter()"/> 	  
+		</mx:HBox>
+		
+		<mx:HBox width="100%" height="23" top="50" verticalAlign="middle" horizontalGap="2" paddingLeft="5" paddingRight="10" styleName="cabeceraPanelGris"
+				 buttonMode="true" useHandCursor="true" mouseChildren="false"
+				 click="onClickAllVirtualDataCenterLabel()">
+			<mx:Label id="allVirtualDataCenterLabel" maxWidth="160" verticalCenter="0"
+					  text="@Resource(bundle='VirtualAppliance', key='LABEL_ALL')" fontStyle="italic"/>
+		</mx:HBox>
+		
+		<!-- Virtual DataCenter list -->
+		<mx:List id="virtualDataCenterList"
+				 bottom="31" top="73" width="100%"
+				 click="onClickVirtualDataCenterList()"
+				 itemRenderer="net.undf.abicloud.view.virtualappliance.components.virtualdatacenter.VirtualDataCenterListRenderer" borderStyle="none"/>
+				 
+		<!-- Enterprises Tool Bar -->
+		<mx:HBox bottom="0" width="100%" height="32" verticalAlign="middle" styleName="bajo" paddingLeft="6" paddingRight="6">
+		
+			<mx:Button id="addVirtualDataCenterButton"
+						click="addVirtualDataCenter()" styleName="bAgregar"
+						toolTip="@Resource(bundle='Common', key='BUTTON_NEW_TOOLTIP')"/>
+				
+			<mx:Button id="deleteVirtualDataCenterButton"
+					   click="askVirtualDataCenterDeletion()"
+					   enabled="{virtualDataCenterList.selectedIndex > -1}" styleName="bNoAgregar"
+					   toolTip="@Resource(bundle='Common', key='BUTTON_DEL_TOOLTIP')"/>
+			<mx:Spacer width="100%" height="10"/>
+					   
+			<mx:Button id="editVirtualDataCenterButton"
+					   click="editVirtualDataCenter()"
+					   enabled="{virtualDataCenterList.selectedIndex > -1}" styleName="bConfig"
+					   toolTip="@Resource(bundle='Common', key='BUTTON_EDIT_TOOLTIP')"/>
+
+		</mx:HBox>
+	</mx:Canvas>
+	
+	<mx:Spacer width="10" />
+	
+	<!-- VIRTUAL APPLIANCE -->
+	<mx:VBox id="virtualApplianceContainer"
+			   width="100%" height="100%"
+			   horizontalGap="0" verticalGap="0" paddingTop="0" paddingLeft="0" paddingRight="0" paddingBottom="0"
+			   verticalScrollPolicy="off" horizontalScrollPolicy="off"
+			   horizontalAlign="center">
+		
+		<!-- Title -->
+		<mx:HBox width="100%" height="18" styleName="cabeceraPanel" 
+				 horizontalGap="0" paddingLeft="5" verticalAlign="middle">
+			<mx:Label text="@Resource(bundle='VirtualAppliance', key='LABEL_VIRTUALAPPLIANCES')" styleName="titlePanel" height="14"/>
+		</mx:HBox>
+		
+		<mx:Canvas width="100%" height="100%">
+		
+			<!-- View modes selector -->
+			<mx:HBox width="100%" top="0" height="32" styleName="cabeceraPanelGris" verticalAlign="middle" paddingLeft="10" paddingRight="10" horizontalGap="0">
+			
+				<mx:Button id="listButton" 
+						   styleName="bVistaUno"
+						   click="onClickViewOptions('listMode')"
+						   toolTip="@Resource(bundle='Common', key='BUTTON_LISTMODE_TOOLTIP')"/>
+						   
+				<mx:Button id="iconsButton" 
+						   styleName="bVistaDos"
+						   click="onClickViewOptions('iconsMode')"
+						   toolTip="@Resource(bundle='Common', key='BUTTON_ICONSMODE_TOOLTIP')"/>
+			</mx:HBox>
+			
+			
+			<mx:ViewStack id="viewModesVS" top="31" bottom="32" width="100%">
+			
+				<!-- Data Grid -->
+				<mx:Canvas width="100%" height="100%"
+						   verticalScrollPolicy="off" horizontalScrollPolicy="off">
+					<mx:DataGrid id="virtualApplianceDataGrid"
+								 width="100%" height="100%"
+								 click="onClickVirtualApplianceDataGrid()"
+								 doubleClick="onDoubleClickVirtualApplianceDataGrid()"
+								 doubleClickEnabled="true">
+						
+						<mx:columns>
+							<mx:DataGridColumn dataField="name" sortable="true"
+											   headerText="@Resource(bundle='Common', key='TEXTINPUT_LABEL_NAME')"/>
+							
+							<mx:DataGridColumn width="24" dataField="state" sortable="true" resizable="false" headerText="">			   
+								<mx:itemRenderer>
+									<mx:Component>
+										<mx:Canvas width="12" height="13">
+											<mx:Script>
+												<![CDATA[
+													import net.undf.abicloud.vo.infrastructure.State;
+													import net.undf.abicloud.vo.virtualappliance.VirtualAppliance;
+													
+													[Bindable]
+													private var _virtualAppliance:VirtualAppliance;
+													override public function set data(value:Object):void
+													{
+														super.data = value;
+														this._virtualAppliance = value as VirtualAppliance;
+													}
+												]]>
+											</mx:Script>
+											<utils:SmoothImage width="14" height="14" verticalCenter="0" horizontalCenter="0"
+															   visible="{this._virtualAppliance.state.id != State.IN_PROGRESS}"
+						  									   source="{(this._virtualAppliance.state.id == State.RUNNING) ? 'assets/buttonsMenu/verde.png' : 'assets/buttonsMenu/rojo.png'}"/>
+						  									   
+						  					<mx:SWFLoader width="14" height="14" verticalCenter="0" horizontalCenter="0"
+													  	  visible="{this._virtualAppliance.state.id == State.IN_PROGRESS}"
+													  	  source="assets/buttonsMenu/CargaPeque.swf"/>					   
+										</mx:Canvas>
+									</mx:Component>
+								</mx:itemRenderer>
+							</mx:DataGridColumn>
+							
+							<mx:DataGridColumn width="24" sortable="true" dataField="error" resizable="false" headerText="">			   
+								<mx:itemRenderer>
+									<mx:Component>
+										<mx:Canvas width="12" height="13">
+											<mx:Script>
+												<![CDATA[
+													import net.undf.abicloud.vo.virtualappliance.VirtualAppliance;
+													
+													[Bindable]
+													private var _virtualAppliance:VirtualAppliance;
+													override public function set data(value:Object):void
+													{
+														super.data = value;
+														this._virtualAppliance = value as VirtualAppliance;
+													}
+												]]>
+											</mx:Script>
+											<utils:SmoothImage width="18" height="18" verticalCenter="0" horizontalCenter="0"
+															   source="assets/general/alert.png"
+															   visible="{this._virtualAppliance.error ? true:false}"/>
+										</mx:Canvas>
+									</mx:Component>
+								</mx:itemRenderer>
+							</mx:DataGridColumn>
+						</mx:columns>
+					</mx:DataGrid>
+				</mx:Canvas>
+
+				<!-- Icons -->
+				<mx:Canvas width="100%" height="100%"
+					   verticalScrollPolicy="off" horizontalScrollPolicy="off">
+					<mx:TileList id="virtualApplianceTile" width="100%" height="100%"
+								 paddingTop="0" paddingLeft="0" paddingRight="0" paddingBottom="0"
+								 itemRenderer="net.undf.abicloud.view.virtualappliance.components.virtualappliance.VirtualApplianceMiniature"
+								 click="onClickVirtualApplianceTile()"
+								 doubleClick="onDoubleClickVirtualApplianceTile()"
+								 doubleClickEnabled="true"/>
+				</mx:Canvas>
+				
+			</mx:ViewStack>
+	
+				
+			<!-- Tool Box -->
+			<mx:HBox width="100%" bottom="0" height="32" verticalAlign="middle" styleName="bajoGris" paddingLeft="6" paddingRight="6">
+				<mx:Button id="addVirtualApplianceButton"
+							click="addVirtualAppliance()" styleName="bAgregar"
+							toolTip="@Resource(bundle='Common', key='BUTTON_NEW_TOOLTIP')"/>
+					
+				<mx:Button id="deleteVirtualApplianceButton"
+						   click="askVirtualApplianceDeletion()"
+						   enabled="{this._selectedVirtualAppliance != null &amp;&amp; 
+						   			 this._selectedVirtualAppliance.state.id != State.IN_PROGRESS}" 
+						   styleName="bNoAgregar"
+						   toolTip="@Resource(bundle='Common', key='BUTTON_DEL_TOOLTIP')"/>
+				
+				<mx:Spacer width="100%" />
+						   
+				<mx:Button id="editVirtualApplianceButton"
+						   click="editVirtualAppliance()"
+						   enabled="{this._selectedVirtualAppliance != null &amp;&amp; 
+						   			 this._selectedVirtualAppliance.state.id != State.IN_PROGRESS}" 
+						   styleName="bConfig"
+						   toolTip="@Resource(bundle='Common', key='BUTTON_EDIT_TOOLTIP')"/>
+			</mx:HBox>
+		</mx:Canvas>
+		
+		<mx:Button 	id="hideButton" styleName="buttonUpDown"
+					width="49" height="10"
+					visible="false" includeInLayout="false"
+					click="onClickHideButton()"/>
+		
+		<!-- Virtual Appliance info -->
+		<componentsVA:VirtualApplianceRenderer id="virtualApplianceRenderer" visible="false"
+											   virtualAppliance="{this._selectedVirtualAppliance}"
+											   width="100%" height="0"/>
+	</mx:VBox>
+</mx:HBox>

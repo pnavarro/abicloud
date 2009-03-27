@@ -1,0 +1,183 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 width="100%" height="100%" verticalAlign="top"
+		 paddingBottom="0" paddingTop="0" paddingLeft="0" paddingRight="0"
+		 verticalScrollPolicy="off" horizontalScrollPolicy="off">
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.vo.infrastructure.NetworkModule;
+			
+	   		import net.undf.abicloud.vo.infrastructure.SO;
+	   		import mx.utils.ObjectUtil;
+	   		import net.undf.abicloud.model.AbiCloudModel;
+	   		import net.undf.abicloud.vo.infrastructure.PhysicalMachine;
+	   		
+	   		[Bindable]
+	   		private var _editMode:Boolean;
+	   		/**
+	   		 * @private
+	   		 */
+	   		public function set editMode(value:Boolean):void
+	   		{
+	   			this._editMode = value;
+	   			
+	   			if(this._editMode)
+	   			{
+		   			//Set the values that can be edited
+		   			networkModuleList.dispatchEvent(new MouseEvent(MouseEvent.CLICK));
+	   			}
+	   		}
+	   		
+	   		[Bindable]
+	   		private var _physicalMachine:PhysicalMachine;
+	   		/**
+	   		 * @private
+	   		 */
+	   		public function set physicalMachine(value:PhysicalMachine):void
+	   		{
+	   			this._physicalMachine = value;
+	   			this._physicalMachineEdited = ObjectUtil.copy(value) as PhysicalMachine;
+	   			this._networkModule = null;
+	   		}
+	   		
+	   		[Bindable]
+	   		private var _physicalMachineEdited:PhysicalMachine;
+	   		/**
+	   		 * Returns a copy (not original) of _physicalMachine, with the changes that can be made in this component
+	   		 */
+	   		public function get physicalMachineEdited():PhysicalMachine
+	   		{
+				if(this._networkModule != null)
+				{
+					if(! this._networkModule.dhcp)
+					{
+						this._networkModule.ip = ipInput.text;
+						this._networkModule.gateway = gatewayInput.text;
+						this._networkModule.subNetMask = subnetMaskInput.text;
+					}
+					this._networkModule.bw = Number(bwInput.text);
+				}
+	   			return this._physicalMachineEdited;
+	   		}
+   			
+   			//The selected NetworkModule that will be rendered
+			[Bindable]
+			private var _networkModule:NetworkModule;
+   			
+			private function networkModuleListLabelFunction(item:Object):String
+			 {
+			 	var networkModule:NetworkModule = item as NetworkModule;
+			 	if(networkModule.ip.length > 0)
+			 		return networkModule.ip
+			 	else
+			 		return "DHCP";
+			 }
+			 
+			 private function onClickNetworkModuleList():void
+			 {
+			 	if(networkModuleList.selectedIndex > -1)
+			 	{
+			 		this._networkModule = null;
+			 		this._networkModule = networkModuleList.selectedItem as NetworkModule;
+			 	}	
+			 }
+		]]>
+	</mx:Script>
+	
+	<mx:HBox width="60%" height="100%"
+			 verticalScrollPolicy="off" horizontalScrollPolicy="off"
+			 verticalAlign="middle">
+		<mx:List id="networkModuleList" width="120" height="90%"
+			 dataProvider="{this._physicalMachineEdited.networkModuleList}"
+			 labelFunction="networkModuleListLabelFunction"
+			 click="onClickNetworkModuleList()"/>
+			 
+		<mx:Form verticalGap="1" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" fontSize="11">
+			<mx:FormItem enabled="{! this._networkModule.dhcp}"
+				 label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_IP')">
+				<mx:Label text="{(this._networkModule.dhcp) ? '' : _networkModule.ip}" height="20"
+						  visible="{! this._editMode}" includeInLayout="{! this._editMode}"/>
+				
+				<mx:TextInput id="ipInput" text="{(this._networkModule.dhcp) ? '' : _networkModule.ip}" height="20" width="120"
+						  	  restrict="0-9.:A-F" enabled="{networkModuleList.selectedIndex > -1}"
+						  	  visible="{this._editMode}" includeInLayout="{this._editMode}"/>
+			</mx:FormItem>
+			
+			<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_SUBNETMASK')" enabled="{! this._networkModule.dhcp}">
+				<mx:Label text="{(this._networkModule.dhcp) ? '' : _networkModule.subNetMask}" height="20"
+						  visible="{! this._editMode}" includeInLayout="{! this._editMode}"/>
+						  
+				<mx:TextInput id="subnetMaskInput" text="{(this._networkModule.dhcp) ? '' : _networkModule.subNetMask}" height="20" width="120"
+						  	  restrict="0-9.:A-F" enabled="{networkModuleList.selectedIndex > -1}"
+						  	  visible="{this._editMode}" includeInLayout="{this._editMode}"/>		  
+			</mx:FormItem>
+			
+			<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_GATEWAY')" enabled="{! this._networkModule.dhcp}">
+				<mx:Label text="{(this._networkModule.dhcp) ? '' : _networkModule.gateway}" height="20"
+						  visible="{! this._editMode}" includeInLayout="{! this._editMode}"/>
+						  
+				<mx:TextInput id="gatewayInput" text="{(this._networkModule.dhcp) ? '' : _networkModule.gateway}" height="20" width="120"
+						  restrict="0-9.:A-F" enabled="{networkModuleList.selectedIndex > -1}"
+						  visible="{this._editMode}" includeInLayout="{this._editMode}"/>						  
+			</mx:FormItem>
+			
+			<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_BW')">
+				<mx:Label text="{_networkModule.bw.toString()}" height="20"
+						  visible="{! this._editMode}" includeInLayout="{! this._editMode}"/>
+						  
+				<mx:TextInput id="bwInput" restrict="0-9" text="{_networkModule.bw.toString()}" height="20" width="120"
+							  enabled="{networkModuleList.selectedIndex > -1}"
+							  visible="{this._editMode}" includeInLayout="{this._editMode}"/>		  
+			</mx:FormItem>
+		</mx:Form>
+	</mx:HBox>
+	
+	<mx:VRule width="1" height="100%" strokeColor="#CCCCCC" horizontalCenter="0"/>
+	
+	<!-- DNS info -->
+	<mx:VBox height="100%" width="50%" verticalGap="0" verticalAlign="top"
+			 paddingTop="0" paddingBottom="0" paddingLeft="0" paddingRight="0">
+		<mx:Label text="@Resource(bundle='Infrastructure', key='FORM_LABEL_DNS')"
+				  fontSize="14" fontWeight="bold" paddingTop="4"/>
+				  
+		<mx:List id="dnsList" width="100" height="100%"
+				 dataProvider="{_networkModule.dns}"
+				 labelField="dns"/>
+	</mx:VBox>
+</mx:HBox>

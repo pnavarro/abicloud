@@ -1,0 +1,359 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		   width="100%" height="100%"
+		   verticalScrollPolicy="off" horizontalScrollPolicy="off"
+		   styleName="VirtualMachineRenderer" xmlns:utils="net.undf.abicloud.utils.*" borderStyle="solid" backgroundColor="#F4F4F4">
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.model.AbiCloudModel;
+			import mx.utils.ObjectUtil;
+			import net.undf.abicloud.vo.infrastructure.State;
+			import net.undf.abicloud.events.InfrastructureEvent;
+			import net.undf.abicloud.vo.infrastructure.VirtualMachine;
+			
+			//The virtual machine that will be rendered
+			[Bindable]
+			private var _virtualMachine:VirtualMachine;
+			
+			public function get virtualMachine():VirtualMachine
+			{
+				return this._virtualMachine;
+			}
+			
+			[Bindable]
+			private var _editMode:Boolean;
+			
+			/**
+			 * Initializes this component with the virtual machine that will be rendered
+			 **/
+			public function init(vM:VirtualMachine):void
+			{
+				this._virtualMachine = vM;
+				this._editMode = false;
+			}
+			
+			/**
+			 * Performs a "Start" or "Shutdown" action in the Virtual Machine
+			 **/
+			private function onClickPowerOnOffButton():void
+			{
+				var event:InfrastructureEvent;
+				
+				if(_virtualMachine.state.id == 1 || _virtualMachine.state.id == 2)
+				{
+					//The Virtual Machine is running or paused. We proceed to power it off
+					event = new InfrastructureEvent(InfrastructureEvent.SHUTDOWN_VIRTUALMACHINE);
+				}
+				else
+				{
+					//The Virtual Machine is powered off. We proceed to power it on
+					event = new InfrastructureEvent(InfrastructureEvent.START_VIRTUALMACHINE);
+				}
+				
+				event.infrastructureElement = ObjectUtil.copy(this._virtualMachine) as VirtualMachine;
+				event.oldInfrastructureElement = this._virtualMachine;
+				dispatchEvent(event);
+			}
+			
+			
+			/**
+			 * Performs a "Shutdown" action in the Virtual Machine
+			 **/
+			private function onClickPauseButton():void
+			{
+				var event:InfrastructureEvent;
+				
+				if(_virtualMachine.state.id == State.PAUSED)
+				{
+					//The virtual machine is paused. We proceed to resume it
+					event = new InfrastructureEvent(InfrastructureEvent.START_VIRTUALMACHINE);
+				}
+				else if(_virtualMachine.state.id == State.RUNNING)
+				{
+					//The virtual machine is running. We procced to pause it
+					event = new InfrastructureEvent(InfrastructureEvent.PAUSE_VIRTUALMACHINE);
+				}
+				
+				event.infrastructureElement = ObjectUtil.copy(this._virtualMachine) as VirtualMachine;
+				event.oldInfrastructureElement = this._virtualMachine;
+				dispatchEvent(event);
+			}
+			
+			/**
+			 * Performs a "Reboot" action in the Virtual Machine
+			 **/
+			 private function onClickRebootButton():void
+			 {
+			 	//Proceed to reboot the virtual machine
+			 	var event:InfrastructureEvent = new InfrastructureEvent(InfrastructureEvent.REBOOT_VIRTUALMACHINE);
+			 	event.infrastructureElement = ObjectUtil.copy(this._virtualMachine) as VirtualMachine;
+				event.oldInfrastructureElement = this._virtualMachine;
+			 	dispatchEvent(event);
+			 }
+			
+			/**
+			 * Initalizes a VRDP Session against this Virtual Machine
+			 */
+			private function onClickAccessVRDPButton(event:MouseEvent):void
+			 {
+			 	event.stopImmediatePropagation();
+			 	
+			 	var appletURL:String = "properJavaRDP/properJavaRDP.html?vrdpIP=" + this._virtualMachine.vdrpIP + "&vrdpPort=" + this._virtualMachine.vdrpPort;
+				navigateToURL(new URLRequest(appletURL), "_blank");
+			 }
+			 
+			 
+			/**
+			 * Sets this component in edit mode
+			 */
+			private function onClickEdit():void
+			{
+				if(this._virtualMachine.state.id != State.IN_PROGRESS)
+				{
+					this._editMode = true;
+				
+					//Setting the values that can be edited
+					nameInput.text = this._virtualMachine.name;
+					ramInput.value = this._virtualMachine.ram;
+					cpuInput.value = this._virtualMachine.cpu;
+					hdInput.value = this._virtualMachine.hd / AbiCloudModel.GB_TO_BYTES;
+					descriptionInput.text = this._virtualMachine.description;
+				}
+			}
+			
+			/**
+			 * Saves the changes made to the virtual machine being rendered
+			 */
+			private function onClickAccept():void
+			{
+				//Making a copy of the virtual machine, to not modify the original one before changes are saved in server
+				var virtualMachineEdited:VirtualMachine = ObjectUtil.copy(this._virtualMachine) as VirtualMachine;
+				
+				//Saving changes made by the user
+				virtualMachineEdited.name = nameInput.text;
+				virtualMachineEdited.ram = ramInput.value;
+				virtualMachineEdited.cpu = cpuInput.value;
+				virtualMachineEdited.hd = hdInput.value * AbiCloudModel.GB_TO_BYTES;
+				virtualMachineEdited.description = descriptionInput.text;
+				
+				//Announcing that a virtual machine has been edited
+				var infrastructureEvent:InfrastructureEvent = new InfrastructureEvent(InfrastructureEvent.EDIT_VIRTUALMACHINE);
+				infrastructureEvent.infrastructureElement = virtualMachineEdited;
+				infrastructureEvent.oldInfrastructureElement = this._virtualMachine;
+				if(this._virtualMachine.state.id != State.IN_PROGRESS)
+					dispatchEvent(infrastructureEvent);
+				
+				//Turning off edit mode
+				this._editMode = false;
+			}
+			
+			/**
+			 * Cancels the edition of the physical machine being rendered
+			 */
+			private function onClickCancel():void
+			{
+				this._editMode = false;	
+			}	
+		]]>
+	</mx:Script>
+	
+	<!-- Virtual Machine state -->
+	<mx:VBox width="27" height="100%" left="0"
+			 verticalAlign="middle" horizontalAlign="center"
+			 verticalScrollPolicy="off" horizontalScrollPolicy="off" styleName="fSemaforo" verticalGap="3">
+		
+		<utils:SmoothImage id="startImage" 
+				  source="{(_virtualMachine.state.id == State.RUNNING) ? 'assets/buttonsMenu/verde.png':'assets/buttonsMenu/gris.png'}"/>
+		
+		<utils:SmoothImage id="pauseImage"
+				  source="{(_virtualMachine.state.id == State.PAUSED) ? 'assets/buttonsMenu/amarillo.png':'assets/buttonsMenu/gris.png'}"/>
+		
+		<utils:SmoothImage id="stopImage" 
+				  source="{(_virtualMachine.state.id == State.POWERED_OFF || _virtualMachine.state.id == State.NOT_DEPLOYED) ? 'assets/buttonsMenu/rojo.png':'assets/buttonsMenu/gris.png'}"/>
+		
+	</mx:VBox>
+	
+	<mx:HBox height="100%" left="27" right="63" verticalCenter="0"
+			   paddingBottom="0" paddingTop="0" paddingLeft="0" paddingRight="0"
+			   verticalScrollPolicy="off" horizontalScrollPolicy="off">
+			   
+		<!-- Virtual Machine information -->
+		<mx:HBox height="100%" width="50%" verticalAlign="top" horizontalGap="0">
+			
+			<mx:Canvas width="143" height="143">
+				<utils:SmoothImage id="virtualMachineIcon"
+								  source="assets/infrastructure/virtualMachine.png" maintainAspectRatio="true" 
+								  height="100%" width="100%"
+								  verticalCenter="0" horizontalCenter="0"/>
+								  
+				<mx:SWFLoader id="busyIcon"
+							  source="assets/buttonsMenu/CargaGrande.swf"
+							  height="80" width="80"
+							  verticalCenter="0" horizontalCenter="0"
+							  visible="{this._virtualMachine.state.id == State.IN_PROGRESS}"/>
+			</mx:Canvas>
+			
+			<mx:VBox height="100%" width="100%" verticalGap="0" paddingTop="4">
+				
+				<mx:HBox width="100%">
+					<mx:Label text="{_virtualMachine.name}" 
+						      fontSize="16" fontWeight="bold"
+						      visible="{! _editMode}" includeInLayout="{! _editMode}"/>
+						  
+					<mx:TextInput id="nameInput" maxChars="29" height="20"
+								  visible="{_editMode}" includeInLayout="{_editMode}"/>
+								  
+					<utils:SmoothImage height="17"
+									   source="assets/general/lapiz.png"
+									   toolTip="@Resource(bundle='Common', key='BUTTON_EDIT_TOOLTIP')"
+									   visible="{! this._editMode}" includeInLayout="{! this._editMode}"
+									   click="onClickEdit()"/>
+									   
+					<mx:Button label="@Resource(bundle='Common', key='BUTTON_ACCEPT')" height="17"
+							   visible="{this._editMode}" includeInLayout="{this._editMode}"
+							   click="onClickAccept()"/>
+				   
+					<mx:Button label="@Resource(bundle='Common', key='BUTTON_CANCEL')" height="17" styleName="buttonGris"
+							   visible="{this._editMode}" includeInLayout="{this._editMode}"
+							   click="onClickCancel()"/>
+							   
+					<mx:Spacer width="100%" />
+					
+					<mx:Button id="accessVRDPButton" styleName="AccessVRDPButtonSmall"
+				   			   click="onClickAccessVRDPButton(event)"
+				   			   toolTip="@Resource(bundle='Infrastructure', key='TOOLTIP_VRDP')"
+				   			   enabled="{this._virtualMachine.state.id == State.RUNNING || this._virtualMachine.state.id == State.PAUSED}"/>	
+				</mx:HBox>
+				
+				
+				<mx:Form verticalGap="1" paddingBottom="0" paddingLeft="0" paddingRight="0" paddingTop="0" fontSize="11">
+					<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_UUID')" height="17">
+						<mx:Label text="{_virtualMachine.UUID}" />
+					</mx:FormItem>
+				
+					<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_VIRTUALIMAGE')" height="17">
+						<mx:Label text="{_virtualMachine.virtualImage.name}" />
+					</mx:FormItem>
+					
+					
+					<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_RAM')" height="17"
+								 direction="horizontal">
+								 
+						<mx:Label id="ramLabel" width="40"
+								  visible="{! this._editMode}" includeInLayout="{! this._editMode}"
+								  text="{_virtualMachine.ram.toString()}" />
+						
+						<mx:NumericStepper id="ramInput" height="17" width="75"
+							   		   minimum="0" maximum="32768" stepSize="256"
+							   		   visible="{_editMode}" includeInLayout="{_editMode}"/>
+
+					</mx:FormItem>
+					
+					<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_CPU')" height="17"
+								 direction="horizontal">
+								 
+						<mx:Label id="cpuLabel" width="40"
+								  visible="{! this._editMode}" includeInLayout="{! this._editMode}"
+								  text="{_virtualMachine.cpu.toString()}" />
+						
+						<mx:NumericStepper id="cpuInput" height="17" width="75"
+								   		   minimum="1" maximum="32" stepSize="1"
+								   		   visible="{_editMode}" includeInLayout="{_editMode}"/>
+					</mx:FormItem>
+					
+					<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_HD')" height="17"
+								 direction="horizontal">
+								 
+						<mx:Label id="hdLabel" width="40"
+								  visible="{! this._editMode}" includeInLayout="{! this._editMode}"
+								  text="{(_virtualMachine.hd / AbiCloudModel.GB_TO_BYTES).toString()}" />
+								  
+					    <mx:NumericStepper id="hdInput" height="17" width="75"
+								   		   minimum="0" maximum="10000" stepSize="10"
+								   		   visible="{_editMode}" includeInLayout="{_editMode}"/>
+					</mx:FormItem>
+					
+					<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_VRDP')" height="17">
+						<mx:Label text="{_virtualMachine.vdrpIP + ':' + _virtualMachine.vdrpPort.toString()}" />
+					</mx:FormItem>
+				</mx:Form>
+				
+			</mx:VBox>
+		</mx:HBox>
+		
+		<mx:VRule width="1" height="100%" strokeColor="#CCCCCC" horizontalCenter="0"/>
+		
+		<!-- Virtual Machine description -->
+		<mx:VBox height="100%" width="50%" verticalGap="0">
+		
+			<mx:Label text="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_DESCRIPTION')"
+					  fontSize="14" fontWeight="bold" paddingTop="4"/>
+			
+			<mx:Label text="{_virtualMachine.description}"
+					  visible="{! _editMode}" includeInLayout="{! _editMode}"/>
+			
+			<mx:TextArea id="descriptionInput" maxChars="99"
+					 	 visible="{_editMode}" includeInLayout="{_editMode}"/>
+			
+		</mx:VBox>
+	</mx:HBox>
+	
+	<!-- Virtual Machine actions -->
+	<mx:VBox width="57" height="100%" right="0"
+			 verticalGap="0" verticalScrollPolicy="off" horizontalScrollPolicy="off" verticalAlign="middle"
+			 enabled="{this._virtualMachine.state.id != State.IN_PROGRESS &amp;&amp; (! this._editMode)}">
+		
+		<mx:Button id="powerOnOffButton" width="57" height="47"
+				   click="onClickPowerOnOffButton()" styleName="mPower"
+				   useHandCursor="true" mouseChildren="false" buttonMode="true"
+				   selected="{_virtualMachine.state.id == State.PAUSED || _virtualMachine.state.id == State.RUNNING}"/>
+		
+		<mx:Button id="pauseButton" width="57" height="47"
+				   click="onClickPauseButton()" styleName="mPause"
+				   useHandCursor="true" mouseChildren="false" buttonMode="true"
+				   enabled="{_virtualMachine.state.id == State.PAUSED || _virtualMachine.state.id == State.RUNNING}"
+				   selected="{_virtualMachine.state.id == State.PAUSED}"/>
+		
+		<mx:Button id="rebootButton" width="57" height="47"
+				   click="onClickRebootButton()"  styleName="mReset" useHandCursor="true" mouseChildren="false" buttonMode="true"
+				   enabled="{_virtualMachine.state.id == State.PAUSED || _virtualMachine.state.id == State.RUNNING}"/>
+	</mx:VBox>
+	
+	
+</mx:Canvas>

@@ -1,0 +1,24 @@
+<env:Envelope xmlns:env="http://www.w3.org/2003/05/soap-envelope" xmlns:mdo="http://schemas.wiseman.dev.java.net/metadata/messagetypes" xmlns:mex="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:wsa="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:wse="http://schemas.xmlsoap.org/ws/2004/08/eventing" xmlns:wsen="http://schemas.xmlsoap.org/ws/2004/09/enumeration" xmlns:wsman="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd" xmlns:wsmeta="http://schemas.dmtf.org/wbem/wsman/1/wsman/version1.0.0.a/default-addressing-model.xsd" xmlns:wxf="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:xs="http://www.w3.org/2001/XMLSchema">
+	<env:Header>
+		<wsa:To xmlns:ns11="http://schemas.dmtf.org/ovf/envelope/1" xmlns:ns12="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData" xmlns:ns13="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:ns14="http://schemas.dmtf.org/wbem/wscim/1/common" env:mustUnderstand="true">http://localhost:8080/virtualAppliance/</wsa:To>
+		<wsman:ResourceURI xmlns:ns11="http://schemas.dmtf.org/ovf/envelope/1" xmlns:ns12="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData" xmlns:ns13="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:ns14="http://schemas.dmtf.org/wbem/wscim/1/common">http://schemas.dmtf.org/ovf/envelope/1/virtualApplianceService/virtualApplianceResource</wsman:ResourceURI>
+		<wsa:Action xmlns:ns11="http://schemas.dmtf.org/ovf/envelope/1" xmlns:ns12="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData" xmlns:ns13="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:ns14="http://schemas.dmtf.org/wbem/wscim/1/common" env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/09/transfer/Create</wsa:Action>
+		<wsa:ReplyTo xmlns:ns11="http://schemas.dmtf.org/ovf/envelope/1" xmlns:ns12="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData" xmlns:ns13="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:ns14="http://schemas.dmtf.org/wbem/wscim/1/common">
+			<wsa:Address env:mustUnderstand="true">http://schemas.xmlsoap.org/ws/2004/08/addressing/role/anonymous</wsa:Address>
+		</wsa:ReplyTo>
+		<wsa:MessageID xmlns:ns11="http://schemas.dmtf.org/ovf/envelope/1" xmlns:ns12="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData" xmlns:ns13="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:ns14="http://schemas.dmtf.org/wbem/wscim/1/common" env:mustUnderstand="true">uuid:4a9e4adb-7654-4072-8a01-f0e1af0a0b42</wsa:MessageID>
+	</env:Header>
+	<env:Body>
+		<ns9:Envelope xmlns="http://www.w3.org/2003/05/soap-envelope" xmlns:ns10="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_VirtualSystemSettingData" xmlns:ns11="http://schemas.dmtf.org/wbem/wscim/1/cim-schema/2/CIM_ResourceAllocationSettingData" xmlns:ns12="http://schemas.dmtf.org/wbem/wscim/1/common" xmlns:ns2="http://schemas.xmlsoap.org/ws/2004/08/addressing" xmlns:ns3="http://schemas.xmlsoap.org/ws/2004/08/eventing" xmlns:ns4="http://schemas.xmlsoap.org/ws/2004/09/enumeration" xmlns:ns5="http://schemas.xmlsoap.org/ws/2004/09/transfer" xmlns:ns6="http://schemas.dmtf.org/wbem/wsman/1/wsman.xsd" xmlns:ns7="http://schemas.xmlsoap.org/ws/2004/09/mex" xmlns:ns8="http://schemas.wiseman.dev.java.net/metadata/messagetypes" xmlns:ns9="http://schemas.dmtf.org/ovf/envelope/1">
+			<ns9:VirtualSystem ns9:id="3">
+				<ns9:VirtualHardwareSection>
+					<ns9:System>
+						<ns10:InstanceId xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true"/>
+						<ns10:VirtualSystemIdentifier xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:nil="true"/>
+						<ns10:VirtualSystemType>vBox</ns10:VirtualSystemType>
+					</ns9:System>
+				</ns9:VirtualHardwareSection>
+			</ns9:VirtualSystem>
+		</ns9:Envelope>
+	</env:Body>
+</env:Envelope>

@@ -1,0 +1,260 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<AbiCloudPopUp xmlns="net.undf.abicloud.view.common.*" xmlns:mx="http://www.adobe.com/2006/mxml"
+			   titleText="@Resource(bundle='Infrastructure', key='POPUP_TITLE_HYPERVISORFORM')">
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.business.managers.InfrastructureManager;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import net.undf.abicloud.view.common.AbiCloudAlert;
+			import mx.utils.ObjectUtil;
+			import net.undf.abicloud.events.InfrastructureEvent;
+			import mx.collections.ArrayCollection;
+			import net.undf.abicloud.vo.infrastructure.HyperVisorType;
+			import mx.resources.ResourceManager;
+			import mx.resources.ResourceBundle;
+			import net.undf.abicloud.vo.infrastructure.PhysicalMachine;
+			import net.undf.abicloud.vo.infrastructure.NetworkModule;
+			import net.undf.abicloud.model.AbiCloudModel;
+			import net.undf.abicloud.vo.infrastructure.HyperVisor;
+
+			
+			
+			
+			[Bindable]
+			private var _formValid:Boolean;
+			
+			
+			[ResourceBundle("Infrastructure")]
+			private var rb:ResourceBundle;
+			[ResourceBundle("Common")]
+			private var rb2:ResourceBundle;
+	
+			[Bindable]
+			private var _hypervisor:HyperVisor
+			
+			public function get hypervisor():HyperVisor
+			{
+				return this._hypervisor;
+			}
+			
+			//The network modules that this hypervisor can use
+			[Bindable]
+			private var _networkModules:ArrayCollection;
+	
+			public function init(hypervisor:HyperVisor, networkModules:ArrayCollection):void
+			{
+				this._hypervisor = hypervisor;
+				this._networkModules = networkModules;
+				
+				if(this._hypervisor == null)
+				{
+					//We want to create a new Hypervisor
+					typeInput.selectedIndex = -1;
+					typeInput.prompt = ResourceManager.getInstance().getString("Infrastructure", "LABEL_TYPE");
+					
+					ipInput.selectedIndex = -1;
+					ipInput.prompt = ResourceManager.getInstance().getString("Infrastructure", "TEXTINPUT_LABEL_IP");
+					
+					portInput.text = "";
+					
+					acceptButton.enabled = false;
+				}
+				else
+				{
+					//User wants to manage an existing hypervisor
+					typeInput.selectedIndex = -1;
+					typeInput.prompt = this._hypervisor.type.name;
+					
+					ipInput.selectedIndex = -1;
+					ipInput.prompt = this._hypervisor.ip;
+					
+					portInput.text = this._hypervisor.port.toString();
+					
+					acceptButton.enabled = true;
+				}
+			}
+			
+			
+			private function validateForm():void
+			{
+				if(this._hypervisor == null)
+				{
+					//We are creating a new hypervisor
+					if(typeInput.selectedIndex > -1 && ipInput.selectedIndex > -1 && portInput.text.length > 0)
+						acceptButton.enabled = true;
+					else
+						acceptButton.enabled = false;
+				}
+				else
+				{
+					//We are editing an hypervisor
+					if(portInput.text.length > 0)
+						acceptButton.enabled = true;
+					else
+						acceptButton.enabled = false;
+				}
+			}
+			
+			 /**
+			 * When user wants to save changes made to a Network Module
+			 **/
+			 private function onAccept():void
+			 {
+			 	
+			 	if(this._hypervisor == null)
+			 	{
+			 		//Create a new hypervisor
+			 		this._hypervisor = new HyperVisor();
+						
+					this._hypervisor.type = typeInput.selectedItem as HyperVisorType;
+					this._hypervisor.ip = NetworkModule(ipInput.selectedItem).dhcp ? "DHCP" : NetworkModule(ipInput.selectedItem).ip;
+					this._hypervisor.port = Number(portInput.text);
+					this._hypervisor.shortDescription = this._hypervisor.type.name + " - " + 
+														((NetworkModule(ipInput.selectedItem).dhcp) ? "DHCP" : this._hypervisor.ip) + ":" + 
+														this._hypervisor.port;
+			 	}
+			 	else
+			 	{
+			 		//Edit an existing hypervisor						
+					if(typeInput.selectedIndex > -1)
+						this._hypervisor.type = typeInput.selectedItem as HyperVisorType;
+					if(ipInput.selectedIndex > -1)
+						this._hypervisor.ip = NetworkModule(ipInput.selectedItem).dhcp ? "DHCP" : NetworkModule(ipInput.selectedItem).ip;
+					
+					this._hypervisor.port = Number(portInput.text);
+					
+					if(ipInput.selectedIndex > -1)
+					{
+						this._hypervisor.shortDescription = this._hypervisor.type.name + " - " + 
+															((NetworkModule(ipInput.selectedItem).dhcp) ? "DHCP" : this._hypervisor.ip) + ":" + 
+															this._hypervisor.port;
+					}
+					else
+					{
+						this._hypervisor.shortDescription = this._hypervisor.type.name + " - " + 
+															ipInput.prompt + ":" + 
+															this._hypervisor.port;
+					}
+					
+			 	}
+			 	
+			 	dispatchEvent(new Event("hypervisorFormAccept"));
+			 }
+			 
+			 /**
+			 * When users wants to cancel
+			 **/
+			 private function onCancel():void
+			 {
+			 	dispatchEvent(new Event("hypervisorFormCancel"));
+			 }
+			
+			
+			private function ipInputLabelFunction(item:Object):String
+			 {
+			 	var networkModule:NetworkModule = item as NetworkModule;
+			 	if(networkModule.dhcp)
+			 		return "DHCP";
+			 	else
+			 		return networkModule.ip;
+			 }
+			 
+			private function onChangeTypeInput():void
+			{
+				if(typeInput.selectedIndex > -1)
+				{
+					portInput.text = HyperVisorType(typeInput.selectedItem).defaultPort.toString();
+				}
+			}
+			
+			/**
+			 * Basic behaivour is as follows:
+			 * If user presses the Enter, in any part of this Pop Up (except buttons), it would be
+			 * like Accept Button has been pressed
+			 */
+			override protected function keyboardHandler(keyboardEvent:KeyboardEvent):void
+			{
+				if(keyboardEvent.target == acceptButton || keyboardEvent.target == cancelButton)
+					super.keyboardHandler(keyboardEvent);
+				else
+				{
+					if(keyboardEvent.keyCode == 13 && acceptButton.enabled)
+						onAccept();
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	
+	
+	<mx:Form paddingTop="3">	
+		
+		<mx:FormItem label="@Resource(bundle='Infrastructure', key='LABEL_HYPERVISOR_TYPE')">
+			<mx:ComboBox id="typeInput" height="18"
+						 dataProvider="{AbiCloudModel.getInstance().infrastructureManager.hypervisorTypes}"
+						 labelField="name"
+						 change="onChangeTypeInput()"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_IP')"
+					 direction="horizontal">
+			
+			<mx:ComboBox id="ipInput" height="18"
+						 dataProvider="{this._networkModules}"
+						 labelFunction="ipInputLabelFunction"
+						 change="validateForm()"/>
+		</mx:FormItem>
+		
+		<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_PORT')">
+			<mx:TextInput id="portInput" height="20"
+						  restrict="0-9" maxChars="5"
+						  change="validateForm()"/>
+		</mx:FormItem>
+		
+		<mx:FormItem direction="horizontal">
+			<mx:Button id="acceptButton" label="@Resource(bundle='Common', key='BUTTON_ACCEPT')" 
+					   click="onAccept()" height="18"/>
+			
+			<mx:Button id="cancelButton" label="@Resource(bundle='Common', key='BUTTON_CANCEL')"
+					   click="onCancel()"  height="18" styleName="buttonGris"/>
+		</mx:FormItem>
+	</mx:Form>
+
+</AbiCloudPopUp>

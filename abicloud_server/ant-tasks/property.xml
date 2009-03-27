@@ -1,0 +1,10 @@
+<property>
+    <db>
+       <driver>com.mysql.jdbc.Driver</driver>
+       <url>jdbc:mysql://localhost:3306/kinton</url>
+       <username>root</username>
+       <password>jasmine</password>
+       <classpath>../WebContent/WEB-INF/lib/mysql-connector-java-5.0.8-bin.jar</classpath> 
+       <load-file>../../database/20090306 Release/Base BBDD/Kinton 20090306 BBDD Base Release 20090306.sql</load-file>    
+    </db>
+</property>

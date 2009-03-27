@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<AbiCloudPopUp xmlns="net.undf.abicloud.view.common.*" xmlns:mx="http://www.adobe.com/2006/mxml"
+			   titleText="@Resource(bundle='VirtualAppliance', key='POPUP_TITLE_VIRTUALAPPLIANCESELECTOR')"
+			   width="700" height="400"
+			   verticalScrollPolicy="off" horizontalScrollPolicy="off"
+			   styleName="alertPopUpNew">
+	
+	
+	<mx:Metadata>
+		[Event(name="virtualApplianceSelectorClose", type="flash.events.Event")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import net.undf.abicloud.vo.virtualappliance.VirtualAppliance;
+			import net.undf.abicloud.events.VirtualApplianceEvent;
+			import mx.events.ItemClickEvent;
+			import mx.binding.utils.BindingUtils;
+			import net.undf.abicloud.model.AbiCloudModel;
+			import mx.collections.ArrayCollection;
+			
+	
+			/**
+			 * To announce when user wants has selected a Virtual Appliance
+			 **/
+			private function onClickVirtualApplianceTile():void
+			{
+				if(virtualApplianceTile.selectedIndex > -1)
+				{
+					var virtualApplianceEvent:VirtualApplianceEvent = new VirtualApplianceEvent(VirtualApplianceEvent.VIRTUAL_APPLIANCE_SELECTED, false);
+					virtualApplianceEvent.virtualAppliance = virtualApplianceTile.selectedItem as VirtualAppliance;
+					dispatchEvent(virtualApplianceEvent);
+				}
+			}
+			
+			/**
+			 * Announces that user wants to close this component without interact with it
+			 **/
+			private function closeVirtualApplianceSelector():void
+			{
+				dispatchEvent(new Event("virtualApplianceSelectorClose"));
+			}
+		]]>
+	</mx:Script>
+	
+		
+		<mx:TileList id="virtualApplianceTile" width="100%" height="300"
+					 paddingTop="0" paddingLeft="0" paddingRight="0" paddingBottom="0"
+					 itemRenderer="net.undf.abicloud.view.virtualappliance.components.virtualappliance.VirtualApplianceMiniature"
+					 dataProvider="{AbiCloudModel.getInstance().virtualApplianceManager.virtualAppliances}"
+					 click="onClickVirtualApplianceTile()"/>
+					 
+		<mx:Button id="cancelButton" label="@Resource(bundle='Common', key='BUTTON_CANCEL')"
+					   click="closeVirtualApplianceSelector()"  height="18" styleName="buttonGris"/>			 
+	
+</AbiCloudPopUp>

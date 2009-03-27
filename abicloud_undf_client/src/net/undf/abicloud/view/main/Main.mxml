@@ -1,0 +1,167 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" 
+		   xmlns:main="net.undf.abicloud.view.main.*"
+		   xmlns:infrastructure="net.undf.abicloud.view.infrastructure.*"
+		   xmlns:virtualappliance="net.undf.abicloud.view.virtualappliance.*" 
+		   xmlns:virtualimage="net.undf.abicloud.view.virtualimage.*"
+		   xmlns:user="net.undf.abicloud.view.user.*"
+		   width="100%" height="100%" 
+		   creationComplete="onCreationComplete()" >
+	
+	<!-- AbiCloud's main component -->
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.resources.ResourceBundle;
+			import mx.resources.ResourceManager;
+			import net.undf.abicloud.view.common.AbiCloudAlert;
+			import net.undf.abicloud.view.main.components.HeaderButton;
+			import mx.events.FlexEvent;
+			import net.undf.abicloud.events.MainEvent;
+			import net.undf.abicloud.events.LoginEvent;
+			import mx.events.ItemClickEvent;
+			import net.undf.abicloud.view.login.Login;
+			import net.undf.abicloud.model.AbiCloudModel;
+			
+			[ResourceBundle("Common")]
+			private var rb:ResourceBundle;
+			[ResourceBundle("Main")]
+			private var rb2:ResourceBundle;
+			
+			[Bindable]
+			private var _currentBodyIndex:int = 0;
+			
+			private var _nextBodyIndex:int;
+			
+			private function onCreationComplete():void
+			{
+				//Listening for Dashboard interactions
+				addEventListener("DashboardShortcurtClicked", securableHeader.menu.onDashboardInteraction);
+				
+				//Listening for selection on the HeaderButtons
+				addEventListener("HeaderButtonClicked", onSelectMenuOption);				
+			}
+			
+			/**
+			 * Method to initalize the Main component
+			 **/
+			public function initMain():void
+			{
+				//When the application's main component loads, we retrieve the common information for the whole application
+				var event:MainEvent = new MainEvent(MainEvent.GET_COMMON_INFORMATION);
+				dispatchEvent(event);
+				
+				
+			}
+			
+			private function onSelectMenuOption(event:ItemClickEvent):void
+			{
+				this._nextBodyIndex = HeaderButton(event.item).index;
+				
+				if(IBodyComponent(body.selectedChild).hasUnsavedChanges())
+				{
+					AbiCloudAlert.showAlert(ResourceManager.getInstance().getString("Common", "ALERT_TITLE_LABEL"),
+											 ResourceManager.getInstance().getString("Main", "ALERT_UNSAVED_CHANGES_HEADER"),
+											 ResourceManager.getInstance().getString("Main", "ALERT_UNSAVED_CHANGES_TEXT"),
+											 Alert.YES | Alert.NO,
+											 onSelectedMenuOptionHandler);
+				}
+				else
+					switchBody();
+			}
+			
+			private function onSelectedMenuOptionHandler(closeEvent:CloseEvent):void
+			{
+				if(closeEvent.detail == Alert.YES)
+				{
+					IBodyComponent(body.selectedChild).saveChanges();
+					switchBody();	
+				}
+				else if(closeEvent.detail == Alert.NO)
+					switchBody();
+				else
+				{
+					//Do nothing...	
+				}
+			}
+			
+			private function switchBody():void
+			{
+				this._currentBodyIndex = this._nextBodyIndex;	
+			}
+		]]>
+	</mx:Script>
+	
+	
+	
+	<mx:Canvas
+		top="6" bottom="29"
+		right="6" left="6"
+		styleName="mainWindow">
+		
+		<!-- Header -->
+		<main:SecurableHeader id="securableHeader"
+							  top="0" left="0" right="0" height="64"
+							  authorizationManager="{AbiCloudModel.getInstance().authorizationManager}"/>
+			
+		<!-- Body   
+			 All components in the Body ViewStack implement IBodyComponent interface -->
+		
+		<mx:ViewStack id="body" creationPolicy="auto"
+					  selectedIndex="{this._currentBodyIndex}"
+					  top="64" left="13" right="13" bottom="13">
+			
+			<main:Dashboard />
+	
+			<infrastructure:Index />
+			
+			<virtualappliance:Index />
+			
+			<virtualimage:Index />
+			
+			<user:Index />
+			
+		</mx:ViewStack>
+	
+	</mx:Canvas>
+	
+	<!-- Footer -->
+	<main:Footer left="8" right="8" bottom="0" height="24"/>
+</mx:Canvas>

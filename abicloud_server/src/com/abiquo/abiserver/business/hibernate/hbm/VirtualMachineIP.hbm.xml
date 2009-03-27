@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 16-oct-2008 16:52:14 by Hibernate Tools 3.2.1.GA -->
+<hibernate-mapping>
+<class catalog="datacenter_management" entity-name="VirtualMachineIPHB" name="com.abiquo.abiserver.business.hibernate.pojohb.networking.VirtualMachineIPHB" table="vm_ip">
+    
+    <id name="id" type="string">
+      <column length="36" name="id" not-null="true"/>
+    </id>
+    <property name="datacenterId" type="java.lang.Integer">
+       <column name="datacenter_id" not-null="true"/>
+    </property>
+    <property name="virtualIP" type="string">
+      <column length="15" name="vm_ip" not-null="true"/>
+    </property>
+</class>
+</hibernate-mapping>

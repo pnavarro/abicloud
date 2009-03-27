@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<abicloud-config>
+	<hypervisors>
+		<vmware>
+			<!-- <datacenter>default</datacenter> -->
+			<SanDatastore name="nfsrepository"></SanDatastore>
+			<!-- <VmfsDatastore name="datastore1"></VmfsDatastore> -->
+			<user>root</user>
+			<password>voycruzand0elrio</password>
+			<ignorecert>true</ignorecert>
+		</vmware>
+	</hypervisors>
+	<repository>
+		<remotePath>/opt/vm_repository</remotePath>
+		<remoteHost>192.168.1.45</remoteHost>
+	</repository>
+</abicloud-config>

@@ -1,0 +1,204 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<AbiCloudPopUp xmlns="net.undf.abicloud.view.common.*" xmlns:mx="http://www.adobe.com/2006/mxml">
+	
+	<mx:Metadata>
+		[Event(name="EnterpriseFormClose", type="flash.events.Event")]		
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.business.managers.VirtualApplianceManager;
+			import net.undf.abicloud.events.VirtualApplianceEvent;
+			import net.undf.abicloud.vo.virtualappliance.VirtualDataCenter;
+			import net.undf.abicloud.model.AbiCloudModel;
+			import mx.utils.ObjectUtil;
+			import mx.resources.ResourceManager;
+			import mx.resources.ResourceBundle;
+
+			
+			[ResourceBundle("Common")]
+			private var rb:ResourceBundle;
+			[ResourceBundle("VirtualAppliance")]
+			private var rb2:ResourceBundle;
+			
+			//The VirtualDataCenter that will be created or edited
+			private var _virtualDataCenter:VirtualDataCenter;
+			
+			//Flag to indicate when this component is listening for VirtualDataCenter creation or edition
+			private var _listenerRegistered:Boolean;
+			
+			/**
+			 * Initializes this component to create a new enterprise,
+			 * or edit an existing one
+			 */
+			public function init(virtualDataCenter:VirtualDataCenter = null):void
+			{
+				this._virtualDataCenter = virtualDataCenter;
+				
+				if(this._virtualDataCenter)
+				{
+					//Edit an existing VirtualDataCenter
+					titleText = ResourceManager.getInstance().getString("VirtualAppliance", "POPUP_TITLE_VIRTUALDATACENTER_EDIT");
+					
+					//Setting fields
+					nameInput.text = this._virtualDataCenter.name;
+					
+					acceptButton.enabled = true;
+				}
+				else
+				{
+					//Create a new VirtualDataCenter
+					titleText = ResourceManager.getInstance().getString("VirtualAppliance", "POPUP_TITLE_VIRTUALDATACENTER_ADD");
+					
+					//Cleaning fields
+					nameInput.text = "";
+					
+					acceptButton.enabled = false;
+				}
+				
+				_listenerRegistered = false;
+				nameInput.setFocus();
+			}
+			
+			private function onAccept():void
+			{
+				var virtualApplianceEvent:VirtualApplianceEvent;
+				
+				if(this._virtualDataCenter)
+				{
+					//Editing the VirtualDataCenter, without modifying the original one until changes are saved in server
+					var virtualDataCenterCopy:VirtualDataCenter = ObjectUtil.copy(this._virtualDataCenter) as VirtualDataCenter;
+					virtualDataCenterCopy.name = nameInput.text;
+					
+					//Registering listener, if it is not, to know when the VirtualDataCenter has been edited
+					if(! this._listenerRegistered)
+					{
+						//VirtualApplianceEvent.VIRTUAL_DATACENTER_EDITED event is dispatched when an VirtualDataCenter has been successfully edited
+						AbiCloudModel.getInstance().virtualApplianceManager.addEventListener(VirtualApplianceEvent.VIRTUAL_DATACENTER_EDITED, virtualDataCenterCallFinishedHandler);
+						this._listenerRegistered = true;
+					}
+					
+					virtualApplianceEvent = new VirtualApplianceEvent(VirtualApplianceEvent.EDIT_VIRTUAL_DATACENTER);
+					virtualApplianceEvent.oldVirtualDataCenter = this._virtualDataCenter;
+					virtualApplianceEvent.virtualDataCenter = virtualDataCenterCopy;
+				}
+				else
+				{
+					//Creating the new VirtualDataCenter (with the enterprise from the user who has logged in)
+					var newVirtualDataCenter:VirtualDataCenter = new VirtualDataCenter();
+					newVirtualDataCenter.name = nameInput.text;
+					newVirtualDataCenter.enterprise = AbiCloudModel.getInstance().loginManager.user.enterprise;
+					
+					//Registering listener, if it is not, to know when the VirtualDataCenter has been created
+					if(! this._listenerRegistered)
+					{
+						//VirtualApplianceManager.VIRTUALDATACENTERS_UPDATED event is dispatched when an VirtualDataCenter has been succesfully created
+						AbiCloudModel.getInstance().virtualApplianceManager.addEventListener(VirtualApplianceManager.VIRTUALDATACENTERS_UPDATED, virtualDataCenterCallFinishedHandler);					
+						this._listenerRegistered = true;
+					}
+					
+					virtualApplianceEvent = new VirtualApplianceEvent(VirtualApplianceEvent.CREATE_VIRTUAL_DATACENTER);
+					virtualApplianceEvent.virtualDataCenter = newVirtualDataCenter;
+				}
+				
+				dispatchEvent(virtualApplianceEvent);
+			}
+			
+			private function virtualDataCenterCallFinishedHandler(event:Event):void
+			{
+				//Closing form
+				onCancel();
+			}
+			
+			private function onCancel():void
+			{
+				//Unregistering apropiate event
+				if(this._listenerRegistered)
+				{
+					if(this._virtualDataCenter)
+						AbiCloudModel.getInstance().virtualApplianceManager.removeEventListener(VirtualApplianceEvent.VIRTUAL_DATACENTER_EDITED, virtualDataCenterCallFinishedHandler);
+					else
+						AbiCloudModel.getInstance().virtualApplianceManager.removeEventListener(VirtualApplianceManager.VIRTUALDATACENTERS_UPDATED, virtualDataCenterCallFinishedHandler);
+						
+				}
+				
+				dispatchEvent(new Event("VirtualDataCenterFormClose"));
+			}
+			
+			private function validateForm():void
+			{
+				if(nameInput.text.length > 0)
+					acceptButton.enabled = true;
+				else
+					acceptButton.enabled = false;
+			}
+			
+			/**
+			 * Basic behaivour is as follows:
+			 * If user presses the Enter, in any part of this Pop Up (except buttons), it would be
+			 * like Accept Button has been pressed
+			 */
+			override protected function keyboardHandler(keyboardEvent:KeyboardEvent):void
+			{
+				if(keyboardEvent.target == acceptButton || keyboardEvent.target == cancelButton)
+					super.keyboardHandler(keyboardEvent);
+				else
+				{
+					if(keyboardEvent.keyCode == 13 && acceptButton.enabled)
+						onAccept();
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:Form paddingTop="3">
+		<mx:FormItem label="@Resource(bundle='Common', key='TEXTINPUT_LABEL_NAME')" required="true">
+			<mx:TextInput id="nameInput" maxChars="39" height="20"
+					      change="validateForm()" />
+		</mx:FormItem>
+		
+		<!-- BUTTONS -->
+		<mx:FormItem direction="horizontal">
+			<mx:Button id="acceptButton" label="@Resource(bundle='Common', key='BUTTON_ACCEPT')" 
+					   click="onAccept()" height="18"/>
+			
+			<mx:Button id="cancelButton" label="@Resource(bundle='Common', key='BUTTON_CANCEL')"
+					   click="onCancel()"  height="18" styleName="buttonGris"/>
+		</mx:FormItem>
+	</mx:Form>
+</AbiCloudPopUp>

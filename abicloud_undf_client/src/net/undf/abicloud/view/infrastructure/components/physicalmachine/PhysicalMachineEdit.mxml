@@ -1,0 +1,523 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<AbiCloudPopUp xmlns="net.undf.abicloud.view.common.*" xmlns:mx="http://www.adobe.com/2006/mxml"
+			   creationComplete="onCreationComplete()"
+			   titleText="@Resource(bundle='Infrastructure', key='POPUP_TITLE_PHYSICALMACHINEEDIT')">
+
+	<mx:Metadata>
+		[Event(name="physicalMachineAddClose", type="flash.events.Event")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.business.managers.InfrastructureManager;
+			import mx.resources.ResourceBundle;
+			import mx.resources.ResourceManager;
+			import net.undf.abicloud.view.common.AbiCloudAlert;
+			import mx.controls.Alert;
+			import mx.events.CloseEvent;
+			import mx.utils.ObjectUtil;
+			import net.undf.abicloud.vo.infrastructure.PhysicalMachineCreation;
+			import net.undf.abicloud.vo.infrastructure.HyperVisor;
+			import mx.managers.PopUpManager;
+			import net.undf.abicloud.model.AbiCloudModel;
+			import net.undf.abicloud.vo.infrastructure.SO;
+			import net.undf.abicloud.vo.infrastructure.NetworkModule;
+			import net.undf.abicloud.vo.infrastructure.DNS;
+			import mx.collections.ArrayCollection;
+			import net.undf.abicloud.vo.infrastructure.PhysicalMachine;
+			import net.undf.abicloud.events.InfrastructureEvent;
+			import net.undf.abicloud.vo.infrastructure.Rack;
+			import net.undf.abicloud.vo.infrastructure.DataCenter;
+			
+			
+			
+			[ResourceBundle("Common")]
+			private var rb:ResourceBundle;
+			[ResourceBundle("Infrastructure")]
+			private var rb2:ResourceBundle;
+			
+			//Copy of the original physical machine
+			private var _originaPhysicalmachine:PhysicalMachine;
+			
+			//The physical machine that will be edited
+			private var _physicalMachine:PhysicalMachine;
+			
+			//Array with the network modules that the new physical machine will have
+			[Bindable]
+			private var _networkModules:ArrayCollection;
+			
+			[Bindable]
+			private var _hypervisors:ArrayCollection;
+			
+			//Pop Up to create a new Network Module
+			private var _networkModuleForm:NetworkModuleForm;
+			
+			//Pop Up to create an Hypervisor
+			private var _hypervisorForm:HypervisorForm;
+			
+			//Auxiliary variable to temporaly save the hypervisor that HypervisorForm has been managing
+			private var _hypervisorResultForm:HyperVisor;
+			
+			private function onCreationComplete():void
+			{
+				//Creating pop up to be able to add new network modules
+				_networkModuleForm = new NetworkModuleForm();
+				_networkModuleForm.addEventListener("networkModuleFormAccept", onNetworkModuleFormAccept);
+				_networkModuleForm.addEventListener("networkModuleFormCancel", onNetworkModuleFormCancel);	
+				
+				//Creating pop up to be able to add new hypervisors
+				_hypervisorForm = new HypervisorForm();
+				_hypervisorForm.addEventListener("hypervisorFormAccept", onHypervisorFormAccept);
+				_hypervisorForm.addEventListener("hypervisorFormCancel", onHypervisorFormCancel);
+			}
+			
+			/**
+			 * Initializes this component
+			 **/
+			public function init(physicalMachine:PhysicalMachine):void
+			{
+				this._originaPhysicalmachine = physicalMachine;
+				this._physicalMachine = ObjectUtil.copy(this._originaPhysicalmachine) as PhysicalMachine;
+				
+				//Initalizing the form
+				nameInput.text = this._physicalMachine.name;
+				
+				rackInput.selectedIndex = -1;
+				rackInput.prompt = this._physicalMachine.assignedTo.name;
+				
+				descriptionInput.text = this._physicalMachine.description;
+				ramInput.value = this._physicalMachine.ram;
+				cpuInput.value = this._physicalMachine.cpu;
+				hdInput.value = this._physicalMachine.hd / AbiCloudModel.GB_TO_BYTES;
+				
+				soInput.selectedIndex = -1;
+				soInput.prompt = this._physicalMachine.hostSO.description;
+				
+				_networkModules = this._physicalMachine.networkModuleList;
+				_hypervisors = new ArrayCollection(AbiCloudModel.getInstance().infrastructureManager.getHyperVisorsByPhysicalMachine(this._physicalMachine));
+				
+				//Listeners for updates in the model. We need them to update the hypervisor list
+				AbiCloudModel.getInstance().infrastructureManager.addEventListener(InfrastructureManager.INFRASTRUCTURE_UPDATED, onInfrastructureUpdated);
+				AbiCloudModel.getInstance().infrastructureManager.addEventListener(InfrastructureEvent.INFRASTRUCTURE_ELEMENT_EDITED, onInfrastructureUpdated);
+				
+				acceptButton.enabled = true;
+				nameInput.setFocus();
+			}
+			
+			/**
+			 * Listener for updates in model related to infrastructure
+			 */
+			private function onInfrastructureUpdated(event:Event):void
+			{
+				//Everytime the infrastructure updates, we update the list of hypervisors
+				if(this._physicalMachine != null)
+				{
+					_hypervisors = new ArrayCollection(AbiCloudModel.getInstance().infrastructureManager.getHyperVisorsByPhysicalMachine(this._physicalMachine));
+				}
+			}
+			 
+			/**
+			 * When user wants to create a new Network Module
+			 **/
+			 private function onClickAddNetworkModule():void
+			 {
+			 	PopUpManager.addPopUp(_networkModuleForm, this, true);
+			 	PopUpManager.centerPopUp(_networkModuleForm);
+			 	_networkModuleForm.networkModule = null;
+			 	
+			 }
+			 
+			 /**
+			 * When user clicks to delete a created network module
+			 **/
+ 			 private function onClickDeleteNetworkModule():void
+			 {
+			 	//First, we check if the network module's ip is used by an Hypervisor
+			 	var networkModule:NetworkModule = networkModuleList.selectedItem as NetworkModule;
+			 	
+			 	if(! networkModule.dhcp)
+				{
+					var length:int = this._hypervisors.length;
+					var i:int;
+					for(i = 0; i < length; i++)
+					{
+						if(HyperVisor(this._hypervisors.getItemAt(i)).ip == networkModule.ip)
+						{
+							AbiCloudAlert.showAlert(ResourceManager.getInstance().getString("Common", "ALERT_TITLE_LABEL"),
+									 ResourceManager.getInstance().getString("Infrastructure", "ALERT_DELETE_NETWORKMODULE_HEADER"),
+									 ResourceManager.getInstance().getString("Infrastructure", "ALERT_DELETE_NETWORKMODULE_TEXT"),
+									 Alert.YES | Alert.NO,
+									 onDeleteNetworkModuleUserResponse);
+									 
+							return;
+						}
+					}
+				}
+				
+				//This network module is not being used by any hypervsor
+				deleteNetworkModule();
+			 }
+			 
+			private function onDeleteNetworkModuleUserResponse(event:CloseEvent):void
+			{
+				if(event.detail == Alert.YES)
+					deleteNetworkModule();
+			}
+			
+			private function deleteNetworkModule():void
+			{
+				var index:int = _networkModules.getItemIndex(networkModuleList.selectedItem);
+			 	_networkModules.removeItemAt(index);
+			}
+			 
+			 /**
+			 * When user clicks to edit a network module
+			 **/
+			 private function onClickEditNetworkModule():void
+			 {
+			 	PopUpManager.addPopUp(_networkModuleForm, this, true);
+			 	PopUpManager.centerPopUp(_networkModuleForm);
+			 	_networkModuleForm.networkModule = networkModuleList.selectedItem as NetworkModule;
+			 }
+			 
+			 private function onNetworkModuleFormAccept(event:Event):void
+			 {
+			 	if(!_networkModules.contains(_networkModuleForm.networkModule))
+			 		_networkModules.addItem(_networkModuleForm.networkModule);
+			 		
+			 	PopUpManager.removePopUp(_networkModuleForm);
+			 }
+			 
+			 private function onNetworkModuleFormCancel(event:Event):void
+			 {
+			 	PopUpManager.removePopUp(_networkModuleForm);
+			 }
+
+			/**
+			 * When user clicks to add a new hypervisor
+			 */
+			private function onClickAddHypervisor():void
+			{
+				PopUpManager.addPopUp(this._hypervisorForm, this, true);
+				PopUpManager.centerPopUp(this._hypervisorForm);
+				
+				this._hypervisorForm.init(null, this._networkModules);
+			}
+			
+			/**
+			 * When user clicks to delete an Hypervisor
+			 */
+			private function onClickDeleteHypervisor():void
+			{
+				AbiCloudAlert.showAlert(ResourceManager.getInstance().getString("Common", "ALERT_TITLE_LABEL"),
+									 ResourceManager.getInstance().getString("Infrastructure", "ALERT_DELETE_HYPERVISOR_HEADER"),
+									 ResourceManager.getInstance().getString("Infrastructure", "ALERT_DELETE_HYPERVISOR_TEXT"),
+									 Alert.YES | Alert.NO,
+									 deleteHypervisor);
+				
+			}
+			
+			private function deleteHypervisor(closeEvent:CloseEvent):void
+			{
+				if(closeEvent.detail == Alert.YES)
+				{
+					var index:int = this._hypervisors.getItemIndex(hypervisorList.selectedItem);
+					var hypervisorToDelete:HyperVisor = this._hypervisors.removeItemAt(index) as HyperVisor;
+					
+					//Announcing that user wants to delete an hypervisor
+					var infrastructureEvent:InfrastructureEvent = new InfrastructureEvent(InfrastructureEvent.DELETE_HYPERVISOR);
+					infrastructureEvent.infrastructureElement = hypervisorToDelete;
+					dispatchEvent(infrastructureEvent);
+				}
+			}
+			
+			/**
+			 * When user clicks to edit an Hypervisor
+			 */
+			private function onClickEditHypervisor():void
+			{
+				PopUpManager.addPopUp(this._hypervisorForm, this, true);
+				PopUpManager.centerPopUp(this._hypervisorForm);
+				
+				//Editing the hypervisor without modyfing it until changes confirms and changes are saved in server
+				this._hypervisorForm.init(ObjectUtil.copy(hypervisorList.selectedItem) as HyperVisor, this._networkModules);
+			}
+			
+			private function onHypervisorFormAccept(event:Event):void
+			{
+				this._hypervisorResultForm = this._hypervisorForm.hypervisor;
+				var infrastructureEvent:InfrastructureEvent;
+				
+				if(this._hypervisorResultForm.id > 0)
+				{
+					//User wants to edit an hypervisor
+					infrastructureEvent = new InfrastructureEvent(InfrastructureEvent.EDIT_HYPERVISOR);
+					infrastructureEvent.infrastructureElement = this._hypervisorResultForm;
+					infrastructureEvent.oldInfrastructureElement = hypervisorList.selectedItem as HyperVisor;
+				}
+				else
+				{
+					//User wants to create a new hypervisor
+					this._hypervisorResultForm.assignedTo = this._physicalMachine;
+					infrastructureEvent = new InfrastructureEvent(InfrastructureEvent.CREATE_HYPERVISOR);
+					infrastructureEvent.infrastructureElement = this._hypervisorResultForm;
+				}
+				
+				dispatchEvent(infrastructureEvent);
+				PopUpManager.removePopUp(this._hypervisorForm);
+			}
+			
+			private function onHypervisorFormCancel(event:Event):void
+			{				
+				PopUpManager.removePopUp(this._hypervisorForm);	
+			}
+			 
+			/**
+			 * When user clicks Accept button, we save the new physical machine
+			 **/
+			 private function onAccept():void
+			 {
+			 	//Editing the Physical Machine, without modifying the original one until
+			 	//changes are saved in server
+			 	_physicalMachine.name = nameInput.text;
+			 	
+			 	if(rackInput.selectedIndex > -1)
+			 		_physicalMachine.assignedTo = rackInput.selectedItem as Rack;
+			 		
+			 	_physicalMachine.description = descriptionInput.text;
+			 	_physicalMachine.ram = ramInput.value;
+			 	_physicalMachine.cpu = cpuInput.value;
+			 	_physicalMachine.hd = hdInput.value * AbiCloudModel.GB_TO_BYTES;
+			 	
+			 	if(soInput.selectedIndex > -1)
+			 		_physicalMachine.hostSO = soInput.selectedItem as SO;
+			 		
+			 	_physicalMachine.networkModuleList = _networkModules;
+			 	
+			 	//Announcing that user wants to edit the physical machine
+			 	var event:InfrastructureEvent = new InfrastructureEvent(InfrastructureEvent.EDIT_PHYSICALMACHINE);
+			 	event.infrastructureElement = this._physicalMachine;
+			 	event.oldInfrastructureElement = this._originaPhysicalmachine;
+			 	dispatchEvent(event);
+			 	
+			 	//We do not need there listeners anymore
+				AbiCloudModel.getInstance().infrastructureManager.removeEventListener(InfrastructureManager.INFRASTRUCTURE_UPDATED, onInfrastructureUpdated);
+				AbiCloudModel.getInstance().infrastructureManager.removeEventListener(InfrastructureEvent.INFRASTRUCTURE_ELEMENT_EDITED, onInfrastructureUpdated);
+			 	
+			 	//Closing the form
+			 	dispatchEvent(new Event("physicalMachineEditClose"));
+			 }
+			 
+			 /**
+			 * Cancels Physical Machine creation
+			 **/
+			 private function onCancel():void
+			 {
+			 	//We do not need there listeners anymore
+				AbiCloudModel.getInstance().infrastructureManager.removeEventListener(InfrastructureManager.INFRASTRUCTURE_UPDATED, onInfrastructureUpdated);
+				AbiCloudModel.getInstance().infrastructureManager.removeEventListener(InfrastructureEvent.INFRASTRUCTURE_ELEMENT_EDITED, onInfrastructureUpdated);
+			 	
+			 	//Closing the form
+				dispatchEvent(new Event("physicalMachineEditClose"));
+			 }
+			 
+			 /**
+			 * Activates the Accept Button if the form is valid
+			 **/
+			 private function validateForm():void
+			 {
+			 	if(nameInput.text.length > 0)
+			 	    acceptButton.enabled = true;
+			 	   
+			 	else
+			 		acceptButton.enabled = false;
+			 }
+			 
+			 private function networkModuleListLabelFunction(item:Object):String
+			 {
+			 	var networkModule:NetworkModule = item as NetworkModule;
+			 	if(networkModule.ip.length > 0)
+			 		return networkModule.ip
+			 	else
+			 		return "DHCP";
+			 }
+			 
+			 /**
+			 * Basic behaivour is as follows:
+			 * If user presses the Enter, in any part of this Pop Up (except buttons), it would be
+			 * like Accept Button has been pressed
+			 */
+			override protected function keyboardHandler(keyboardEvent:KeyboardEvent):void
+			{
+				if(keyboardEvent.target == acceptButton || keyboardEvent.target == cancelButton)
+					super.keyboardHandler(keyboardEvent);
+				else
+				{
+					if(keyboardEvent.keyCode == 13 && acceptButton.enabled)
+						onAccept();
+				}
+			}
+			 
+		]]>
+	</mx:Script>
+	
+	<mx:HBox horizontalGap="2">
+		<mx:Form paddingTop="3">
+			<mx:FormItem label="@Resource(bundle='Common', key='TEXTINPUT_LABEL_NAME')" required="true">
+				<mx:TextInput id="nameInput" maxChars="29"
+							  change="validateForm()" height="20"/>
+			</mx:FormItem>
+			
+			<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_DESCRIPTION')">
+				<mx:TextArea id="descriptionInput" maxChars="99"/>
+			</mx:FormItem>
+			
+			<mx:FormItem label="@Resource(bundle='Infrastructure', key='LABEL_RACK')" required="true">
+				<mx:ComboBox id="rackInput"
+							 labelField="name"
+							 dataProvider="{AbiCloudModel.getInstance().infrastructureManager.racks}"
+							 prompt="@Resource(bundle='Infrastructure', key='LABEL_RACK')"
+							 change="validateForm()" height="18"/>
+			</mx:FormItem>
+			
+			<mx:FormItem label="@Resource(bundle='Infrastructure', key='COMBOBOX_LABEL_SO')" required="true">
+				<mx:ComboBox id="soInput" 
+							 labelField="description"
+							 dataProvider="{AbiCloudModel.getInstance().operatingSystems}"
+							 prompt="@Resource(bundle='Infrastructure', key='COMBOBOX_LABEL_SO')"
+							 change="validateForm()" height="18"/>
+			</mx:FormItem>
+			
+			
+			<mx:FormItem id="networkModuleFormItem"
+					 label="@Resource(bundle='Infrastructure', key='FORM_LABEL_NETWORKMODULES')"
+					 direction="horizontal">
+				
+				<mx:VBox verticalGap="0">
+					<mx:List id="networkModuleList" width="150" height="100"
+							 dataProvider="{_networkModules}"
+							 labelFunction="networkModuleListLabelFunction"/>
+					<mx:Spacer width="6" height="6"/>
+					<mx:HBox horizontalGap="3" width="100%" verticalAlign="middle">
+						<mx:Button id="addNetworkModuleButton"
+							       click="onClickAddNetworkModule()" styleName="bAgregar"
+							       toolTip="@Resource(bundle='Common', key='BUTTON_NEW_TOOLTIP')"/>
+							       
+						<mx:Button id="deleteNetworkModuleButton"
+							       click="onClickDeleteNetworkModule()"
+							       enabled="{networkModuleList.selectedIndex > -1}" styleName="bNoAgregar"
+							       toolTip="@Resource(bundle='Common', key='BUTTON_DEL_TOOLTIP')"/>
+						<mx:Spacer width="100%" height="6"/>
+							       
+						<mx:Button id="editButton"
+							   click="onClickEditNetworkModule()"
+							   enabled="{networkModuleList.selectedIndex > -1}" styleName="bConfig"
+							   toolTip="@Resource(bundle='Common', key='BUTTON_EDIT_TOOLTIP')"/>
+					</mx:HBox>		 
+					
+				</mx:VBox>
+				
+			</mx:FormItem>
+			
+			<mx:FormItem direction="horizontal">
+				<mx:Button id="acceptButton" label="@Resource(bundle='Common', key='BUTTON_ACCEPT')" 
+						   click="onAccept()" height="18"/>
+				
+				<mx:Button id="cancelButton" label="@Resource(bundle='Common', key='BUTTON_CANCEL')"
+						   click="onCancel()"  height="18" styleName="buttonGris"/>
+			</mx:FormItem>
+		</mx:Form>
+		
+		<mx:Form paddingTop="3">
+			<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_RAM')">
+				<mx:NumericStepper id="ramInput" height="20" width="75"
+								   minimum="0" maximum="32768" stepSize="256"/>
+				
+			</mx:FormItem>
+			
+			<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_CPU')">
+				<mx:NumericStepper id="cpuInput" height="20" width="75"
+								   minimum="1" maximum="32" stepSize="1"/>
+			</mx:FormItem>
+			
+			<mx:FormItem label="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_HD')">
+				<mx:NumericStepper id="hdInput" height="20" width="75"
+								   minimum="0" maximum="10000" stepSize="10"/>
+			</mx:FormItem>
+		
+			<mx:Spacer height="41"/>
+		
+			<mx:FormItem 
+					 label="@Resource(bundle='Infrastructure', key='FORM_LABEL_HYPERVISOR')"
+					 direction="horizontal">
+				
+				<mx:VBox verticalGap="0">
+					<mx:List id="hypervisorList"
+							 width="170" height="100"
+							 dataProvider="{this._hypervisors}"
+							 labelField="shortDescription"/>
+							 
+					<mx:Spacer width="6" height="6"/>
+					
+					<mx:HBox horizontalGap="3" width="100%" verticalAlign="middle">
+						<mx:Button id="addHypervisorButton"
+								   enabled="{this._networkModules.length > 0}"
+							       click="onClickAddHypervisor()" styleName="bAgregar"
+							       toolTip="@Resource(bundle='Common', key='BUTTON_NEW_TOOLTIP')"/>
+							       
+						<mx:Button id="deleteHypervisorButton"
+							       click="onClickDeleteHypervisor()"
+							       enabled="{hypervisorList.selectedIndex > -1}" styleName="bNoAgregar"
+							       toolTip="@Resource(bundle='Common', key='BUTTON_DEL_TOOLTIP')"/>
+						<mx:Spacer width="100%" height="6"/>
+							       
+						<mx:Button id="editHypervisorButton"
+							   click="onClickEditHypervisor()"
+							   enabled="{hypervisorList.selectedIndex > -1}" styleName="bConfig"
+							   toolTip="@Resource(bundle='Common', key='BUTTON_EDIT_TOOLTIP')"/>
+					</mx:HBox>		 
+					
+				</mx:VBox>
+				
+			</mx:FormItem>
+		</mx:Form>
+	
+	</mx:HBox>
+	
+</AbiCloudPopUp>
+

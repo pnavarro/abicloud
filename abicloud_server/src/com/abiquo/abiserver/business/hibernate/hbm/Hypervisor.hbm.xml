@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 16-oct-2008 16:52:14 by Hibernate Tools 3.2.1.GA -->
+<hibernate-mapping>
+  <class catalog="kinton" name="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.HypervisorHB" table="hypervisor">
+    <id name="idHyper" type="java.lang.Integer">
+      <column name="id"/>
+      <generator class="identity"/>
+    </id>
+    <property name="shortDescription" type="string">
+      <column length="100" name="description" not-null="true"/>
+    </property>
+    <property name="ip" type="string">
+      <column length="39" name="ip" not-null="true"/>
+    </property>
+    <property name="port" type="int">
+      <column length="5" name="port" not-null="true"/>
+    </property>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.HypervisorTypeHB" fetch="select" lazy="false" name="type">
+      <column name="idType"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.PhysicalmachineHB" fetch="select" lazy="false" name="physicalMachine">
+      <column name="idPhysicalMachine"/>
+    </many-to-one>
+    <set inverse="false" lazy="true" name="virtualmachines" order-by="name">
+      <key>
+        <column name="idHypervisor" not-null="true"/>
+      </key>
+      <one-to-many class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.VirtualmachineHB"/>
+    </set>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.UserHB" fetch="select" name="userHBByIdUserCreation">
+      <column name="idUserCreation" not-null="true"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.UserHB" fetch="select" name="userHBByIdUserLastModification">
+      <column name="idUser_lastModification"/>
+    </many-to-one>
+    <property name="creationDate" type="timestamp">
+      <column length="0" name="creationDate" not-null="true"/>
+    </property>
+    <property name="lastModificationDate" type="timestamp">
+      <column length="0" name="lastModificationDate"/>
+    </property>
+  </class>
+</hibernate-mapping>

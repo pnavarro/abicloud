@@ -1,0 +1,877 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		   xmlns:common="net.undf.abicloud.view.common.*"
+		   xmlns:componentsPM="net.undf.abicloud.view.infrastructure.components.physicalmachine.*"
+		   xmlns:utils="net.undf.abicloud.utils.*"
+		   xmlns:customtree="net.undf.abicloud.utils.customtree.*" 
+		   width="100%" height="100%"
+		   creationComplete="onCreationComplete()"
+		   show="onShow()">
+	
+	
+	<!-- Component for Infrastructure management. Main functionality:
+			- View a tree that represents the infrastructure associated with a Data Center
+			- Add / Edit / Delete  racks and physical machines, and move physical machines between racks
+			- View Virtual Machines associated to physical machines, view its state and perform actions to them
+	-->
+	
+	<mx:Metadata>
+		[Event(name="backToDataCenters", type="flash.events.Event")]
+	</mx:Metadata>
+	
+	<!-- addButton's data provider -->		
+	<mx:XMLList id="addButtonDataProvider">
+        <node label="@Resource(bundle='Infrastructure', key='LABEL_RACK')" id="addRack"/>
+        <node label="@Resource(bundle='Infrastructure', key='LABEL_PHYSICALMACHINE')" id="addPhysicalMachine"/>
+   	</mx:XMLList>
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.view.infrastructure.components.physicalmachine.*;
+			import net.undf.abicloud.view.infrastructure.components.rack.*;
+			import net.undf.abicloud.view.infrastructure.components.virtualmachine.*;
+		
+			
+			import net.undf.abicloud.business.managers.CountdownManager;
+			import mx.controls.Image;
+			import mx.core.UIComponent;
+			import mx.core.Application;
+			import mx.core.DragSource;
+			import mx.managers.DragManager;
+			import net.undf.abicloud.utils.customtree.CustomTreeNode;
+			import flash.net.navigateToURL;
+			import mx.events.DropdownEvent;
+
+			import mx.events.ItemClickEvent;
+			import mx.controls.Alert;
+			import mx.resources.ResourceManager;
+			import net.undf.abicloud.view.common.AbiCloudAlert;
+			import mx.resources.ResourceBundle;
+			import mx.events.CloseEvent;
+			import mx.controls.PopUpButton;
+			import mx.managers.PopUpManager;
+			import mx.events.MenuEvent;
+			import mx.binding.utils.BindingUtils;
+			import net.undf.abicloud.vo.infrastructure.DataCenter;
+			import net.undf.abicloud.events.InfrastructureEvent;
+			import net.undf.abicloud.vo.infrastructure.InfrastructureElement;
+			import mx.collections.ArrayCollection;
+			import net.undf.abicloud.vo.infrastructure.Rack;
+			import net.undf.abicloud.vo.infrastructure.PhysicalMachine;
+			import net.undf.abicloud.vo.infrastructure.VirtualMachine;
+			import net.undf.abicloud.model.AbiCloudModel;
+			import net.undf.abicloud.view.infrastructure.components.InfrastructureDataDescriptor;
+			
+			//Pop Ups
+			private var _rackAdd:RackAdd;
+			private var _rackEdit:RackEdit;
+			private var _physicalMachineAdd:PhysicalMachineAdd;
+			private var _physicalMachineEdit:PhysicalMachineEdit;
+			
+			//Renderer for more information
+			private var _virtualMachineRenderer:VirtualMachineRenderer;
+			private var _physicalMachineRenderer:PhysicalMachineRenderer;
+			
+			//This component will manage the infrastructure associated with this data center
+			[Bindable]
+			private var _dataCenter:DataCenter;
+			
+			//ArrayCollection containing the infrastructure that will be managed
+			[Bindable]
+			private var _infrastructureArray:ArrayCollection;
+			
+			//ArrayCollection containing the Virtual Machines
+			//associated to a Rack or Physical Machine
+			private var _virtualMachines:ArrayCollection;
+			
+			//Data descriptor for the Infrastructure Tree
+			[Bindable]
+			private var _infrastructureDataDescriptor:InfrastructureDataDescriptor;
+				
+			/**
+			 * When this component loads for the first time
+			 **/
+			private function onCreationComplete():void
+			{
+				//Creating Pop Up's
+				_rackAdd = new RackAdd();
+				_rackAdd.addEventListener("rackAddClose", closeRackAdd);
+				
+				_rackEdit = new RackEdit();
+				_rackEdit.addEventListener("rackEditClose", closeRackEdit);
+				
+				_physicalMachineAdd = new PhysicalMachineAdd();
+				_physicalMachineAdd.addEventListener("physicalMachineAddClose", closePhysicalMachineAdd);
+				
+				_physicalMachineEdit = new PhysicalMachineEdit();
+				_physicalMachineEdit.addEventListener("physicalMachineEditClose", closePhysicalMachineEdit);
+				
+				//Creating renderers
+				this._physicalMachineRenderer = new PhysicalMachineRenderer();
+				this._virtualMachineRenderer = new VirtualMachineRenderer();
+				
+				//Initializing variables that required only to initalize once
+				_dataCenter = null;
+				_infrastructureDataDescriptor = new InfrastructureDataDescriptor();
+				_infrastructureDataDescriptor.addEventListener(InfrastructureEvent.EDIT_PHYSICALMACHINE, infrastructureDataDescriptorHandler);
+				_infrastructureDataDescriptor.addEventListener(InfrastructureEvent.CREATE_PHYSICALMACHINE, infrastructureDataDescriptorHandler);
+				_infrastructureDataDescriptor.addEventListener(InfrastructureEvent.CREATE_VIRTUALMACHINE, infrastructureDataDescriptorHandler);
+				_infrastructureDataDescriptor.addEventListener(InfrastructureEvent.EDIT_VIRTUALMACHINE, infrastructureDataDescriptorHandler);
+				
+				//We keep synchronized _infrastructureArray with AbiCloud's model
+				BindingUtils.bindSetter(setInfrastructureTree, AbiCloudModel.getInstance().infrastructureManager, "infrastructure");
+				
+				//Listening for editions in any infrastructure element
+				AbiCloudModel.getInstance().infrastructureManager.addEventListener(InfrastructureEvent.INFRASTRUCTURE_ELEMENT_EDITED, infrastructureElementEditedHandler);
+			}
+			
+			/**
+			 * Everytime this component is shown
+			 */
+			private function onShow():void
+			{
+				//We clean the view each time this component is shown
+				onClickViewOptions('listMode');
+				viewModesVS.selectedIndex = 0;
+				if(virtualMachinesDataGrid.dataProvider != null)
+					ArrayCollection(virtualMachinesDataGrid.dataProvider).removeAll(); //Dont know why we have to empty the DataGrid by hand...
+				setInfrastructureTree(new ArrayCollection());
+				infrastructureTree.cleanState();
+				unassignedPMList.closeList();
+				
+				//Setting the default size level
+				iconSizeSlider.value = 1;
+
+				if(this._dataCenter != null)
+				{
+					//We do not retrieve the infrastructure from the server, until this component is shown
+					var event:InfrastructureEvent = new InfrastructureEvent(InfrastructureEvent.GET_INFRASTRUCTURE_BY_DATACENTER);
+					event.dataCenter = this._dataCenter;
+					dispatchEvent(event);
+				}
+			}
+			
+			/**
+			 * Sets the Data Center, to manage its infrastructure
+			 **/
+			public function set dataCenter(dC:DataCenter):void
+			{
+				this._dataCenter = dC;
+			}
+			
+			
+			/**
+			 * Navigates back to Data Centers management
+			 **/
+			private function backToDataCentersManagement():void
+			{
+				dispatchEvent(new Event("backToDataCenters"));
+			}
+			
+			
+			//////////////////////////////////////////////////////
+			//INFRASTRUCTURE
+			
+			/**
+			 * Sets Infrastructure Tree's data provider with an array containing the infrastructure
+			 * It also collects all unassigned Physical Machines, to show them in a separated list
+			 **/
+			private function setInfrastructureTree(infrastructureArray:ArrayCollection, updateVM:Boolean = true):void
+			{
+				var element:InfrastructureElement;
+				var array:ArrayCollection = new ArrayCollection();
+				var unassignedPM:ArrayCollection = new ArrayCollection();
+				var length:int = infrastructureArray.length;
+				var i:int;
+				
+				for(i = 0; i < length; i++)
+				{
+					element = infrastructureArray.getItemAt(i) as InfrastructureElement;
+					if(element is Rack)
+						array.addItem(element);
+					else if(element is PhysicalMachine && element.assignedTo == null)
+						unassignedPM.addItem(element);
+				}
+				
+				_infrastructureArray = array;
+				unassignedPMList.physicalMachines = unassignedPM;
+				
+				if(updateVM)
+					virtualMachines = new ArrayCollection();
+			}
+			
+			/**
+			 * Handler for infrastructure element editions
+			 */
+			private function infrastructureElementEditedHandler(infrastructureEvent:InfrastructureEvent):void
+			{
+				if(infrastructureEvent.infrastructureElement is Rack || infrastructureEvent.infrastructureElement is PhysicalMachine)
+				{
+					//If a Rack or PhysicalMachine has been edited, we must redraw the Infrastructure Tree, without refreshing the Virtual Machines
+					setInfrastructureTree(AbiCloudModel.getInstance().infrastructureManager.infrastructure, false);
+				}
+				else if(infrastructureEvent.infrastructureElement is VirtualMachine)
+				{
+					var virtualMachineMoreInfo:VirtualMachine;
+					if(moreInfoContainer.visible && this._virtualMachineRenderer.parent == moreInfoContainer)
+						virtualMachineMoreInfo = this._virtualMachineRenderer.virtualMachine;
+						
+					onClickInfrastructureTree();
+					
+					if(virtualMachineMoreInfo)
+						showVirtualMachine(virtualMachineMoreInfo);
+				}
+			}
+			
+			/**
+			 * Handler to catch when user moves InfrastructureElements in the Infrastructure Tree
+			 **/
+			private function infrastructureDataDescriptorHandler(event:InfrastructureEvent):void
+			{
+				//InfrastructureDataDescriptor can not dispatch bubble events, since it is not in the Display List
+				//We have to replicate its events
+				var infrastructureEvent:InfrastructureEvent = new InfrastructureEvent(event.type);
+				infrastructureEvent.physicalMachineCreation = event.physicalMachineCreation;
+				infrastructureEvent.infrastructureElement = event.infrastructureElement;
+				infrastructureEvent.oldInfrastructureElement = event.oldInfrastructureElement;
+				dispatchEvent(infrastructureEvent);
+				
+				//If a Virtual Machine is being edited here, we must clear the virtual machines list
+				//to avoid inconsistencies
+				//if(event.type == InfrastructureEvent.EDIT_VIRTUALMACHINE)
+					//virtualMachines = new ArrayCollection();
+				
+			}
+			
+			/**
+			 * When user clicks to add a new infrastructure element
+			 **/
+			 private function onClickAddInfrastructureElement(event:MenuEvent):void
+			 {
+			 	addButton.dataProvider = addButtonDataProvider; //To avoid an annoying graphic problem...
+			 
+			 	if(event.item.@id == "addRack")
+			 	{
+			 		//Adding a Pop Up to create a rack
+			 		PopUpManager.addPopUp(_rackAdd, this, true);
+			 		PopUpManager.centerPopUp(_rackAdd);
+					this._rackAdd.init(_dataCenter);
+			 	}
+			 	else if(event.item.@id == "addPhysicalMachine")
+			 	{
+			 		//Adding a Pop Up to create a Physical Machine
+			 		PopUpManager.addPopUp(_physicalMachineAdd, this, true);
+			 		PopUpManager.centerPopUp(_physicalMachineAdd);
+					this._physicalMachineAdd.init(this._dataCenter);
+			 	}
+			 }
+			
+				
+			/**
+			 * Closes rackAdd Pop Up
+			 **/
+			private function closeRackAdd(event:Event):void
+			{
+				PopUpManager.removePopUp(_rackAdd);
+			}
+			
+			
+			/**
+			 * Closes physicalMachineAdd Pop Up
+			 **/
+			 private function closePhysicalMachineAdd(event:Event):void
+			 {
+			 	PopUpManager.removePopUp(_physicalMachineAdd);
+			 }
+			
+			
+			/**
+			 * When user clicks to delete a infrastructure element, we ask him/her for confirmation
+			 **/
+			[ResourceBundle("Common")]
+			private var rb:ResourceBundle;
+			[ResourceBundle("Infrastructure")]
+			private var rb2:ResourceBundle;
+			private function askInfrastructureElementDeletion():void
+			{
+				if(infrastructureTree.selectedItem is Rack)
+					AbiCloudAlert.showAlert(ResourceManager.getInstance().getString("Common", "ALERT_TITLE_LABEL"),
+									 ResourceManager.getInstance().getString("Infrastructure", "ALERT_DELETE_RACK_HEADER"),
+									 ResourceManager.getInstance().getString("Infrastructure", "ALERT_DELETE_RACK_TEXT"),
+									 Alert.YES | Alert.NO,
+									 deleteInfrastructureElement);
+									 
+				else if(infrastructureTree.selectedItem is PhysicalMachine)
+					AbiCloudAlert.showAlert(ResourceManager.getInstance().getString("Common", "ALERT_TITLE_LABEL"),
+									 ResourceManager.getInstance().getString("Infrastructure", "ALERT_DELETE_PHYSICALMACHINE_HEADER"),
+									 ResourceManager.getInstance().getString("Infrastructure", "ALERT_DELETE_PHYSICALMACHINE_TEXT"),
+									 Alert.YES | Alert.NO,
+									 deleteInfrastructureElement);
+			}
+			
+			
+			/**
+			 * Calls for infrastructure element deletion, if user has confirmed it
+			 **/
+			 private function deleteInfrastructureElement(closeEvent:CloseEvent):void
+			 {
+			 	if(closeEvent.detail == Alert.YES)
+				{
+					var event:InfrastructureEvent;
+					
+					if(infrastructureTree.selectedItem is Rack)
+					{
+						//Announcing that user wants to delete a Rack
+						event = new InfrastructureEvent(InfrastructureEvent.DELETE_RACK);
+						event.infrastructureElement = infrastructureTree.selectedItem as Rack;
+					}
+									 
+					else if(infrastructureTree.selectedItem is PhysicalMachine)
+					{
+						//Announcing that user wants to delete a Physical Machine
+						event = new InfrastructureEvent(InfrastructureEvent.DELETE_PHYSICALMACHINE);
+						event.infrastructureElement = infrastructureTree.selectedItem as PhysicalMachine;
+					}
+					dispatchEvent(event);
+				}
+				
+			 }
+			
+			
+			/**
+			 * When user clicks to edit a infrastructure element
+			 **/
+			 private function onClickEditInfrastructureElement():void
+			 {
+			 	if(infrastructureTree.selectedItem is Rack)
+			 	{
+			 		//Adding a Pop Up to edit the selected Rack
+			 		PopUpManager.addPopUp(_rackEdit, this, true);
+			 		PopUpManager.centerPopUp(_rackEdit);
+			 		_rackEdit.init(infrastructureTree.selectedItem as Rack);
+			 	}
+			 	else if(infrastructureTree.selectedItem is PhysicalMachine)
+			 	{
+			 		//Adding a Pop Up to edit the selected Physical Machine
+			 		PopUpManager.addPopUp(_physicalMachineEdit, this, true);
+			 		PopUpManager.centerPopUp(_physicalMachineEdit);
+			 		_physicalMachineEdit.init(infrastructureTree.selectedItem as PhysicalMachine);
+			 	}
+			 }
+			
+			
+			/**
+			 * Closes rackEdit Pop Up
+			 **/
+			 private function closeRackEdit(event:Event):void
+			 {
+			 	PopUpManager.removePopUp(_rackEdit);	
+			 }
+			 
+			 
+			 /**
+			 * Closes physicalMachineEdit Pop Up
+			 **/
+			 private function closePhysicalMachineEdit(event:Event):void
+			 {
+			 	PopUpManager.removePopUp(_physicalMachineEdit);
+			 }
+			 
+			 
+			/**
+			 * When  user selects a infrastructure element from the tree
+			 * we retrieve the corresponding virtual machines
+			 **/
+			private function onClickInfrastructureTree():void
+			{
+				if(infrastructureTree.selectedIndex > -1)
+				{
+					if(infrastructureTree.selectedItem is Rack)
+						virtualMachines = new ArrayCollection(AbiCloudModel.getInstance().infrastructureManager.getVirtualMachinesByRack(infrastructureTree.selectedItem as Rack));
+						
+					else if(infrastructureTree.selectedItem is PhysicalMachine)
+					{
+						virtualMachines = new ArrayCollection(AbiCloudModel.getInstance().infrastructureManager.getVirtualMachinesByPhysicalMachine(infrastructureTree.selectedItem as PhysicalMachine));
+						
+						showPhysicalMachine(infrastructureTree.selectedItem as PhysicalMachine);	
+					}
+				}
+				else
+					virtualMachines = new ArrayCollection();
+			}
+			
+			/**
+			 * Shows a PhysicalMachine using a PhysicalMachineRenderer component
+			 */
+			private function showPhysicalMachine(physicalMachine:PhysicalMachine):void
+			{
+				viewModesVS.setStyle("bottom", 153);
+				
+				this._physicalMachineRenderer.init(physicalMachine);
+				
+				moreInfoContainer.removeAllChildren();
+				moreInfoContainer.addChild(this._physicalMachineRenderer);
+				moreInfoContainer.visible = true;
+			}
+			
+			/////////////////////////////////////////////////////////
+			//VIRTUAL MACHINES
+			
+			/**
+			 * Sets the ArrayCollection containing the Virtual Machines that will be displayed
+			 */
+			private function set virtualMachines(value:ArrayCollection):void
+			{
+				//Cleaning things...
+					//If an old renderer component was being showed, we hide it
+					hideMoreInfoContainer();
+					
+					//Cleaning the old virtual machines miniatures
+					this._virtualMachines = new ArrayCollection();
+					
+					//Cleaning filter
+					virtualMachinesFilter.text = "";
+				
+				//Saving the list of virtual machines
+				this._virtualMachines = value;
+				
+				
+				//Setting the dataProviders
+				virtualMachinesDataGrid.dataProvider = this._virtualMachines;
+				virtualMachinesTile.dataProvider = this._virtualMachines;
+
+				//Starting background updates, if there are virtual machines
+				if(this._virtualMachines.length > 0)
+					startBackgroundUpdates();
+				else
+					stopBackgroundUpdates();
+			}
+			
+			/**
+			 * Filters the virtual machines, checking for patterns in virtual machine's name
+			 * and virtual machine's virtual image's name
+			 */
+			private function onVirtualMachinesFilterChange():void
+			{
+				var filterText:String = virtualMachinesFilter.text.toLocaleLowerCase();
+				
+				if(filterText == null || filterText == "")
+				{
+					//No filter needed
+					virtualMachinesDataGrid.dataProvider = this._virtualMachines;
+					virtualMachinesTile.dataProvider = this._virtualMachines;	
+				}
+				else
+				{
+					var virtualMachinesFiltered:ArrayCollection = new ArrayCollection();
+					var length:int = this._virtualMachines.length;
+					var i:int;
+					var virtualMachine:VirtualMachine;
+					
+					for(i = 0; i < length; i++)
+					{
+						virtualMachine = this._virtualMachines.getItemAt(i) as VirtualMachine;
+						if(virtualMachine.name.toLowerCase().indexOf(filterText) > -1)
+						{
+							virtualMachinesFiltered.addItem(virtualMachine);
+						}	
+						else
+						{
+							if(virtualMachine.virtualImage.name.toLowerCase().indexOf(filterText) > -1)
+							{
+								virtualMachinesFiltered.addItem(virtualMachine);
+							}
+						}
+					}
+					
+					//Updating dataProvider's
+					virtualMachinesDataGrid.dataProvider = virtualMachinesFiltered;
+					virtualMachinesTile.dataProvider = virtualMachinesFiltered;
+				}
+			}
+			
+			/**
+			 * When user clicks on the VirtualMachine's Data Grid
+			 */
+			private function onClickVirtualMachinesDataGrid():void
+			{
+				//There was no drop operation. We can remove this handler
+				virtualMachinesDataGrid.removeEventListener(MouseEvent.MOUSE_MOVE, onMouseMoveVirtualMachineDataGrid);
+				
+				if(virtualMachinesDataGrid.selectedIndex > -1)
+				{
+					showVirtualMachine(virtualMachinesDataGrid.selectedItem as VirtualMachine);
+					
+					//Forcing the virtualMachinesTile to have the same selected VirtualMachine
+					virtualMachinesTile.selectedIndex = virtualMachinesDataGrid.selectedIndex;
+				}
+			}
+			
+			/**
+			 * When user clicks on the VirtualMachine's Tile
+			 */
+			private function onClickVirtualMachinesTile():void
+			{
+				if(virtualMachinesTile.selectedIndex > -1)
+				{
+					showVirtualMachine(virtualMachinesTile.selectedItem as VirtualMachine);
+					
+					//Forcing the virtualMachinesDataGrid to have the same selected VirtualMachine
+					virtualMachinesDataGrid.selectedIndex = virtualMachinesTile.selectedIndex;
+				}
+			}
+				
+			/**
+			 * Label function for colum 'Virtual Image' in virtual machines DataGrid
+			 */
+			private function vmDataGridVirtualImageLabel(item:Object, column:DataGridColumn):String
+			{
+				return VirtualMachine(item).virtualImage.name;	
+			}
+			
+			/**
+			 * Shows a Virtual Machine, using a VirtualMachineRenderer component
+			 **/
+			private function showVirtualMachine(virtualMachine:VirtualMachine):void
+			{
+				viewModesVS.setStyle("bottom", 153);
+				
+				this._virtualMachineRenderer.init(virtualMachine);
+				moreInfoContainer.removeAllChildren();
+				moreInfoContainer.addChild(this._virtualMachineRenderer);
+				moreInfoContainer.visible = true;
+			}
+			
+			/**
+			 * Hides the VirtualMachineRenderer component showed using method showVirtualMachine
+			 **/
+			private function hideMoreInfoContainer():void
+			{
+				viewModesVS.setStyle("bottom", 0);
+				moreInfoContainer.visible = false;				
+			}
+			
+			
+			private function onClickViewOptions(viewMode:String):void
+			{
+				if(viewMode == 'listMode')
+				{
+					listButton.selected = true;
+					iconsButton.selected = false;
+					viewModesVS.selectedIndex = 0;
+				}
+				else if(viewMode == 'iconsMode')
+				{
+					listButton.selected = false;
+					iconsButton.selected = true;
+					viewModesVS.selectedIndex = 1;	
+				}
+			}
+			
+			/**
+			 * Creates a RDP Session against a Virtual Machine, using properJavaRDP applet
+			 **/
+			public function initRDPSession(virtualMachine:VirtualMachine):void
+			{
+				var appletURL:String = "properJavaRDP/properJavaRDP.html?vrdpIP=" + virtualMachine.vdrpIP + "&vrdpPort=" + virtualMachine.vdrpPort;
+				navigateToURL(new URLRequest(appletURL), "_blank");
+			}
+			
+			//////////////////////////////////////////
+			// DRAG & DROP FUNCTIONALITY
+			
+			/**
+			 * Register Mouse Move events, to know if user wants to start a drag operaion
+			 */
+			private function onMouseDownVirtualMachineDataGrid():void
+			{
+				if(virtualMachinesDataGrid.selectedIndex > -1)
+					virtualMachinesDataGrid.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMoveVirtualMachineDataGrid);
+			}
+			
+			/**
+			 * Initializes a Drag operation
+			 */
+			private function onMouseMoveVirtualMachineDataGrid(mouseEvent:MouseEvent):void
+			{
+				//We don't need this handler until user wants to initate another Drag operation
+				virtualMachinesDataGrid.removeEventListener(MouseEvent.MOUSE_MOVE, onMouseMoveVirtualMachineDataGrid);
+				
+				//To be able to interact with a CustomTree in a Drag Drop operation, we have to encapsulate the data
+				//in a CustomTreeNode
+				var customTreeNode:CustomTreeNode = new CustomTreeNode(virtualMachinesDataGrid.selectedItem);
+				
+				var dragSource:DragSource = new DragSource();
+				dragSource.addData(customTreeNode, "CustomTreeNode");
+				
+				var dragProxy:Image = new Image();
+				dragProxy.source = "assets/infrastructure/virtualMachine.png";
+				dragProxy.maintainAspectRatio = true;
+				dragProxy.width = 100;
+				dragProxy.height = 100;
+				
+				var position:Point = localToGlobal(new Point(mouseEvent.localX, mouseEvent.localY));
+				DragManager.doDrag(UIComponent(Application.application), dragSource, mouseEvent, dragProxy, -mouseEvent.stageX, -mouseEvent.stageY);
+			}
+			
+			
+			//////////////////////////////
+			// BACKGROUND UPDATES
+			
+			/**
+			 * Starts all backgrounds updates that this component may have
+			 * Only this component control when the background updates can start
+			 */
+			private function startBackgroundUpdates():void
+			{
+				//Unregistering previous events that may be registered
+				AbiCloudModel.getInstance().countdownManager.removeEventListener(CountdownManager.COUNTDOWN_COMPLETE_EVENT, updateVirtualMachinesState);
+				
+				//Registering new events
+				AbiCloudModel.getInstance().countdownManager.addEventListener(CountdownManager.COUNTDOWN_COMPLETE_EVENT, updateVirtualMachinesState);
+				
+				//Starting timer
+				AbiCloudModel.getInstance().countdownManager.startAutoCountdown(AbiCloudModel.getInstance().configurationManager.config.VIRTUAL_MACHINES_UPDATE_INTERVAL);
+			}
+			
+			/**
+			 * Stops all background automatic updates that this component may have
+			 * The background updates can be stopped from outside, since this component can not always control
+			 * when they are not longer necessary.
+			 */
+			public function stopBackgroundUpdates():void
+			{
+				//Stopping timer
+				AbiCloudModel.getInstance().countdownManager.stopAutoCountdown();
+				
+				//Unregistering all events for timer
+				AbiCloudModel.getInstance().countdownManager.removeEventListener(CountdownManager.COUNTDOWN_COMPLETE_EVENT, updateVirtualMachinesState);
+			}
+			
+			/**
+			 * VirtualMachinesCheckTimer interval handler
+			 */
+			public function updateVirtualMachinesState(event:Event):void
+			{
+				var infrastructureEvent:InfrastructureEvent = new InfrastructureEvent(InfrastructureEvent.CHECK_VIRTUALMACHINES_STATE);
+				infrastructureEvent.infrastructureElementArray = this._virtualMachines;
+				dispatchEvent(infrastructureEvent);
+			}
+
+		]]>
+	</mx:Script>
+	
+	<mx:HBox x="0" y="0" width="200" height="18" styleName="cabeceraPanel" paddingLeft="5" verticalAlign="middle">
+		<mx:Label text="@Resource(bundle='Common', key='LABEL_PANEL')" styleName="titlePanel" height="14"/>
+	</mx:HBox>
+	
+	<mx:Canvas left="0" height="100%" width="200"
+			   verticalScrollPolicy="off" horizontalScrollPolicy="off" top="18">
+		<!-- Navigator back to Data Centers Management -->
+		<mx:HBox width="100%" height="32" verticalAlign="middle" horizontalGap="2" paddingLeft="10" paddingRight="10" styleName="cabeceraPanelGris">
+			<mx:Label id="dataCenterLabel" maxWidth="160" verticalCenter="0"
+					  text="{this._dataCenter.name}" truncateToFit="true" styleName="titleAlert"/>
+			<mx:Spacer width="100%" height="30"/>
+					  
+			<mx:Button id="backToDataCentersManagButton" right="0" verticalCenter="0"
+			   click="backToDataCentersManagement()" styleName="bBackApp"
+			   toolTip="@Resource(bundle='Common', key='BUTTON_RETURN_TOOLTIP')"/>
+		</mx:HBox>
+		
+		
+		<mx:VBox top="32" bottom="31" width="100%"
+				 paddingLeft="0" paddingRight="0" paddingBottom="0" paddingTop="0"
+				 verticalGap="0">
+				 
+			<!-- Display Racks, and for each rack its Physical Machines -->
+			<customtree:CustomTree id="infrastructureTree" borderStyle="none"
+								   height="100%" width="100%"
+								   labelField="name" saveState="true"
+								   customTreeDataDescriptor="{_infrastructureDataDescriptor}"
+								   customTreeDataProvider="{_infrastructureArray}"
+								   click="onClickInfrastructureTree()"/>	
+			
+			<componentsPM:PhysicalMachineList id="unassignedPMList"
+											width="100%"/>
+		</mx:VBox>	   
+							   
+		
+		<!-- Tool Bar -->
+		<mx:HBox bottom="0" width="100%" height="32" verticalAlign="middle" styleName="bajo" 
+			paddingLeft="6" paddingRight="6">
+						
+			<mx:PopUpMenuButton id="addButton" styleName="bNewPlus"
+							    dataProvider="{addButtonDataProvider}"
+							    label=""
+							    labelField="@label"
+							    itemClick="onClickAddInfrastructureElement(event)" width="40" height="22"
+							    toolTip="@Resource(bundle='Common', key='BUTTON_NEW_TOOLTIP')"
+							    closeDuration="0"/>
+			
+			<mx:Button id="deleteButton"
+					   click="askInfrastructureElementDeletion()"
+					   enabled="{infrastructureTree.selectedIndex > -1}" styleName="bNoAgregar"
+					   toolTip="@Resource(bundle='Common', key='BUTTON_DEL_TOOLTIP')"/>
+			<mx:Spacer width="100%"/>
+					   
+			<mx:Button id="editButton"
+					   click="onClickEditInfrastructureElement()"
+					   enabled="{infrastructureTree.selectedIndex > -1}" styleName="bConfig"
+					   toolTip="@Resource(bundle='Common', key='BUTTON_EDIT_TOOLTIP')"/>
+
+		</mx:HBox>
+						
+	</mx:Canvas>
+	
+	<!-- Where user can user can see the Virtual Machines to manage them -->
+	<mx:HBox x="210" y="0" width="100%" height="18" styleName="cabeceraPanel" paddingLeft="5" verticalAlign="middle">
+		<mx:Label text="@Resource(bundle='Common', key='LABEL_DATA_PANEL')" styleName="titlePanel" height="14"/>
+	</mx:HBox>
+	
+	<mx:Canvas right="0" left="210" height="100%"
+			   verticalScrollPolicy="off" horizontalScrollPolicy="off" top="18">
+		
+		<!-- View modes selector and filter -->
+		<mx:HBox width="100%" height="32" styleName="cabeceraPanelGris" verticalAlign="middle" paddingLeft="10" paddingRight="10" horizontalGap="0">
+		
+			<mx:Button id="listButton" 
+					   styleName="bVistaUno"
+					   click="onClickViewOptions('listMode')"
+					   toolTip="@Resource(bundle='Common', key='BUTTON_LISTMODE_TOOLTIP')"/>
+					   
+			<mx:Button id="iconsButton" 
+					   styleName="bVistaDos"
+					   click="onClickViewOptions('iconsMode')"
+					   toolTip="@Resource(bundle='Common', key='BUTTON_ICONSMODE_TOOLTIP')"/>
+			
+			<!-- Zoom for Virtual Machines Miniatures is currently disabled -->
+			<mx:HBox width="100%" verticalAlign="middle" horizontalGap="0" paddingBottom="6" paddingLeft="6"
+					 visible="false">
+				<mx:HSlider id="iconSizeSlider"
+							minimum="0.5" maximum="1.5" snapInterval="0.01"
+							showDataTip="false" visible="{viewModesVS.selectedIndex == 1}" liveDragging="true"
+							width="100"/>
+			</mx:HBox>
+			<mx:Spacer width="100%"/>
+			<mx:HBox width="100%" verticalAlign="middle" horizontalAlign="right" horizontalGap="3">
+				<mx:Image source="assets/buttonsMenu/lupa.png"/>
+				<mx:TextInput id="virtualMachinesFilter"
+						 	  change="onVirtualMachinesFilterChange()" height="20"
+						 	  toolTip="@Resource(bundle='Common', key='BUTTON_FILTER_TOOLTIP')"/>
+			</mx:HBox>
+			
+		</mx:HBox>
+		
+		<!-- View modes -->
+		<mx:ViewStack id="viewModesVS" top="31" width="100%">
+			
+			<!-- Data Grid -->
+			<mx:Canvas width="100%" height="100%"
+					   verticalScrollPolicy="off" horizontalScrollPolicy="off">
+				<mx:DataGrid id="virtualMachinesDataGrid"
+							 width="100%" height="100%"
+							 click="onClickVirtualMachinesDataGrid()"
+							 mouseDown="onMouseDownVirtualMachineDataGrid()">
+					
+					<mx:columns>
+						<mx:DataGridColumn dataField="name" 
+										   headerText="@Resource(bundle='Common', key='TEXTINPUT_LABEL_NAME')"/>
+										   
+						<mx:DataGridColumn labelFunction="vmDataGridVirtualImageLabel"
+										   headerText="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_VIRTUALIMAGE')"/>
+										   
+						<mx:DataGridColumn dataField="ram"
+										   headerText="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_RAM')"/>
+										   
+						<mx:DataGridColumn dataField="cpu"
+										   headerText="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_CPU')"/>
+										   
+						<mx:DataGridColumn dataField="hd"
+										   headerText="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_HD')"/>
+						
+						<mx:DataGridColumn headerText=""
+										   resizable="false">
+							<mx:itemRenderer>
+								<mx:Component>
+									<mx:Canvas width="12" height="13">
+										<mx:Script>
+											<![CDATA[
+												import net.undf.abicloud.vo.infrastructure.VirtualMachine;
+												import net.undf.abicloud.vo.infrastructure.State;
+												
+												[Bindable]
+												private var _virtualMachine:VirtualMachine;
+												override public function set data(value:Object):void
+												{
+													this._virtualMachine = value as VirtualMachine;
+												}
+											]]>
+										</mx:Script>
+										<utils:SmoothImage width="14" height="14" verticalCenter="0" horizontalCenter="0"
+														   visible="{this._virtualMachine.state.id != State.IN_PROGRESS}"
+					  									   source="{(this._virtualMachine.state.id == State.RUNNING) ? 'assets/buttonsMenu/verde.png' : 
+					   												((this._virtualMachine.state.id == State.PAUSED) ? 'assets/buttonsMenu/amarillo.png' : 'assets/buttonsMenu/rojo.png')}"/>
+					   												
+										<mx:SWFLoader width="14" height="14" verticalCenter="0" horizontalCenter="0"
+													  visible="{this._virtualMachine.state.id == State.IN_PROGRESS}"
+													  source="assets/buttonsMenu/CargaPeque.swf"/>											
+									</mx:Canvas>
+								</mx:Component>
+							</mx:itemRenderer>
+						</mx:DataGridColumn>
+					</mx:columns>
+				</mx:DataGrid>
+			</mx:Canvas>
+			
+			
+			<!-- Icons -->
+			<mx:Canvas width="100%" height="100%"
+					   verticalScrollPolicy="off" horizontalScrollPolicy="off">
+				<mx:TileList id="virtualMachinesTile" width="100%" height="100%"
+							 paddingTop="0" paddingLeft="0" paddingRight="0" paddingBottom="0"
+							 itemRenderer="net.undf.abicloud.view.infrastructure.components.virtualmachine.VirtualMachineMiniature"
+							 click="onClickVirtualMachinesTile()"/>
+			</mx:Canvas>
+		</mx:ViewStack>
+		
+		<mx:Canvas id="moreInfoContainer"
+				   width="100%" height="143" bottom="0" visible="false"/>
+		
+	</mx:Canvas>
+	
+</mx:Canvas>

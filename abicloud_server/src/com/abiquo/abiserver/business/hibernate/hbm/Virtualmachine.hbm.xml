@@ -1,0 +1,53 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 16-oct-2008 16:52:14 by Hibernate Tools 3.2.1.GA -->
+<hibernate-mapping>
+  <class catalog="kinton" name="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.VirtualmachineHB" table="virtualmachine">
+    <id name="idVm" type="java.lang.Integer">
+      <column name="idVM"/>
+      <generator class="identity"/>
+    </id>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.HypervisorHB" name="hypervisor">
+      <column name="idHypervisor"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.StateHB" name="state">
+      <column name="idState"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.virtualimage.VirtualimageHB" name="image">
+      <column name="idImage"/>
+    </many-to-one>
+    <property name="uuid" type="string">
+      <column length="36" name="UUID" not-null="true"/>
+    </property>
+    <property name="name" type="string">
+      <column length="100" name="name" not-null="true"/>
+    </property>
+    <property name="description" type="string">
+      <column length="100" name="description"/>
+    </property>
+    <property name="ram" type="java.lang.Integer">
+      <column name="ram"/>
+    </property>
+    <property name="cpu" type="java.lang.Integer">
+      <column name="cpu"/>
+    </property>
+    <property name="hd" type="java.lang.Long">
+      <column name="hd"/>
+    </property>
+    <property name="vdrpPort" type="java.lang.Integer">
+      <column name="vdrpPort"/>
+    </property>
+    <property name="vdrpIp" type="string">
+      <column length="39" name="vdrpIP"/>
+    </property>
+    <property name="highDisponibility" type="int">
+      <column name="high_disponibility" not-null="true"/>
+    </property>
+    <set inverse="true" name="virtualmachinenetworkmodules">
+      <key>
+        <column name="idVM" not-null="true"/>
+      </key>
+      <one-to-many class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.VirtualmachinenetworkmoduleHB"/>
+    </set>
+  </class>
+</hibernate-mapping>

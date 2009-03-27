@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 16-oct-2008 16:52:14 by Hibernate Tools 3.2.1.GA -->
+<hibernate-mapping>
+<class catalog="datacenter_management" entity-name="DatacentersIPHB" name="com.abiquo.abiserver.business.hibernate.pojohb.networking.DatacentersIPHB" table="datacenters_ip">
+    <id name="id" type="java.lang.Integer">
+      <column name="id"/>
+   </id>
+   <property name="firstIP" type="string">
+     <column length="15" name="first_ip" not-null="true"/>
+   </property>
+   <property name="lastIP" type="string">
+      <column length="15" name="last_ip" not-null="true"/>
+   </property>
+   <property name="numNodes" type="java.lang.Integer">
+      <column name="num_nodes" not-null="true"/>
+   </property>
+</class>
+</hibernate-mapping>

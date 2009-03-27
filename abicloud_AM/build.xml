@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="abiCloud_ApplianceManager" default="bindingJar" basedir=".">
+
+	<!-- Test that a valid ant version is being used -->
+	<condition property="valid.ant.version">
+		<or>
+		  <contains substring="1.6.5" string="${ant.version}" />	
+		  <contains substring="1.7." string="${ant.version}" />	
+		</or>
+	</condition>
+	<fail message="You should be using ant 1.6.5 or better." unless="valid.ant.version"/>
+	
+	
+	<!-- property file="project.properties"/ -->
+	<property name="lib.dir" value="${basedir}${file.separator}lib"/>
+	<property name="xsd.dir" value="${basedir}${file.separator}resources${file.separator}schemas"/>
+	<property name="gen.src.dir" value="${basedir}${file.separator}src"/>
+	
+	
+	
+	
+	
+	
+	<!-- For those consumers that don't already have a favorite JAVA<->XML technology, JAXB instructions/configuration is provided  -->
+	<!--  ===================================================================  -->
+	<!--   "jaxb" - Runs JAXB's XJC compiler on any .xsd files in the xsd dir  -->
+	<!--  ===================================================================  -->
+	<target name="jaxb" 		
+		description="Runs JAXB's XJC compiler on any .xsd files in the xsd directory.">
+		<taskdef name="xjc" classname="com.sun.tools.xjc.XJCTask">
+			<classpath>
+				<fileset dir="${lib.dir}" includes="*.jar"/> <!--excludes="ant.jar"/-->
+			</classpath>
+		</taskdef>
+		<xjc  destdir="${gen.src.dir}">
+			<!-- uncomment if HTTP proxies are needed for internet access, 
+                 define it in ${user.home}/.ant.properties -->
+			<!-- <arg value="-httpproxy" />
+			<arg value="${http.proxy}" /> -->
+			<schema dir="${xsd.dir}" />
+		</xjc>
+	</target>
+	
+	
+	<!-- ====================================== -->
+		<!-- "bindingJar" - Creates a jar with the OVF binding classes			 -->
+		<!-- ====================================== -->
+		
+		<target name="bindingJar" depends="jaxb">
+			<jar jarfile="${lib.dir}${file.separator}OVFbinding.jar">
+				<fileset dir="${gen.src.dir}" /><!--org${file.separator}**${file.separator}*.class" /-->
+			</jar>				
+		</target>
+				
+	
+	<!-- Uncomment when using HTTP proxy settings.
+	<setproxy proxyhost="${http.proxyHost}" 
+	          proxyport="${http.proxyPort}" 
+	          nonproxyhosts="${http.nonProxyHosts}"/>
+	-->
+	<path id="compile.classpath">
+		<fileset dir="${lib.dir}">
+			<include name="**/*.jar"/>
+		</fileset>
+	</path>
+
+	<!-- This setting may need to be modified for alternate Binding technology -->
+	<path id="jaxb.compile.classpath">
+		<fileset dir="${extern.lib.dir}">
+			<include name="**/*.jar" />
+		</fileset>
+	</path>
+
+
+</project>

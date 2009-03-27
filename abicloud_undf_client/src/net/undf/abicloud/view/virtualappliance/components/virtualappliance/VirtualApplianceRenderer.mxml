@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		   width="100%" height="100%"
+		   verticalScrollPolicy="off" horizontalScrollPolicy="off"
+		   styleName="VirtualMachineRenderer" xmlns:utils="net.undf.abicloud.utils.*" borderStyle="solid" backgroundColor="#F4F4F4">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.utils.ObjectUtil;
+			import net.undf.abicloud.events.VirtualApplianceEvent;
+			import net.undf.abicloud.vo.virtualappliance.Log;
+			import mx.collections.ArrayCollection;
+			import mx.resources.ResourceBundle;
+			import mx.resources.ResourceManager;
+			import net.undf.abicloud.vo.infrastructure.State;
+			import net.undf.abicloud.vo.virtualappliance.VirtualAppliance;
+			
+			[ResourceBundle("VirtualAppliance")]
+			private var rb2:ResourceBundle;
+			
+			//The VirtualAppliance that will be rendered
+			[Bindable]
+			private var _virtualAppliance:VirtualAppliance;
+			
+			/**
+			 * Sets the virtual appliance that this component will render
+			 */
+			public function set virtualAppliance(value:VirtualAppliance):void
+			{
+				this._virtualAppliance = value;
+			}
+			
+			private function writeLogMessages(logMessages:ArrayCollection):String
+			{
+				var length:int = logMessages.length;
+				var i:int;
+				var log:Log;
+				var htmlText:String = "";
+				for(i = 0; i < length; i++)
+				{
+					log = logMessages.getItemAt(i) as Log;
+					htmlText += "<b>" + log.logDate.getDate() + "/" + (log.logDate.getMonth() + 1) + "/" + log.logDate.getFullYear() + 
+								"  " + 
+								log.logDate.toTimeString() + "</b>" + ":   " + 
+								log.description + "<br/>";
+				}	
+				
+				return htmlText;
+			}
+			
+			/**
+			 * Performs a "Start" or "Shutdown" action in the Virtual Appliance
+			 **/
+			private function onClickPowerOnOffButton():void
+			{
+				var event:VirtualApplianceEvent;
+			
+				if(_virtualAppliance.state.id == State.RUNNING)
+				{
+					//The Virtual Appliance is running. We proceed to power it off
+					event = new VirtualApplianceEvent(VirtualApplianceEvent.SHUTDOWN_VIRTUALAPPLIANCE);
+				}
+				else
+				{
+					//The Virtual Appliance is powered off We proceed to power it on
+					event = new VirtualApplianceEvent(VirtualApplianceEvent.START_VIRTUALAPPLIANCE);
+				}
+				
+				event.virtualAppliance = ObjectUtil.copy(this._virtualAppliance) as VirtualAppliance;
+				event.oldVirtualAppliance = this._virtualAppliance;
+				dispatchEvent(event);
+			}
+			
+			/**
+			 * When users makes click on refreshLogButton
+			 */
+			private function onClickRefreshLogButton():void
+			{
+				//Asking for the last Log list for this Virtual Appliance
+				var virtualApplianceEvent:VirtualApplianceEvent = new VirtualApplianceEvent(VirtualApplianceEvent.GET_VIRTUAL_APPLIANCE_UPDATED_LOGS);
+				virtualApplianceEvent.virtualAppliance = this._virtualAppliance;
+				dispatchEvent(virtualApplianceEvent);
+			}
+		]]>
+	</mx:Script>
+	
+	<!-- Virtual Machine state -->
+	<mx:VBox width="27" height="100%" left="0"
+			 verticalAlign="middle" horizontalAlign="center"
+			 verticalScrollPolicy="off" horizontalScrollPolicy="off" styleName="fSemaforo" verticalGap="3">
+		
+		<utils:SmoothImage id="startImage" 
+				  source="{(this._virtualAppliance.state.id == State.RUNNING) ? 'assets/buttonsMenu/verde.png':'assets/buttonsMenu/gris.png'}"/>
+		
+		<utils:SmoothImage id="stopImage" 
+				  source="{(this._virtualAppliance.state.id == State.POWERED_OFF || this._virtualAppliance.state.id == State.NOT_DEPLOYED) ? 'assets/buttonsMenu/rojo.png':'assets/buttonsMenu/gris.png'}"/>
+		
+	</mx:VBox>
+	
+	<mx:HBox height="100%" left="27" right="63" verticalCenter="0"
+			   paddingBottom="0" paddingTop="0" paddingLeft="0" paddingRight="0"
+			   verticalScrollPolicy="off" horizontalScrollPolicy="off">
+			   
+		<!-- Virtual Appliance information -->
+		<mx:HBox height="100%" width="35%" verticalAlign="top" horizontalGap="0" paddingTop="10" paddingLeft="8">
+			
+			<mx:Canvas width="143" height="143">
+				<utils:SmoothImage id="virtualMachineIcon"
+								  source="assets/virtualappliance/VirtualAppliance.png" maintainAspectRatio="true" 
+								  height="100%" width="100%"
+								  verticalCenter="0" horizontalCenter="0"/>
+								  
+				<mx:SWFLoader id="busyIcon"
+							  source="assets/buttonsMenu/CargaGrande.swf"
+							  height="80" width="80"
+							  verticalCenter="0" horizontalCenter="0"
+							  visible="{this._virtualAppliance.state.id == State.IN_PROGRESS}"/>
+			</mx:Canvas>
+			
+			
+			<mx:VBox height="100%" width="100%" verticalGap="0" paddingTop="4"
+			 		 verticalScrollPolicy="off" horizontalScrollPolicy="off">
+				
+				<mx:Label text="{this._virtualAppliance.name}" 
+						  fontSize="22" fontWeight="bold"/>
+				
+				<mx:Label text="{this._virtualAppliance.virtualDataCenter.name}"
+						  fontSize="18" fontStyle="italic"/>
+				
+				<!-- Public or Private information is disabled
+				     erase "visible = false" to enable it -->
+				<mx:Label text="{this._virtualAppliance.isPublic ? ResourceManager.getInstance().getString('VirtualAppliance', 'LABEL_PUBLIC') :
+																   ResourceManager.getInstance().getString('VirtualAppliance', 'LABEL_PRIVATE')}"
+						  visible="false"/>
+						
+			</mx:VBox>
+		</mx:HBox>
+		
+		<mx:VRule width="1" height="100%" strokeColor="#CCCCCC" horizontalCenter="0"/>
+		
+		<!-- VirtualAppliance logs -->
+		<mx:VBox height="100%" width="100%" verticalGap="3"
+				 paddingTop="10" paddingBottom="10" paddingRight="10">
+		
+			<mx:HBox paddingTop="0" paddingBottom="0" paddingLeft="0" paddingRight="0" verticalAlign="middle">
+				<mx:Label text="@Resource(bundle='VirtualAppliance', key='LABEL_LOGS_MESSAGE')"
+						  fontSize="14" fontWeight="bold" paddingTop="4"/>
+				
+				<mx:Button id="refreshLogButton" styleName="refreshLogButton"
+						   toolTip="@Resource(bundle='VirtualAppliance', key='TOOLTIP_REFRESH_LOG_BUTTON')"
+						   click="onClickRefreshLogButton()"/>
+			</mx:HBox>
+						  
+			<mx:TextArea id="logs" editable="false"
+						 width="100%" height="100%"
+						 styleName="LogsTextArea"
+						 htmlText="{writeLogMessages(this._virtualAppliance.logs)}"/>
+			
+			
+		</mx:VBox>
+	</mx:HBox>
+	
+	<!-- Virtual Appliance actions -->
+	<mx:VBox width="57" height="100%" right="0"
+			 verticalGap="0" verticalScrollPolicy="off" horizontalScrollPolicy="off" verticalAlign="top"
+			 enabled="{this._virtualAppliance.state.id != State.IN_PROGRESS}">
+		
+		<mx:Button id="powerOnOffButton" width="57" height="47"
+				   click="onClickPowerOnOffButton()" styleName="mPower"
+				   useHandCursor="true" mouseChildren="false" buttonMode="true"
+				   selected="{_virtualAppliance.state.id == State.PAUSED || _virtualAppliance.state.id == State.RUNNING}"/>
+		
+	</mx:VBox>
+</mx:Canvas>

@@ -1,0 +1,69 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="utility-tasks" default="help" basedir=".">
+
+    <xmlproperty file="property.xml" keepRoot="false"/>
+    
+    <!--  Used by all the other targets that require the execution of an sql statement -->
+    <target name="-execute-sql">
+         <sql classpath="${db.classpath}"
+             driver="${db.driver}"
+             url="${db.url}"
+             userid="${db.username}"
+             password="${db.password}"
+             print="true">
+             ${sqlStmt};
+        </sql>   	
+    </target>
+    
+     <!--  Used by all the other targets that require the execution of an sql statement -->
+    <target name="-execute-sql-from-file">
+         <sql classpath="${db.classpath}"
+             driver="${db.driver}"
+             url="${db.url}"
+             src="${sqlfile}"
+             userid="${db.username}"
+             password="${db.password}"
+             print="true">
+        </sql>   	
+    </target>
+       
+       
+    <target name="load-db" description="loads the kinton database and adds entries in a few tables">
+    	<!-- Load the kinton database -->
+    	<antcall target="-execute-sql-from-file">
+    		<param name="sqlfile" value="${db.load-file}"/>
+    	</antcall>
+    	
+    	<!-- Now load create a few entries for the development environment -->
+    	<antcall target="-execute-sql-from-file">
+    		<param name="sqlfile" value="add-entries.sql"/>
+    	</antcall>
+    </target>
+	
+	
+    <target name="delete-sessions" description="Removed all registered sessions in the database">
+        <antcall target="-execute-sql">
+            <param name="sqlStmt" value="delete  from session"/>
+        </antcall>
+    </target>
+
+	
+
+    <target name="help" description="Default target">
+        <echo>
+            Utility ant script for carry out database queries.
+            Fill free to add more tasks
+
+            DB url:                  ${db.url}
+            DB username:             ${db.username}
+            DB password:             ${db.password}
+
+            Tasks:
+            ====================================================
+            delete-sessions: Deletes the sessions in the database
+        	
+            
+        </echo>
+    </target>
+
+</project>

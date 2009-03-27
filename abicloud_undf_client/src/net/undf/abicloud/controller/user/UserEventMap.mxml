@@ -1,0 +1,375 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<EventMap xmlns:mx="http://www.adobe.com/2006/mxml" xmlns="http://mate.asfusion.com/">
+	
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.model.AbiCloudModel;
+			import net.undf.abicloud.controller.ResultHandler;
+			import net.undf.abicloud.controller.FaultHandler;
+			import net.undf.abicloud.business.Services;
+			import com.asfusion.mate.utils.debug.Debugger;
+			
+			import net.undf.abicloud.events.*;
+			import net.undf.abicloud.utils.ScreenBlocker;
+			
+			[Bindable]
+			private var services:Services = new Services();
+			
+		]]>
+	</mx:Script>
+	
+	
+	<!-- ********************************************************************************************************************* -->
+	<!-- UserEvent.GET_USERS ________________________________________________________________________ -->
+	<EventHandlers type="{UserEvent.GET_USERS}">
+	
+		<!-- Blocking screen -->
+		<InlineInvoker method="ScreenBlocker.blockScreen" />
+		
+		<!-- Make call to the server here -->
+		
+		<RemoteObjectInvoker instance="{services.userService}"
+						     method="getUsers"
+						     arguments="{[AbiCloudModel.getInstance().loginManager.session, event.userListOptions]}">
+						     
+			<resultHandlers>
+				<MethodInvoker generator="{UserResultHandler}"
+							   method="handleGetUsers"
+							   arguments="{[resultObject]}"/>
+							   
+				<!-- Unblock screen -->
+				<InlineInvoker method="ScreenBlocker.unblockScreen" />
+			</resultHandlers>
+			
+			<faultHandlers>
+				<MethodInvoker generator="{FaultHandler}"
+							   method="handleFault"
+							   arguments="{[fault]}"/>
+							   
+				<!-- Unblock screen -->
+				<InlineInvoker method="ScreenBlocker.unblockScreen" />
+			</faultHandlers>
+			
+		</RemoteObjectInvoker>
+		
+	</EventHandlers>
+	
+
+	<!-- UserEvent.ADD_USER ________________________________________________________________________ -->
+	<EventHandlers type="{UserEvent.CREATE_USER}">
+	
+		<!-- Blocking screen -->
+		<InlineInvoker method="ScreenBlocker.blockScreen" />
+		
+		<!-- Make call to the server here -->
+		
+		<RemoteObjectInvoker instance="{services.userService}"
+						     method="createUser"
+						     arguments="{[AbiCloudModel.getInstance().loginManager.session, event.user]}">
+						     
+			<resultHandlers>
+				<MethodInvoker generator="{UserResultHandler}"
+							   method="handleCreateUser"
+							   arguments="{[resultObject]}"/>
+							   
+				<!-- Unblock screen -->
+				<InlineInvoker method="ScreenBlocker.unblockScreen" />
+			</resultHandlers>
+			
+			<faultHandlers>
+				<MethodInvoker generator="{FaultHandler}"
+							   method="handleFault"
+							   arguments="{[fault]}"/>
+							   
+				<!-- Unblock screen -->
+				<InlineInvoker method="ScreenBlocker.unblockScreen" />
+			</faultHandlers>
+			
+		</RemoteObjectInvoker>
+		
+	</EventHandlers>
+	
+	
+	
+	<!-- UserEvent.DELETE_USER ________________________________________________________________________ -->
+	<EventHandlers type="{UserEvent.DELETE_USER}">
+	
+		<!-- Blocking screen -->
+		<InlineInvoker method="ScreenBlocker.blockScreen" />
+		
+		<!-- Make call to the server here -->
+		
+		<RemoteObjectInvoker instance="{services.userService}"
+						     method="deleteUser"
+						     arguments="{[AbiCloudModel.getInstance().loginManager.session, event.user]}">
+						     
+			<resultHandlers>
+				<MethodInvoker generator="{UserResultHandler}"
+							   method="handleDeleteUser"
+							   arguments="{[resultObject, event.user]}"/>
+							   
+				<!-- Unblock screen -->
+				<InlineInvoker method="ScreenBlocker.unblockScreen" />
+			</resultHandlers>
+			
+			<faultHandlers>
+				<MethodInvoker generator="{FaultHandler}"
+							   method="handleFault"
+							   arguments="{[fault]}"/>
+							   
+				<!-- Unblock screen -->
+				<InlineInvoker method="ScreenBlocker.unblockScreen" />
+			</faultHandlers>
+			
+		</RemoteObjectInvoker>
+		
+	</EventHandlers>
+	
+	
+	<!-- UserEvent.EDIT_USER ________________________________________________________________________ -->
+	<EventHandlers type="{UserEvent.EDIT_USERS}">
+	
+		<!-- Blocking screen -->
+		<InlineInvoker method="ScreenBlocker.blockScreen" />
+		
+		<!-- Make call to the server here -->
+		
+		<RemoteObjectInvoker instance="{services.userService}"
+						     method="editUser"
+						     arguments="{[AbiCloudModel.getInstance().loginManager.session, event.users]}">
+						     
+			<resultHandlers>
+				<MethodInvoker generator="{UserResultHandler}"
+							   method="handleEditUser"
+							   arguments="{[resultObject, event.oldUsers, event.users]}"/>
+							   
+				<!-- Unblock screen -->
+				<InlineInvoker method="ScreenBlocker.unblockScreen" />
+			</resultHandlers>
+			
+			<faultHandlers>
+				<MethodInvoker generator="{FaultHandler}"
+							   method="handleFault"
+							   arguments="{[fault]}"/>
+							   
+				<!-- Unblock screen -->
+				<InlineInvoker method="ScreenBlocker.unblockScreen" />
+			</faultHandlers>
+			
+		</RemoteObjectInvoker>
+		
+	</EventHandlers>
+	
+	
+	<!-- UserEvent.CLOSE_SESSION_USERS ________________________________________________________________________ -->
+	<EventHandlers type="{UserEvent.CLOSE_SESSION_USERS}">
+	
+		<!-- Blocking screen -->
+		<InlineInvoker method="ScreenBlocker.blockScreen" />
+		
+		<!-- Make call to the server here -->
+		
+		<RemoteObjectInvoker instance="{services.userService}"
+						     method="closeSessionUsers"
+						     arguments="{[AbiCloudModel.getInstance().loginManager.session, event.users]}">
+						     
+			<resultHandlers>
+				<MethodInvoker generator="{UserResultHandler}"
+							   method="handleCloseSessionUsers"
+							   arguments="{[resultObject, event.oldUsers]}"/>
+							   
+				<!-- Unblock screen -->
+				<InlineInvoker method="ScreenBlocker.unblockScreen" />
+			</resultHandlers>
+			
+			<faultHandlers>
+				<MethodInvoker generator="{FaultHandler}"
+							   method="handleFault"
+							   arguments="{[fault]}"/>
+							   
+				<!-- Unblock screen -->
+				<InlineInvoker method="ScreenBlocker.unblockScreen" />
+			</faultHandlers>
+			
+		</RemoteObjectInvoker>
+		
+	</EventHandlers>
+	
+	
+	<!-- ********************************************************************************************************************* -->
+	
+	<!-- UserEvent.GET_ENTERPRISES ________________________________________________________________________ -->
+	<EventHandlers type="{UserEvent.GET_ENTERPRISES}">
+	
+		<!-- Blocking screen -->
+		<InlineInvoker method="ScreenBlocker.blockScreen" />
+		
+		<!-- Make call to the server here -->
+		
+		<RemoteObjectInvoker instance="{services.userService}"
+						     method="getEnterprises"
+						     arguments="{[AbiCloudModel.getInstance().loginManager.session, event.enterpriseListOptions]}">
+						     
+			<resultHandlers>
+				<MethodInvoker generator="{UserResultHandler}"
+							   method="handleGetEnterprises"
+							   arguments="{[resultObject]}"/>
+							   
+				<!-- Unblock screen -->
+				<InlineInvoker method="ScreenBlocker.unblockScreen" />
+			</resultHandlers>
+			
+			<faultHandlers>
+				<MethodInvoker generator="{FaultHandler}"
+							   method="handleFault"
+							   arguments="{[fault]}"/>
+							   
+				<!-- Unblock screen -->
+				<InlineInvoker method="ScreenBlocker.unblockScreen" />
+			</faultHandlers>
+			
+		</RemoteObjectInvoker>
+		
+	</EventHandlers>
+	
+		
+	<!-- UserEvent.CREATE_ENTERPRISE ________________________________________________________________________ -->
+	<EventHandlers type="{UserEvent.CREATE_ENTERPRISE}">
+	
+		<!-- Blocking screen -->
+		<InlineInvoker method="ScreenBlocker.blockScreen" />
+		
+		<!-- Make call to the server here -->
+		
+		<RemoteObjectInvoker instance="{services.userService}"
+						     method="createEnterprise"
+						     arguments="{[AbiCloudModel.getInstance().loginManager.session, event.enterprise]}">
+						     
+			<resultHandlers>
+				<MethodInvoker generator="{UserResultHandler}"
+							   method="handleCreateEnterprise"
+							   arguments="{[resultObject]}"/>
+							   
+				<!-- Unblock screen -->
+				<InlineInvoker method="ScreenBlocker.unblockScreen" />
+			</resultHandlers>
+			
+			<faultHandlers>
+				<MethodInvoker generator="{FaultHandler}"
+							   method="handleFault"
+							   arguments="{[fault]}"/>
+							   
+				<!-- Unblock screen -->
+				<InlineInvoker method="ScreenBlocker.unblockScreen" />
+			</faultHandlers>
+			
+		</RemoteObjectInvoker>
+		
+	</EventHandlers>
+	
+	
+	<!-- UserEvent.EDIT_ENTERPRISE ________________________________________________________________________ -->
+	<EventHandlers type="{UserEvent.EDIT_ENTERPRISE}">
+	
+		<!-- Blocking screen -->
+		<InlineInvoker method="ScreenBlocker.blockScreen" />
+		
+		<!-- Make call to the server here -->
+		
+		<RemoteObjectInvoker instance="{services.userService}"
+						     method="editEnterprise"
+						     arguments="{[AbiCloudModel.getInstance().loginManager.session, event.enterprise]}">
+						     
+			<resultHandlers>
+				<MethodInvoker generator="{UserResultHandler}"
+							   method="handleEditEnterprise"
+							   arguments="{[resultObject, event.oldEnterprise, event.enterprise]}"/>
+							   
+				<!-- Unblock screen -->
+				<InlineInvoker method="ScreenBlocker.unblockScreen" />
+			</resultHandlers>
+			
+			<faultHandlers>
+				<MethodInvoker generator="{FaultHandler}"
+							   method="handleFault"
+							   arguments="{[fault]}"/>
+							   
+				<!-- Unblock screen -->
+				<InlineInvoker method="ScreenBlocker.unblockScreen" />
+			</faultHandlers>
+			
+		</RemoteObjectInvoker>
+		
+	</EventHandlers>
+	
+	
+	<!-- UserEvent.DELETE_ENTERPRISE ________________________________________________________________________ -->
+	<EventHandlers type="{UserEvent.DELETE_ENTERPRISE}">
+	
+		<!-- Blocking screen -->
+		<InlineInvoker method="ScreenBlocker.blockScreen" />
+		
+		<!-- Make call to the server here -->
+		
+		<RemoteObjectInvoker instance="{services.userService}"
+						     method="deleteEnterprise"
+						     arguments="{[AbiCloudModel.getInstance().loginManager.session, event.enterprise]}">
+						     
+			<resultHandlers>
+				<MethodInvoker generator="{UserResultHandler}"
+							   method="handleDeleteEnterprise"
+							   arguments="{[resultObject, event.enterprise]}"/>
+							   
+				<!-- Unblock screen -->
+				<InlineInvoker method="ScreenBlocker.unblockScreen" />
+			</resultHandlers>
+			
+			<faultHandlers>
+				<MethodInvoker generator="{FaultHandler}"
+							   method="handleFault"
+							   arguments="{[fault]}"/>
+							   
+				<!-- Unblock screen -->
+				<InlineInvoker method="ScreenBlocker.unblockScreen" />
+			</faultHandlers>
+			
+		</RemoteObjectInvoker>
+		
+	</EventHandlers>
+</EventMap>

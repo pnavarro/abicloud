@@ -1,0 +1,1182 @@
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+
+/* CSS file */
+
+/** ************** FLEX COMPONENTS ************** **/
+
+	@font-face
+{
+    src: local("Arial");
+    font-family: Arial;
+    fontWeight: normal;
+}
+
+	@font-face
+	{
+	    src: local("Arial");
+	    font-family: Arial;
+	    fontWeight: bold;
+	}
+
+/********** General ***********/
+
+	CursorManager
+	{
+		busy-cursor: Embed("assets/cursors/BusyCursor.swf");
+	}
+	 
+	Application
+	{
+		theme-color:					#333333;
+		font-family:					Arial;
+		font-size:						11;
+		color:							#333333;
+		modal-transparency-duration:	500;
+		modal-transparency-blur:		1;
+		modal-transparency-color:		#000000;
+		modal-transparency:				0.8;
+	}
+	
+	Tile
+	{
+		background-color:				#ffffff;
+		selection-color:				#000000;
+		roll-over-color:				#f1f1f1;
+		padding-bottom:					1;
+		padding-left:					1;
+		padding-right:					1;
+		padding-top:					1;
+		horizontal-gap:					1;
+		vertical-gap:					1;
+		border-style:					none;
+	}
+	
+	TabBar
+	{
+		tab-style-name:	"TabBarTabStyle";
+		first-tab-style-name: "TabBarTabStyle";
+		last-tab-style-name: "TabBarTabStyle";
+		selected-tab-text-style-name:	"TabBarSelectedTabText";
+	}
+		.TabBarTabStyle
+		{
+			color:	#333333;
+			backgroundColor: #fea305;
+		}
+		.TabBarSelectedTabText
+		{
+			color:	#ffffff;	
+		}
+	
+	DataGrid 
+	{
+	   alternatingItemColors: #ffffff, #f4f4f4;
+	   headerColors: #fefefe, #dbdbdc;
+	   horizontalGridLines: false;
+	   letterSpacing: 0;
+	   verticalGridLines: true;
+	   verticalGridLineColor: #cacaca;
+	   rollOverColor: #e5e5e5;
+	   borderThickness: 1;
+	   borderColor: #cccccc;
+	   selectionColor: #cccccc;
+	   textIndent: 0;
+	   dropShadowEnabled: false;
+	   headerStyleName: "mydataGridHeaderStyle";
+	}
+		
+		.mydataGridHeaderStyle 
+		{
+		   color: #333333;
+		   letterSpacing: 0;
+		}
+	
+	
+	ScrollBar
+	{
+		up-arrow-up-skin: 		Embed("/assets/general/Scroll_up.png" );
+		up-arrow-over-skin:		Embed("/assets/general/Scroll_up.png");
+		up-arrow-down-skin:		Embed("/assets/general/Scroll_up1.png");
+		
+		down-arrow-up-skin:		Embed("/assets/general/Scroll_down.png" );
+		down-arrow-over-skin:	Embed("/assets/general/Scroll_down.png");
+		down-arrow-down-skin:	Embed("/assets/general/Scroll_down1.png");
+		
+		thumb-up-skin:			Embed("/assets/general/Scroll_barra.png", scaleGridTop="3", scaleGridBottom="7", scaleGridLeft="2", scaleGridRight="11");
+		thumb-over-skin:		Embed("/assets/general/Scroll_barra1.png", scaleGridTop="3", scaleGridBottom="7", scaleGridLeft="2", scaleGridRight="11");
+		thumb-down-skin:		Embed("/assets/general/Scroll_barra2.png", scaleGridTop="3", scaleGridBottom="7", scaleGridLeft="2", scaleGridRight="11");
+		
+		track-skin: 			Embed("/assets/general/Scroll_fondo.png", scaleGridTop="17", scaleGridBottom="28", scaleGridLeft="3", scaleGridRight="12");
+		/*track-down-skin: 		Embed("/assets/botones/Scroll_fondo.png", scaleGridTop="26", scaleGridBottom="28", scaleGridLeft="8", scaleGridRight="9");*/
+	
+		thumb-icon:				Embed("/assets/general/Scroll_icon.png");
+	}	
+	
+	
+	TextInput
+	{
+		background-image:		Embed("/assets/general/textinput_mode.png", scaleGridTop="10", scaleGridBottom="11", scaleGridLeft="11", scaleGridRight="15");
+		background-size:		"100%";
+		border-style:			none;
+		background-color:		none;
+		color:					#333333;
+		font-weight:			normal;
+		font-size:				11px;
+		focus-thickness:		0;
+		padding-top:			2;
+		padding-left:			5;
+	}
+	
+	TextArea
+	{
+		background-image:		Embed("/assets/general/textinput_mode.png", scaleGridTop="10", scaleGridBottom="11", scaleGridLeft="11", scaleGridRight="15");
+		background-size:		"100%";
+		border-style:			none;
+		background-color:		none;
+		color:					#333333;
+		font-weight:			normal;
+		font-size:				11px;
+		focus-thickness:		0;
+		padding-top:			2;
+		padding-left:			5;
+	}
+	
+	NumericStepper
+	{
+		border-thickness: 			0;
+		focus-thickness:			0;
+		up-arrow-up-skin: 			Embed("/assets/general/numericStepper_up.png");
+		up-arrow-over-skin:			Embed("/assets/general/numericStepper_up.png");
+		up-arrow-down-skin:			Embed("/assets/general/numericStepper_up_over.png");
+		up-arrow-disabled-skin:		Embed("/assets/general/numericStepper_up.png");
+		down-arrow-up-skin:			Embed("/assets/general/numericStepper_down.png");
+		down-arrow-over-skin:		Embed("/assets/general/numericStepper_down.png");
+		down-arrow-down-skin:		Embed("/assets/general/numericStepper_down_over.png");
+		down-arrow-disabled-skin:	Embed("/assets/general/numericStepper_down.png");
+		background-image:			Embed("/assets/general/numericStepper_input.png", scaleGridTop="2", scaleGridBottom="15", scaleGridLeft="7", scaleGridRight="10");
+		background-size: 			"100%";
+		border-style: 				none;
+		disabled-color:				#999999;
+		background-disabled-color:	none;
+		font-family:				franklin;
+	}
+	
+	CheckBox
+	{
+		up-icon:				Embed("/assets/general/CheckBox.png");
+		over-icon: 				Embed("/assets/general/CheckBox.png");
+		down-icon: 				Embed("/assets/general/CheckBox1.png");
+		selected-up-icon: 		Embed("/assets/general/CheckBox2.png");
+		selected-over-icon: 	Embed("/assets/general/CheckBox2.png");
+		selected-down-icon: 	Embed("/assets/general/CheckBox3.png");
+		color:					#333333;
+		roll-over-color:		#333333;
+		text-roll-over-color:	#333333;
+		text-selected-color:	#333333;
+	}
+
+	
+	Accordion
+	{
+		border-color:			#cfcfcf;
+		background-color:		#f3f3f3;
+		header-height:			22;	
+	}
+	
+	
+	AccordionHeader
+	{
+		color:					#333333;
+		text-roll-over-color:	#333333;
+		text-selected-color:	#000000;
+		up-skin:				Embed("/assets/general/acc.png", scaleGridTop="3", scaleGridBottom="19", scaleGridLeft="17", scaleGridRight="19");
+		over-skin:				Embed("/assets/general/acc1.png", scaleGridTop="3", scaleGridBottom="19", scaleGridLeft="17", scaleGridRight="19");	
+		down-skin:				Embed("/assets/general/acc2.png", scaleGridTop="3", scaleGridBottom="19", scaleGridLeft="17", scaleGridRight="19");
+		selected-up-skin:		Embed("/assets/general/acc3.png", scaleGridTop="3", scaleGridBottom="19", scaleGridLeft="17", scaleGridRight="19");
+		selected-over-skin:		Embed("/assets/general/acc3.png", scaleGridTop="3", scaleGridBottom="19", scaleGridLeft="17", scaleGridRight="19");
+		selected-down-skin:		Embed("/assets/general/acc3.png", scaleGridTop="3", scaleGridBottom="19", scaleGridLeft="17", scaleGridRight="19");
+	
+		padding-left:			15;
+		padding-top:			1;
+		
+		font-weight:			bold;
+		font-size:				11;
+	}
+	
+	HSlider
+	{
+		thumb-skin: 			Embed("/assets/general/bullet.png");
+		thumb-down-skin: 		Embed(source="/assets/general/bullet1.png");
+		thumb-disabled-skin:	Embed(source="/assets/general/bullet_dis.png");
+		track-skin: 			Embed(source="/assets/general/barra.png", scaleGridTop="2", scaleGridBottom="3", scaleGridLeft="4", scaleGridRight="50");
+		data-tip-offset:		0;
+	}
+	
+	Alert
+	{
+		background-color:		#000000;
+		color:					#cccccc;
+		title-style-name:		#000000;
+		button-height:			18;
+		border-style:			solid;
+		title-style-name:		"titulo";
+		button-height:			18;
+	}
+	
+	.titulo
+	{
+		font-weight:			bold;
+		color:					#cccccc;
+		font-size:				13;
+	}
+	
+	RadioButton
+	{
+		up-icon: 				Embed("/assets/buttonsMenu/radio.png");
+		over-icon: 				Embed("/assets/buttonsMenu/radio1.png");
+		down-icon: 				Embed("/assets/buttonsMenu/radio2.png");
+		selected-up-icon: 		Embed("/assets/buttonsMenu/radio3.png");
+		selected-over-icon:	 	Embed("/assets/buttonsMenu/radio3.png");
+		selected-down-icon: 	Embed("/assets/buttonsMenu/radio4.png");
+		disabled-icon: 			Embed("/assets/buttonsMenu/radio_dis.png");
+		color:					#333333;
+		text-roll-over-color: 	#666666;
+		text-selected-color:	#666666;
+	}
+	
+/**************************** Special ******************************/
+
+	.alertPopUp
+	{
+		background-image:			Embed("/assets/general/popUp.png", scaleGridTop="29", scaleGridBottom="113", scaleGridLeft="48", scaleGridRight="231");
+		background-size:			"100%";	
+	}
+	
+	.alertPopUpNew
+	{
+		background-image:			Embed("/assets/general/popUp1.png", scaleGridTop="29", scaleGridBottom="113", scaleGridLeft="48", scaleGridRight="231");
+		background-size:			"100%";	
+	}
+
+	.bajo
+	{
+		background-image:			Embed("/assets/general/bajo.png", scaleGridTop="3", scaleGridBottom="19", scaleGridLeft="8", scaleGridRight="22");
+		background-size:			"100%";	
+	}
+	
+	.bajoGris
+	{
+		background-image:			Embed("/assets/general/bajoGris.png", scaleGridTop="3", scaleGridBottom="19", scaleGridLeft="8", scaleGridRight="22");
+		background-size:			"100%";	
+	}
+	
+	/*ToogleButtonBar*/
+	.menuToggleButtonBar
+	{
+		horizontal-gap: 0;
+		selectedButtonTextStyleName:	"buttonInfoEpresaStyleSelected";
+		header-height:					64;
+		color:							#333333;
+	}
+	
+	.buttonDashboard
+	{
+		up-skin:        		Embed("/assets/buttonsMenu/inicio.png", scaleGridTop="3", scaleGridBottom="50", scaleGridLeft="3", scaleGridRight="36");
+		over-skin:      		Embed("/assets/buttonsMenu/inicio1.png", scaleGridTop="3", scaleGridBottom="50", scaleGridLeft="3", scaleGridRight="36");
+		down-skin:      		Embed("/assets/buttonsMenu/inicio2.png", scaleGridTop="3", scaleGridBottom="50", scaleGridLeft="3", scaleGridRight="36");
+		selected-up-skin:   	Embed("/assets/buttonsMenu/inicio3.png", scaleGridTop="3", scaleGridBottom="50", scaleGridLeft="3", scaleGridRight="36");
+		selected-over-skin: 	Embed("/assets/buttonsMenu/inicio3.png", scaleGridTop="3", scaleGridBottom="50", scaleGridLeft="3", scaleGridRight="36");
+		selected-down-skin: 	Embed("/assets/buttonsMenu/inicio3.png", scaleGridTop="3", scaleGridBottom="50", scaleGridLeft="3", scaleGridRight="36");
+		color:					#333333;
+		text-roll-over-color: 	#333333;
+		text-selected-color:	#000000;
+		font-weight: 			bold;
+		font-size:				10;
+		padding-top:			33;
+		padding-bottom:			0;
+		padding-left: 			0;
+		padding-right:			19;
+	}
+	
+	.buttonInfrastructure
+	{
+		up-skin:        		Embed("/assets/buttonsMenu/infraestructura.png");
+		over-skin:      		Embed("/assets/buttonsMenu/infraestructura1.png");
+		down-skin:      		Embed("/assets/buttonsMenu/infraestructura2.png");
+		selected-up-skin:   	Embed("/assets/buttonsMenu/infraestructura3.png");
+		selected-over-skin: 	Embed("/assets/buttonsMenu/infraestructura3.png");
+		selected-down-skin: 	Embed("/assets/buttonsMenu/infraestructura3.png");
+		color:					#333333;
+		text-roll-over-color: 	#333333;
+		text-selected-color:	#000000;
+		font-weight: 			bold;
+		font-size:				10;
+		padding-top:			33;
+		padding-bottom:			0;
+		padding-left: 			0;
+		padding-right:			0;
+	}
+	
+	.buttonVirtualApp
+	{
+		up-skin:        		Embed("/assets/buttonsMenu/appVirtuales.png");
+		over-skin:      		Embed("/assets/buttonsMenu/appVirtuales1.png");
+		down-skin:      		Embed("/assets/buttonsMenu/appVirtuales2.png");
+		selected-up-skin:   	Embed("/assets/buttonsMenu/appVirtuales3.png");
+		selected-over-skin: 	Embed("/assets/buttonsMenu/appVirtuales3.png");
+		selected-down-skin: 	Embed("/assets/buttonsMenu/appVirtuales3.png");
+		color:					#333333;
+		text-roll-over-color: 	#333333;
+		text-selected-color:	#000000;
+		font-weight: 			bold;
+		font-size:				10;
+		padding-top:			33;
+		padding-bottom:			0;
+		padding-left: 			0;
+		padding-right:			0;
+	}
+
+	.buttonVirtualImage
+	{
+		up-skin:        		Embed("/assets/buttonsMenu/imagenes.png");
+		over-skin:      		Embed("/assets/buttonsMenu/imagenes1.png");
+		down-skin:      		Embed("/assets/buttonsMenu/imagenes2.png");
+		selected-up-skin:   	Embed("/assets/buttonsMenu/imagenes3.png");
+		selected-over-skin: 	Embed("/assets/buttonsMenu/imagenes3.png");
+		selected-down-skin: 	Embed("/assets/buttonsMenu/imagenes3.png");
+		color:					#333333;
+		text-roll-over-color: 	#333333;
+		text-selected-color:	#000000;
+		font-weight: 			bold;
+		font-size:				10;
+		padding-top:			33;
+		padding-bottom:			0;
+		padding-left: 			0;
+		padding-right:			4;
+	}	
+	
+	.buttonUsers
+	{
+		up-skin:        		Embed("/assets/buttonsMenu/user.png");
+		over-skin:      		Embed("/assets/buttonsMenu/user_over.png");
+		down-skin:      		Embed("/assets/buttonsMenu/user_down.png");
+		selected-up-skin:   	Embed("/assets/buttonsMenu/user_selected.png");
+		selected-over-skin: 	Embed("/assets/buttonsMenu/user_selected.png");
+		selected-down-skin: 	Embed("/assets/buttonsMenu/user_selected.png");
+		color:					#333333;
+		text-roll-over-color: 	#333333;
+		text-selected-color:	#000000;
+		font-weight: 			bold;
+		font-size:				10;
+		padding-top:			33;
+		padding-bottom:			0;
+		padding-left: 			0;
+		padding-right:			4;
+		
+		
+	}
+	
+	.buttonInfoEpresaStyleSelected
+	/*4 color seleccionado*/
+	{
+		color: 					#333333;
+	}
+
+
+	/*Logout*/
+	.buttonMenulogout
+	{	
+		up-skin:				Embed("/assets/buttonsMenu/logout.png", scaleGridTop="2", scaleGridBottom="50", scaleGridLeft="2", scaleGridRight="33");
+		over-skin: 				Embed("/assets/buttonsMenu/logout1.png", scaleGridTop="2", scaleGridBottom="50", scaleGridLeft="2", scaleGridRight="33");
+		down-skin: 				Embed("/assets/buttonsMenu/logout2.png", scaleGridTop="2", scaleGridBottom="50", scaleGridLeft="2", scaleGridRight="33");
+		padding-left:			0;
+		padding-right:			0;
+		padding-top:			30;
+		font-weight:			bold;
+		font-size:				10;
+		color:					#333333;
+		roll-over-color:		#333333;
+		text-roll-over-color:	#333333;
+		text-selected-color:	#000000;
+	}
+	
+	
+	Button
+	{
+		up-skin:				Embed("/assets/general/buttongeneral.png", scaleGridTop="5", scaleGridBottom="13", scaleGridLeft="5", scaleGridRight="12");
+		over-skin:				Embed("/assets/general/buttongeneral_up.png", scaleGridTop="5", scaleGridBottom="13", scaleGridLeft="5", scaleGridRight="12");
+		down-skin:				Embed("/assets/general/buttongeneral_down.png", scaleGridTop="5", scaleGridBottom="13", scaleGridLeft="5", scaleGridRight="12");
+		disabled-skin:			Embed("/assets/general/buttongeneral_dis.png", scaleGridTop="5", scaleGridBottom="13", scaleGridLeft="5", scaleGridRight="12");
+		font-weight:			normal;
+		font-size:				11;
+		color:					#ffffff;
+		roll-over-color:		#ffffff;
+		text-roll-over-color:	#ffffff;
+		text-selected-color:	#e5e5e5;
+		padding-left:			5;
+		padding-right:			5;
+		padding-top:			3;
+	}
+	
+	ComboBox
+	{
+		up-skin:				Embed("/assets/general/combo.png", scaleGridTop="6", scaleGridBottom="13", scaleGridLeft="6", scaleGridRight="13");
+		over-skin: 				Embed("/assets/general/combo.png", scaleGridTop="6", scaleGridBottom="13", scaleGridLeft="6", scaleGridRight="13");
+		down-skin: 				Embed("/assets/general/combo1.png", scaleGridTop="6", scaleGridBottom="13", scaleGridLeft="6", scaleGridRight="13");
+		border-alpha:			0;
+		background-alpha:		0;
+	}
+	
+	.buttonGris
+	{
+		up-skin:				Embed("/assets/general/buttongeneral_gris.png", scaleGridTop="5", scaleGridBottom="13", scaleGridLeft="5", scaleGridRight="12");
+		over-skin:				Embed("/assets/general/buttongeneral_gris1.png", scaleGridTop="5", scaleGridBottom="13", scaleGridLeft="5", scaleGridRight="12");
+		down-skin:				Embed("/assets/general/buttongeneral_gris2.png", scaleGridTop="5", scaleGridBottom="13", scaleGridLeft="5", scaleGridRight="12");
+		disabled-skin:			Embed("/assets/general/buttongeneral_dis.png", scaleGridTop="5", scaleGridBottom="13", scaleGridLeft="5", scaleGridRight="12");
+		font-weight:			normal;
+		font-size:				11;
+		color:					#333333;
+		roll-over-color:		#333333;
+		text-roll-over-color:	#333333;
+		text-selected-color:	#000000;
+		padding-left:			5;
+		padding-right:			5;
+		padding-top:			3;
+		
+	}	
+	
+	.buttonLeftRight
+	{
+		up-skin:				Embed("/assets/buttonsMenu/leftArrow.png");
+		over-skin:				Embed("/assets/buttonsMenu/leftArrow_over.png");
+		down-skin:				Embed("/assets/buttonsMenu/leftArrow_down.png");
+		selected-up-skin:		Embed("/assets/buttonsMenu/rightArrow.png");
+		selected-over-skin:		Embed("/assets/buttonsMenu/rightArrow_over.png");
+		selected-down-skin:		Embed("/assets/buttonsMenu/rightArrow_down.png");
+		
+	}
+	
+	.buttonUpDown
+	{
+		up-skin:				Embed("/assets/buttonsMenu/downArrow.png");
+		over-skin:				Embed("/assets/buttonsMenu/downArrow_over.png");
+		down-skin:				Embed("/assets/buttonsMenu/downArrow_down.png");
+		selected-up-skin:		Embed("/assets/buttonsMenu/upArrow.png");
+		selected-over-skin:		Embed("/assets/buttonsMenu/upArrow_over.png");
+		selected-down-skin:		Embed("/assets/buttonsMenu/upArrow_down.png");
+		
+	}
+	
+	.deleteButton
+	{
+		up-skin:				Embed("/assets/general/delete.png");
+		over-skin:				Embed("/assets/general/delete_over.png");
+		down-skin:				Embed("/assets/general/delete_down.png");
+	}
+	
+	.fullScreenButton
+	{
+		up-skin:				Embed("/assets/buttonsMenu/fullScreen.png");
+		over-skin:				Embed("/assets/buttonsMenu/fullScreen_over.png");
+		down-skin:				Embed("/assets/buttonsMenu/fullScreen_down.png");
+		selected-up-skin:		Embed("/assets/buttonsMenu/fullScreenBack.png");
+		selected-over-skin:		Embed("/assets/buttonsMenu/fullScreenBack_over.png");
+		selected-down-skin:		Embed("/assets/buttonsMenu/fullScreenBack_down.png");
+	}
+	
+	.refreshLogButton
+	{
+		up-skin:				Embed("/assets/buttonsMenu/updateLog.png");
+		over-skin:				Embed("/assets/buttonsMenu/updateLog_over.png");
+		down-skin:				Embed("/assets/buttonsMenu/updateLog_down.png");
+	}
+	
+	.closeAlertPopUp
+	{
+		up-skin:				Embed("/assets/buttonsMenu/close.png");
+		over-skin:				Embed("/assets/buttonsMenu/close1.png");
+		down-skin:				Embed("/assets/buttonsMenu/close2.png");
+	}
+	
+	
+	.loginButton
+	{
+		up-skin:				Embed("/assets/general/buttongeneral.png", scaleGridTop="5", scaleGridBottom="13", scaleGridLeft="5", scaleGridRight="12");
+		over-skin:				Embed("/assets/general/buttongeneral_up.png", scaleGridTop="5", scaleGridBottom="13", scaleGridLeft="5", scaleGridRight="12");
+		down-skin:				Embed("/assets/general/buttongeneral_down.png", scaleGridTop="5", scaleGridBottom="13", scaleGridLeft="5", scaleGridRight="12");
+		font-weight:			normal;
+		font-size:				11;
+		color:					#ffffff;
+		roll-over-color:		#ffffff;
+		text-roll-over-color:	#ffffff;
+		text-selected-color:	#e5e5e5;
+		padding-left:			5;
+		padding-right:			5;
+		padding-top:			3;
+	}
+
+	
+	.cabeceraPanel
+	{
+		background-image:		Embed("/assets/general/cab_panel.png", scaleGridTop="9", scaleGridBottom="13", scaleGridLeft="9", scaleGridRight="12");
+		background-size:		"100%";
+		padding-top:			1;
+		font-weight:			bold;
+	}
+	
+	.cabeceraPanelGris
+	{
+		background-image:		Embed("/assets/general/cab_panel_gris.png", scaleGridTop="1", scaleGridBottom="8", scaleGridLeft="1", scaleGridRight="8");
+		background-size:		"100%";
+	}
+	
+	List 
+	{
+		roll-over-color:				#cacaca;
+		borderColor: 					#cccccc;
+		selectionColor: 				#cccccc;
+		cornerRadius: 					0;
+		background-image:				Embed("/assets/general/cab_panel_gris.png", scaleGridTop="1", scaleGridBottom="8", scaleGridLeft="1", scaleGridRight="8");
+		background-size:				"100%";
+		padding-bottom:					0;
+		padding-left:					5;
+		padding-right:					0;
+		padding-top:					0;
+	}
+	
+
+	.flechaButton
+	{
+		up-skin:				Embed("/assets/buttonsMenu/flecha.png");
+		over-skin:				Embed("/assets/buttonsMenu/flecha1.png");
+		down-skin:				Embed("/assets/buttonsMenu/flecha2.png");
+	}
+
+	
+	
+	.bNewPlus
+	{
+		up-skin:				Embed("/assets/buttonsMenu/botMenu.png");
+		over-skin:				Embed("/assets/buttonsMenu/botMenu.png");
+		down-skin:				Embed("/assets/buttonsMenu/botMenu1.png");
+		pop-up-over-skin:		Embed("/assets/buttonsMenu/botMenu11.png");
+		pop-up-down-skin:		Embed("/assets/buttonsMenu/botMenu22.png");
+		disabled-skin:			Embed("/assets/buttonsMenu/botMenu_dis.png");
+		disabled-color:			#999999;
+		drop-down-style-name:   "PopUpMenuButtonDropDownStyle";
+		color: 					#333333;
+	}
+	
+	.bAgregar
+	{
+		up-skin:				Embed("/assets/buttonsMenu/agregar.png");
+		over-skin:				Embed("/assets/buttonsMenu/agregar.png");
+		down-skin:				Embed("/assets/buttonsMenu/agregar1.png");
+		disabled-skin:			Embed("/assets/buttonsMenu/agregar_dis.png");
+	}
+	
+	.bNoAgregar
+	{
+		up-skin:				Embed("/assets/buttonsMenu/desagregar.png");
+		over-skin:				Embed("/assets/buttonsMenu/desagregar.png");
+		down-skin:				Embed("/assets/buttonsMenu/desagregar1.png");
+		disabled-skin:			Embed("/assets/buttonsMenu/desagregar_dis.png");
+	}
+	
+	.bConfig
+	{
+		up-skin:				Embed("/assets/buttonsMenu/config.png");
+		over-skin:				Embed("/assets/buttonsMenu/config.png");
+		down-skin:				Embed("/assets/buttonsMenu/config1.png");
+		disabled-skin:			Embed("/assets/buttonsMenu/config_dis.png");
+	}
+	
+	.bBackApp
+	{
+		up-skin:				Embed("/assets/buttonsMenu/backApp.png");
+		over-skin:				Embed("/assets/buttonsMenu/backApp.png");
+		down-skin:				Embed("/assets/buttonsMenu/backApp1.png");
+	}
+	
+	.bMoreActions
+	{
+		up-skin:				Embed("/assets/general/popUpButton.png", scaleGridTop="5", scaleGridBottom="7", scaleGridLeft="5", scaleGridRight="25");
+		over-skin:				Embed("/assets/general/popUpButton.png", scaleGridTop="5", scaleGridBottom="7", scaleGridLeft="5", scaleGridRight="25");
+		down-skin:				Embed("/assets/general/popUpButton1.png", scaleGridTop="5", scaleGridBottom="7", scaleGridLeft="5", scaleGridRight="25");
+		pop-up-over-skin:		Embed("/assets/general/popUpButton11.png", scaleGridTop="5", scaleGridBottom="7", scaleGridLeft="5", scaleGridRight="25");
+		pop-up-down-skin:		Embed("/assets/general/popUpButton22.png", scaleGridTop="5", scaleGridBottom="7", scaleGridLeft="5", scaleGridRight="25");
+		disabled-skin:			Embed("/assets/general/popUpButton_dis.png", scaleGridTop="5", scaleGridBottom="7", scaleGridLeft="5", scaleGridRight="25");
+		
+		font-weight:			normal;
+		font-size:				11;
+		color:					#333333;
+		roll-over-color:		#333333;
+		text-roll-over-color:	#333333;
+		text-selected-color:	#000000;
+		padding-left:			5;
+		padding-right:			5;
+		padding-top:			3;	
+		
+	}
+	.titleName
+	{
+		border-skin:		Embed("/assets/general/title.png", scaleGridTop="8", scaleGridBottom="9", scaleGridLeft="8", scaleGridRight="12");
+		color:				#333333;
+		border-thickness:	0;
+		padding-left:		5;
+		padding-right:		5;
+	}
+
+
+/** ************** FONTS STYLES ************** **/
+
+	.gris
+	{
+		font-size:				11;
+		color:					#cccccc;
+	}
+
+	.titleAlert
+	{
+		font-size:				12;
+		font-weight:			bold;
+		color:					#333333;
+	}
+
+	.subTitleAlert
+	{
+		font-size:				14;
+		font-weight:			bold;
+		color:					#fe8f0a;
+	}
+
+
+	.titlePanel
+	{
+		font-size:				9;
+		color:					#333333;
+	}
+
+
+/** ************** CUSTOM COMPONENTS ************** **/
+
+	/* Common */
+	.AbiCloudAlertStyle
+	{
+		background-color:#FFFFFF;
+		background-alpha:0.9;
+	}
+
+
+	.AbiCloudPopUpStyle
+	{
+		background-color:#FFFFFF;
+		background-alpha:0.9;
+	}
+
+	
+	
+	/* Login */
+	.loginBackground 
+	{
+		background-image:	Embed("/assets/general/background_login.jpg");
+		background-size: 	"100%";
+	}
+	
+	.mainWindow
+	{
+		background-image:		Embed("/assets/general/main_window.png", scaleGridTop="62", scaleGridBottom="80", scaleGridLeft="17", scaleGridRight="80");
+		background-size:		"100%";
+		background-color:		none;
+	}
+	
+	
+	
+	.loginStyle
+	{
+		background-image:		Embed("/assets/general/login_window.png", scaleGridTop="62", scaleGridBottom="80", scaleGridLeft="17", scaleGridRight="80");
+		background-size:		"100%";
+		padding-bottom:			16;
+		padding-left:			20;
+		padding-right:			20;
+		padding-top:			13;
+	}
+	
+	.loginStyleIntern
+	{
+		background-image:		Embed("/assets/general/background_login1.jpg", scaleGridTop="7", scaleGridBottom="9", scaleGridLeft="6", scaleGridRight="8");
+		background-size:		"100%";
+		padding-bottom:			18;
+		padding-left:			15;
+		padding-right:			15;
+		padding-top:			12;
+	}
+	
+	
+	
+	/* Main & Dashboard*/
+	
+	.mainBackground 
+	{
+		border-skin:		ClassReference("net.undf.abicloud.view.main.components.RepeatedBackground");
+	}
+
+	/* Infrastructure */
+	.GoogleMapMark
+	{
+		background-image:	Embed("/assets/general/pua.png", scaleGridTop="17", scaleGridBottom="20", scaleGridLeft="17", scaleGridRight="21");
+		background-size:	"100%";
+	}
+	
+	.PhysicalMachineRenderer
+	{
+		background-color:#F4F4F4;
+		background-alpha:0.9;
+		borderThickness: 1;
+	   	borderColor: #cccccc;
+	   	border-style:solid;
+	}
+	
+		.PhysicalMachineRendererTabBar
+		{
+			selected-tab-text-style-name:	"PMTabSelected";
+			
+			first-tab-style-name:	"PMTabBarFirstTab";
+			tab-style-name:			"PMTabBarTab";
+			last-tab-style-name:	"PMTabBarLastTab";	
+			
+		}
+			.PMTabSelected
+			{
+				color: 					#000000;
+				text-roll-over-color:	#000000;
+			}
+			
+			.PMTabBarFirstTab
+			{
+				color:	#333333;
+				text-roll-over-color:	#333333;
+				
+				skin:				Embed("/assets/infrastructure/FirstTab.png", scaleGridTop="4", scaleGridBottom="14", scaleGridLeft="7", scaleGridRight="47");
+				over-skin: 			Embed("/assets/infrastructure/FirstTab_over.png", scaleGridTop="4", scaleGridBottom="14", scaleGridLeft="7", scaleGridRight="47");
+				down-skin: 			Embed("/assets/infrastructure/FirstTab_selected.png", scaleGridTop="4", scaleGridBottom="14", scaleGridLeft="7", scaleGridRight="47");
+				selected-up-skin:	Embed("/assets/infrastructure/FirstTab_selected.png", scaleGridTop="4", scaleGridBottom="14", scaleGridLeft="7", scaleGridRight="47");
+				selected-over-skin: Embed("/assets/infrastructure/FirstTab_selected.png", scaleGridTop="4", scaleGridBottom="14", scaleGridLeft="7", scaleGridRight="47");
+				selected-down-skin:	Embed("/assets/infrastructure/FirstTab_selected.png", scaleGridTop="4", scaleGridBottom="14", scaleGridLeft="7", scaleGridRight="47");
+			}
+
+			.PMTabBarTab
+			{
+				color:	#333333;
+				text-roll-over-color:	#333333;
+				
+				skin:				Embed("/assets/infrastructure/Tab.png", scaleGridTop="4", scaleGridBottom="14", scaleGridLeft="4", scaleGridRight="50");
+				over-skin: 			Embed("/assets/infrastructure/Tab_over.png", scaleGridTop="4", scaleGridBottom="14", scaleGridLeft="4", scaleGridRight="50");
+				down-skin: 			Embed("/assets/infrastructure/Tab_selected.png", scaleGridTop="4", scaleGridBottom="14", scaleGridLeft="4", scaleGridRight="50");
+				selected-up-skin:	Embed("/assets/infrastructure/Tab_selected.png", scaleGridTop="4", scaleGridBottom="14", scaleGridLeft="4", scaleGridRight="50");
+				selected-over-skin: Embed("/assets/infrastructure/Tab_selected.png", scaleGridTop="4", scaleGridBottom="14", scaleGridLeft="4", scaleGridRight="50");
+				selected-down-skin:	Embed("/assets/infrastructure/Tab_selected.png", scaleGridTop="4", scaleGridBottom="14", scaleGridLeft="4", scaleGridRight="50");
+			}
+			
+			.PMTabBarLastTab
+			{
+				color:	#333333;
+				text-roll-over-color:	#333333;
+				
+				skin:				Embed("/assets/infrastructure/LastTab.png", scaleGridTop="4", scaleGridBottom="13", scaleGridLeft="7", scaleGridRight="47");
+				over-skin: 			Embed("/assets/infrastructure/LastTab_over.png", scaleGridTop="4", scaleGridBottom="13", scaleGridLeft="7", scaleGridRight="47");
+				down-skin: 			Embed("/assets/infrastructure/LastTab_selected.png", scaleGridTop="4", scaleGridBottom="13", scaleGridLeft="7", scaleGridRight="47");
+				selected-up-skin:	Embed("/assets/infrastructure/LastTab_selected.png", scaleGridTop="4", scaleGridBottom="13", scaleGridLeft="7", scaleGridRight="47");
+				selected-over-skin: Embed("/assets/infrastructure/LastTab_selected.png", scaleGridTop="4", scaleGridBottom="13", scaleGridLeft="7", scaleGridRight="47");
+				selected-down-skin:	Embed("/assets/infrastructure/LastTab_selected.png", scaleGridTop="4", scaleGridBottom="13", scaleGridLeft="7", scaleGridRight="47");
+			}
+			
+	
+	.VirtualMachineRenderer
+	{
+		background-color:#F4F4F4;
+		background-alpha:0.9;
+		borderThickness: 1;
+	   	borderColor: #cccccc;
+	   	border-style:solid;
+	}
+	
+	.ViewOptionsToggleButtonBar
+	{
+		firstButtonStyleName: 			"bVistaUno";
+		last-button-style-name: 		"bVistaDos";
+		
+		selectedButtonTextStyleName:	"buttonInfoEpresaStyleSelected";
+		header-height:					64;
+		color:							#333333;
+		
+	}
+	
+	
+		.bVistaUno
+		{
+			up-skin:				Embed("/assets/buttonsMenu/buttonvista1.png");
+			over-skin:				Embed("/assets/buttonsMenu/buttonvista1.png");
+			down-skin:				Embed("/assets/buttonsMenu/buttonvista.png");
+			selected-up-skin:   	Embed("/assets/buttonsMenu/buttonvista.png");
+			selected-over-skin: 	Embed("/assets/buttonsMenu/buttonvista.png");
+			selected-down-skin: 	Embed("/assets/buttonsMenu/buttonvista.png");
+		}
+		
+		.bVistaDos
+		{
+			up-skin:				Embed("/assets/buttonsMenu/buttonvistamode1.png");
+			over-skin:				Embed("/assets/buttonsMenu/buttonvistamode1.png");
+			down-skin:				Embed("/assets/buttonsMenu/buttonvistamode.png");
+			selected-up-skin:   	Embed("/assets/buttonsMenu/buttonvistamode.png");
+			selected-over-skin: 	Embed("/assets/buttonsMenu/buttonvistamode.png");
+			selected-down-skin: 	Embed("/assets/buttonsMenu/buttonvistamode.png");
+		}
+	
+	
+	.fSemaforo
+	{
+		background-image:		Embed("/assets/buttonsMenu/fondo_semaf.png", scaleGridTop="1", scaleGridBottom="2", scaleGridLeft="1", scaleGridRight="26");
+		background-size:		"100%";
+	}
+	
+	.PhysicalMachineList
+	{
+		borderColor: 		   #cccccc;
+		border-style:          solid;
+		background-color:	   #E9E9E9;
+		
+	}
+	
+	.PMListOpenButton
+	{
+		up-skin:				Embed("/assets/infrastructure/openButton.png");
+		over-skin:				Embed("/assets/infrastructure/openButton.png");
+		down-skin:				Embed("/assets/infrastructure/openButton_mouseDown.png");
+		selected-up-skin:   	Embed("/assets/infrastructure/openButton_selected.png");
+		selected-over-skin: 	Embed("/assets/infrastructure/openButton_selected.png");
+		selected-down-skin: 	Embed("/assets/infrastructure/openButton_selected_mouseDown.png");
+	}
+	
+	.mPower
+	{
+		up-skin:				Embed("/assets/infrastructure/machine_power.png");
+		over-skin:				Embed("/assets/infrastructure/machine_power_over.png");
+		down-skin:				Embed("/assets/infrastructure/machine_power1.png");
+		selected-over-skin:     Embed("/assets/infrastructure/machine_power1_over.png");
+		selected-down-skin:		Embed("/assets/infrastructure/machine_power1.png");
+		selected-up-skin:		Embed("/assets/infrastructure/machine_power1.png");
+	}
+	
+	.mPause
+	{
+		up-skin:				Embed("/assets/infrastructure/machine_pause.png");
+		over-skin:				Embed("/assets/infrastructure/machine_pause_over.png");
+		down-skin:				Embed("/assets/infrastructure/machine_pause1.png");
+		disabled-skin:			Embed("/assets/infrastructure/machine_pause_dis.png");
+		
+		selected-over-skin:     Embed("/assets/infrastructure/machine_pause1_over.png");
+		selected-down-skin:		Embed("/assets/infrastructure/machine_pause1.png");
+		selected-up-skin:		Embed("/assets/infrastructure/machine_pause1.png");
+	}
+	
+	.mReset
+	{
+		up-skin:				Embed("/assets/infrastructure/machine_reset.png");
+		over-skin:				Embed("/assets/infrastructure/machine_reset_over.png");
+		down-skin:				Embed("/assets/infrastructure/machine_reset1.png");
+		disabled-skin:			Embed("/assets/infrastructure/machine_reset_dis.png");
+	}
+	
+	.PowerOnOffButtonSmall
+	{
+		up-skin:				Embed("/assets/infrastructure/powerButtonSmall.png");
+		over-skin:				Embed("/assets/infrastructure/powerButtonSmall_over.png");
+		down-skin:				Embed("/assets/infrastructure/powerButtonSmall_mouseDown.png");
+		
+		selected-up-skin:		Embed("/assets/infrastructure/powerButtonSmall_selected.png");
+		selected-down-skin:		Embed("/assets/infrastructure/powerButtonSmall_selected.png");
+		selected-over-skin:		Embed("/assets/infrastructure/powerButtonSmall_selected_over.png");
+	}
+	
+	.PauseButtonSmall
+	{
+		up-skin:				Embed("/assets/infrastructure/pauseButtonSmall.png");
+		over-skin:				Embed("/assets/infrastructure/pauseButtonSmall_over.png");
+		down-skin:				Embed("/assets/infrastructure/pauseButtonSmall_mouseDown.png");
+		
+		selected-up-skin:		Embed("/assets/infrastructure/pauseButtonSmall_selected.png");
+		selected-down-skin:		Embed("/assets/infrastructure/pauseButtonSmall_selected.png");
+		selected-over-skin:		Embed("/assets/infrastructure/pauseButtonSmall_selected_over.png");
+		
+		disabled-skin:			Embed("/assets/infrastructure/pauseButtonSmall_disabled.png");
+	}
+	
+	.RebootButtonSmall
+	{
+		up-skin:				Embed("/assets/infrastructure/refreshButtonSmall.png");
+		over-skin:				Embed("/assets/infrastructure/refreshButtonSmall_over.png");
+		down-skin:				Embed("/assets/infrastructure/refreshButtonSmall_mouseDown.png");
+		
+		disabled-skin:			Embed("/assets/infrastructure/refreshButtonSmall_disabled.png");
+	}
+	
+	.AccessVRDPButtonSmall
+	{
+		up-skin:				Embed("/assets/infrastructure/accessVRDPButtonSmall.png");
+		over-skin:				Embed("/assets/infrastructure/accessVRDPButtonSmall_over.png");
+		down-skin:				Embed("/assets/infrastructure/accessVRDPButtonSmall_mouseDown.png");
+		disabled-skin:			Embed("/assets/infrastructure/accessVRDPButtonSmall_disabled.png");	
+	}
+	
+	/* Virtual Image */
+	.VirtualImageMiniature
+	{
+		background-color:	#FFFFFF;
+	}
+	
+		.VirtualImageButtonEdit
+		{
+			up-skin:				Embed("/assets/virtualimage/buttonEdit.png", scaleGridTop="4", scaleGridBottom="6", scaleGridLeft="4", scaleGridRight="10");
+			over-skin:				Embed("/assets/virtualimage/buttonEdit_over.png", scaleGridTop="4", scaleGridBottom="6", scaleGridLeft="4", scaleGridRight="10");
+			down-skin:				Embed("/assets/virtualimage/buttonEdit_down.png", scaleGridTop="4", scaleGridBottom="6", scaleGridLeft="4", scaleGridRight="10");
+			
+			color:					#333333;
+			text-roll-over-color: 	#111111;
+			font-weight:			bold;
+			font-size:				11;
+			
+			padding-bottom:			0;
+			padding-left:			0;
+			padding-right:			0;
+			padding-top:			0;
+			border-thickness:		0;
+		}
+		.VirtualImageButtonErase
+		{
+			up-skin:			Embed("/assets/virtualimage/buttonErase.png", scaleGridTop="13", scaleGridBottom="14", scaleGridLeft="4", scaleGridRight="10");
+			over-skin:			Embed("/assets/virtualimage/buttonErase_over.png", scaleGridTop="13", scaleGridBottom="14", scaleGridLeft="4", scaleGridRight="10");
+			down-skin:			Embed("/assets/virtualimage/buttonErase_down.png", scaleGridTop="13", scaleGridBottom="14", scaleGridLeft="4", scaleGridRight="10");
+		}
+	/* Footer */
+	
+	.footerSkin
+	{
+				background-image:		Embed("/assets/general/footer.png", scaleGridTop="8", scaleGridBottom="15", scaleGridLeft="8", scaleGridRight="19");
+				background-size:		"100%";
+	}
+	
+	
+	/* Virtual Appliance */
+	
+	.VirtualApplianceMiniature
+	{
+		
+		
+	}
+	
+	.NodeRenderer
+	{
+		background-color:	#FFFFFF;
+		background-alpha:	0;
+	}
+	
+	.eraseNodeButton
+	{
+		up-skin:				Embed("/assets/buttonsMenu/buttonErase.png");
+		over-skin: 				Embed("/assets/buttonsMenu/buttonErase1.png");
+		down-skin: 				Embed("/assets/buttonsMenu/buttonErase2.png");
+	}
+	
+	.NodeTypeViewEven
+	{
+		background-color: #FFFFFF;
+	}
+	
+	.NodeTypeViewOdd
+	{
+		background-color: #F4F4F4;
+	}
+	
+	.LogsTextArea
+	{
+		background-image:		Embed("/assets/general/text_area_black.png", scaleGridTop="10", scaleGridBottom="11", scaleGridLeft="11", scaleGridRight="15");
+		background-size:		"100%";
+		border-style:			none;
+		background-color:		none;
+		color:					#15E400;
+		font-weight:			normal;
+		font-size:				11px;
+		focus-thickness:		0;
+		padding-top:			2;
+		padding-left:			5;
+	}
+	
+	.DrawingArea
+	{
+		/*
+		border-skin:"net.undf.abicloud.view.virtualappliance.components.DrawingAreaBackground"; 
+	    background-gradient-alphas:"[]";
+	    background-image:"";
+	 	background-alpha:0; */
+	}
+	
+		/* Draw Tools Buttons */
+		.bSave
+		{
+			up-skin:				Embed("/assets/buttonsMenu/save.png");
+			over-skin:				Embed("/assets/buttonsMenu/save1.png");
+			down-skin:				Embed("/assets/buttonsMenu/save2.png");
+			disabled-skin:			Embed("/assets/buttonsMenu/save_dis.png");
+		}
+		
+		.bNew
+		{
+			up-skin:				Embed("/assets/buttonsMenu/new.png");
+			over-skin:				Embed("/assets/buttonsMenu/new1.png");
+			down-skin:				Embed("/assets/buttonsMenu/new2.png");
+			disabled-skin:			Embed("/assets/buttonsMenu/new_dis.png");
+		}
+		
+		.bOpen
+		{
+			up-skin:				Embed("/assets/buttonsMenu/open.png");
+			over-skin:				Embed("/assets/buttonsMenu/open1.png");
+			down-skin:				Embed("/assets/buttonsMenu/open2.png");
+			disabled-skin:			Embed("/assets/buttonsMenu/open_dis.png");
+		}
+		
+		.bPrint
+		{
+			up-skin:				Embed("/assets/buttonsMenu/print.png");
+			over-skin:				Embed("/assets/buttonsMenu/print1.png");
+			down-skin:				Embed("/assets/buttonsMenu/print2.png");
+			disabled-skin:			Embed("/assets/buttonsMenu/print_dis.png");
+		}
+	
+		.bBack
+		{
+			up-skin:				Embed("/assets/buttonsMenu/back.png");
+			over-skin:				Embed("/assets/buttonsMenu/back1.png");
+			down-skin:				Embed("/assets/buttonsMenu/back2.png");
+			disabled-skin:			Embed("/assets/buttonsMenu/back_dis.png");
+		}
+		
+		.bGo
+		{
+			up-skin:				Embed("/assets/buttonsMenu/go.png");
+			over-skin:				Embed("/assets/buttonsMenu/go1.png");
+			down-skin:				Embed("/assets/buttonsMenu/go2.png");
+			disabled-skin:			Embed("/assets/buttonsMenu/go_dis.png");
+		}
+		
+		.bMas
+		{
+			up-skin:				Embed("/assets/buttonsMenu/mas.png");
+			over-skin:				Embed("/assets/buttonsMenu/mas1.png");
+			down-skin:				Embed("/assets/buttonsMenu/mas2.png");
+			disabled-skin:			Embed("/assets/buttonsMenu/mas_dis.png");
+		}
+	
+		.bMenos
+		{
+			up-skin:				Embed("/assets/buttonsMenu/menos.png");
+			over-skin:				Embed("/assets/buttonsMenu/menos1.png");
+			down-skin:				Embed("/assets/buttonsMenu/menos2.png");
+			disabled-skin:			Embed("/assets/buttonsMenu/menos_dis.png");
+		}
+		
+		.bPointer
+		{
+			up-skin:				Embed("/assets/buttonsMenu/puntero.png");
+			over-skin:				Embed("/assets/buttonsMenu/punteroOver.png");
+			down-skin:				Embed("/assets/buttonsMenu/punteroDown.png");
+			disabled-skin:			Embed("/assets/buttonsMenu/puntero.png");
+			
+			selected-up-skin:		Embed("/assets/buttonsMenu/punteroDown.png");
+			selected-over-skin:		Embed("/assets/buttonsMenu/punteroOver.png");
+			selected-down-skin:		Embed("/assets/buttonsMenu/puntero.png");
+		}
+		
+		.bLine
+		{
+			up-skin:				Embed("/assets/buttonsMenu/linea.png");
+			over-skin:				Embed("/assets/buttonsMenu/lineaOver.png");
+			down-skin:				Embed("/assets/buttonsMenu/lineaDown.png");
+			disabled-skin:			Embed("/assets/buttonsMenu/linea_dis.png");	
+			
+			selected-up-skin:		Embed("/assets/buttonsMenu/lineaDown.png");
+			selected-over-skin:		Embed("/assets/buttonsMenu/lineaOver.png");
+			selected-down-skin:		Embed("/assets/buttonsMenu/linea.png");
+		}
+		
+		.bPower
+		{
+			up-skin:				Embed("/assets/buttonsMenu/power_off.png");
+			over-skin:				Embed("/assets/buttonsMenu/power_off1.png");
+			down-skin:				Embed("/assets/buttonsMenu/power_off.png");
+			disabled-skin:			Embed("/assets/buttonsMenu/power_no.png");
+			selected-over-skin:     Embed("/assets/buttonsMenu/power.png");
+			selected-down-skin:		Embed("/assets/buttonsMenu/power1.png");
+			selected-up-skin:		Embed("/assets/buttonsMenu/power2.png");
+		}
+	
+		.bErrase
+		{
+			up-skin:				Embed("/assets/buttonsMenu/errase.png", scaleGridTop="8", scaleGridBottom="9", scaleGridLeft="8", scaleGridRight="12");
+			over-skin:				Embed("/assets/buttonsMenu/errase1.png", scaleGridTop="8", scaleGridBottom="9", scaleGridLeft="8", scaleGridRight="12");
+			down-skin:				Embed("/assets/buttonsMenu/errase2.png", scaleGridTop="8", scaleGridBottom="9", scaleGridLeft="8", scaleGridRight="12");
+			disabled-skin:			Embed("/assets/buttonsMenu/button_dis.png", scaleGridTop="8", scaleGridBottom="9", scaleGridLeft="8", scaleGridRight="12");
+			font-size:				9;
+			color:					#333333;
+			roll-over-color:		#333333;
+			text-roll-over-color:	#333333;
+			text-selected-color:	#000000;
+			padding-left:			5;
+			padding-right:			5;
+			padding-top:			4;
+		}
+		
+		
+	
+	/* USER */
+	.UserRenderer
+	{
+		background-color:#F4F4F4;
+		background-alpha:0.9;
+		border-style:solid;
+		borderThickness: 1;
+	    borderColor: #cccccc;
+	    padding-left: 20;
+	}

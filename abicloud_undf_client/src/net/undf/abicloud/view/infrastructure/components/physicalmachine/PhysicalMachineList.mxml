@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:VBox xmlns:mx="http://www.adobe.com/2006/mxml" 
+		   width="100%" height="25"
+		   styleName="PhysicalMachineList"
+		   verticalScrollPolicy="off" horizontalScrollPolicy="off">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.core.UIComponent;
+			import mx.core.Application;
+			import mx.managers.DragManager;
+			import mx.core.DragSource;
+			import mx.core.IFlexDisplayObject;
+			import net.undf.abicloud.utils.customtree.CustomTreeNode;
+			import mx.resources.ResourceManager;
+			import mx.resources.ResourceBundle;
+			import mx.collections.ArrayCollection;
+			
+			[ResourceBundle("Infrastructure")]
+			private var rb:ResourceBundle;
+			private var title:String = ResourceManager.getInstance().getString("Infrastructure", "LABEL_PHYSICALMACHINE_UNASSIGNED");
+			
+			[Bindable]
+			private var _physicalMachines:ArrayCollection = new ArrayCollection();
+			/**
+			 * ArrayCollection containing a list of Physical Machines not assigned to any Rack
+			 */
+			public function set physicalMachines(value:ArrayCollection):void
+			{
+				this._physicalMachines = value;
+				mainLabel.text = title + " (" + this._physicalMachines.length + ")";
+			}
+			
+			[Embed("assets/infrastructure/physicalMachine_small.png")]
+			private var pmIcon:Class;
+			private function iconFunction(item:Object):Class
+			{
+				return pmIcon;
+			}
+			
+			private function onClickOpenButton():void
+			{
+				if(openButton.selected)
+					openList();
+				else
+					closeList();
+			}
+			
+			private function openList():void
+			{
+				physicalMachinesList.includeInLayout = true;
+				physicalMachinesList.visible = true;
+				
+				 this.height = 150;
+			}
+			
+			public function closeList():void
+			{
+				openButton.selected = false;
+				
+				physicalMachinesList.includeInLayout = false;
+				physicalMachinesList.visible = false;
+				
+				this.height = 25;
+			}
+			
+			//////////////////////////////////////////
+			// DRAG & DROP FUNCTIONALITY
+			
+			/**
+			 * Register Mouse Move events, to know if user wants to start a drag operaion
+			 */
+			private function onMouseDownPMList():void
+			{
+				if(physicalMachinesList.selectedIndex > -1)
+					physicalMachinesList.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+			}
+			
+			/**
+			 * Initializes a Drag operation
+			 */
+			private function onMouseMove(mouseEvent:MouseEvent):void
+			{
+				//We don't need this handlers until user wants to initate another Drag operation
+				physicalMachinesList.removeEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+				
+				//To be able to interact with a CustomTree in a Drag Drop operation, we have to encapsulate the data
+				//in a CustomTreeNode
+				var customTreeNode:CustomTreeNode = new CustomTreeNode(physicalMachinesList.selectedItem);
+				
+				var dragSource:DragSource = new DragSource();
+				dragSource.addData(customTreeNode, "CustomTreeNode");
+				
+				var dragProxy:IFlexDisplayObject = new pmIcon();
+				
+				DragManager.doDrag(UIComponent(Application.application), dragSource, mouseEvent, dragProxy, -mouseEvent.stageX + 20, -mouseEvent.stageY, 0.9);
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:HBox width="100%" verticalAlign="middle"
+			 paddingLeft="5" paddingTop="3">
+		
+		<mx:Label id="mainLabel"/>
+		
+		<mx:Spacer width="100%"/>
+		
+		<mx:Button id="openButton" styleName="PMListOpenButton" 
+				   toggle="true" click="onClickOpenButton()"
+				   toolTip="@Resource(bundle='Infrastructure', key='TOOLTIP_EXPAND')"/>
+		
+	</mx:HBox>
+	
+	<mx:List id="physicalMachinesList"
+			 width="100%" height="100%" borderStyle="none"
+			 iconFunction="iconFunction"
+			 dataProvider="{this._physicalMachines}" labelField="name"
+			 mouseDown="onMouseDownPMList()"
+			 includeInLayout="false" visible="false"/>
+		
+</mx:VBox>

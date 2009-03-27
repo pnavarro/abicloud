@@ -1,0 +1,575 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		   xmlns:maps="com.google.maps.*" 
+		   width="100%" height="100%"
+		   initialize="onInitialize()"
+		   creationComplete="onCreationComplete()">
+
+
+	<!-- Component for Data Centers management. Allows to add, edit or delete a data center, and select one to access to
+		 its infrastructure
+		 
+		 This component does not prepare itself until de Google Maps is ready
+	-->
+	
+	
+	<mx:Metadata>
+		[Event(name="dataCenterSelected", type="mx.events.ItemClickEvent")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.view.infrastructure.components.datacenter.DataCenterMapMark;
+			import net.undf.abicloud.view.infrastructure.components.datacenter.DataCenterEdit;
+			import net.undf.abicloud.view.infrastructure.components.datacenter.DataCenterAdd;
+			import net.undf.abicloud.view.main.Main;
+			import com.google.maps.Map;
+			import net.undf.abicloud.business.managers.FullScreenManager;
+			import mx.core.Application;
+			import net.undf.abicloud.view.common.AbiCloudAlert;
+			import net.undf.abicloud.vo.infrastructure.DataCenter;
+			import mx.events.CloseEvent;
+			import mx.resources.ResourceManager;
+			import mx.resources.ResourceBundle;
+			import mx.controls.Alert;
+			import mx.events.ItemClickEvent;
+			import mx.binding.utils.BindingUtils;
+			import mx.collections.ArrayCollection;
+			import com.google.maps.overlays.MarkerOptions;
+			import com.google.maps.services.Placemark;
+			import com.google.maps.services.GeocodingResponse;
+			import com.google.maps.services.GeocodingEvent;
+			import com.google.maps.services.ClientGeocoder;
+			import com.google.maps.overlays.Marker;
+			import com.google.maps.controls.PositionControl;
+			import com.google.maps.controls.ZoomControl;
+			import com.google.maps.LatLng;
+			import com.google.maps.MapType;
+			import com.google.maps.MapOptions;
+			import com.google.maps.MapEvent;
+			import net.undf.abicloud.vo.infrastructure.DataCenter;
+			import mx.managers.PopUpManager;
+			import net.undf.abicloud.view.infrastructure.components.datacenter.*;
+			import net.undf.abicloud.model.AbiCloudModel;
+			import net.undf.abicloud.events.InfrastructureEvent;
+
+			
+			//Pop ups
+			private var _dataCenterAdd:DataCenterAdd;
+			private var _dataCenterEdit:DataCenterEdit;
+			
+			//Array with the data centers
+			private var _dataCentersArray:ArrayCollection;
+			
+			private var dataCentersMap:Map;
+			
+			private var _mapLoadControl:Timer;
+			
+			private function onInitialize():void
+			{
+				//Creating Google Maps
+				dataCentersMap = new Map();
+				dataCentersMap.percentWidth = 100;
+				dataCentersMap.percentHeight = 100;
+				dataCentersMap.addEventListener(MapEvent.MAP_PREINITIALIZE, onMapPreinitialize);
+				dataCentersMap.addEventListener(MapEvent.MAP_READY, onMapReady);
+				dataCentersMap.key = AbiCloudModel.getInstance().configurationManager.config.GOOGLE_MAPS_KEY;
+				
+				mapContainer.addChild(dataCentersMap);
+			}
+			
+			/**
+			 * When this component loads for the first time
+			 **/
+			private function onCreationComplete():void
+			{
+				//Creating Pop Ups
+				_dataCenterAdd = new DataCenterAdd();
+				_dataCenterAdd.addEventListener("dataCenterAddClose", closeAddDataCenter);
+				
+				_dataCenterEdit = new DataCenterEdit();
+				_dataCenterEdit.addEventListener("dataCenterEditClose", closeEditDataCenter);
+				
+				//Initializing variables
+				_dataCentersArray = new ArrayCollection();
+				_mapMarkers = new ArrayCollection();
+				
+				//We keep synchronized the DataCenterManagement with the data centers that are in AbiCloud's Model
+				BindingUtils.bindSetter(dataCentersModelUpdated, AbiCloudModel.getInstance().infrastructureManager, "dataCenters");
+				
+				//We give 2 seconds to Google Maps to load. If it is not loaded, we do not use it
+				this._mapLoadControl = new Timer(2000, 1);
+				this._mapLoadControl.addEventListener(TimerEvent.TIMER_COMPLETE, mapLoadFailed);
+				this._mapLoadControl.start();
+			}
+			
+			/**
+			 * Everytime this component is shown (called externaly)
+			 **/
+			public function onShow():void
+			{
+				//Requesting the list of data centers
+				var event:InfrastructureEvent = new InfrastructureEvent(InfrastructureEvent.GET_DATACENTERS);
+				dispatchEvent(event);
+				
+				//Cleaning the component's view
+				if(dataCentersMap.isLoaded() && _dataCentersArray.length > 0)
+				{
+					//Setting the Google Maps to its original position
+					dataCentersMap.panTo(new LatLng(40, -3));
+					
+					//Closing the opened Marker
+					if(this._dataCenterMapMarkClicked != null)
+					{
+						this._dataCenterMapMarkClicked.contractDataCenterMapMark();
+						this._dataCenterMapMarkClicked = null;
+					}
+					
+					//Cleaning the filter
+					filterInput.text = "";
+				}
+			}
+			
+			/**
+			 * To set _dataCentersArray, the  dataCentersList's dataProvider
+			 **/
+			private function dataCentersModelUpdated(dataCentersArray:ArrayCollection):void
+			{
+				//We save a local array with all the data centers that are in AbiCloud Model
+				_dataCentersArray = dataCentersArray;
+				
+				//Updating dataCentersList's data provider
+				dataCenterList.dataProvider = _dataCentersArray;
+			}
+		
+			
+			/**
+			 * When user clicks to add a new data center
+			 **/
+			private function addDataCenter():void
+			{
+				//Making pop up with the form to create a new data center
+				PopUpManager.addPopUp(_dataCenterAdd, this, true);
+				PopUpManager.centerPopUp(_dataCenterAdd);
+				_dataCenterAdd.init();
+			}
+			
+			/**
+			 * When user clicks to delete a data center, we ask him / her for confirmation
+			 **/
+			[ResourceBundle("Common")]
+			private var rb:ResourceBundle;
+			[ResourceBundle("Infrastructure")]
+			private var rb2:ResourceBundle;
+			private function askDataCenterDeletion():void
+			{	
+				AbiCloudAlert.showAlert(ResourceManager.getInstance().getString("Common", "ALERT_TITLE_LABEL"),
+								 ResourceManager.getInstance().getString("Infrastructure", "ALERT_DELETE_DATACENTER_HEADER"),
+								 ResourceManager.getInstance().getString("Infrastructure", "ALERT_DELETE_DATACENTER_TEXT"),
+								 Alert.YES | Alert.NO,
+								 deleteDataCenter);
+			}
+			
+			/**
+			 * Calls for data center deletion, if the user has confirmed it
+			 **/
+			private function deleteDataCenter(closeEvent:CloseEvent):void
+			{
+				if(closeEvent.detail == Alert.YES)
+				{
+					//Announcing that user wants to delete a data center
+					var event:InfrastructureEvent = new InfrastructureEvent(InfrastructureEvent.DELETE_DATACENTER);
+					event.dataCenter = dataCenterList.selectedItem as DataCenter;
+					dispatchEvent(event);
+				}
+			}
+			
+			/**
+			 * When user clicks to edit a data center
+			 **/
+			private function editDataCenter():void
+			{
+				//Making pop up with the form to edit a data center
+				PopUpManager.addPopUp(_dataCenterEdit, this, true);
+				PopUpManager.centerPopUp(_dataCenterEdit);
+				_dataCenterEdit.init(dataCenterList.selectedItem as DataCenter);
+			}
+			
+			private function closeAddDataCenter(event:Event):void
+			{
+				PopUpManager.removePopUp(_dataCenterAdd);	
+			}
+			
+			private function closeEditDataCenter(event:Event):void
+			{
+				PopUpManager.removePopUp(_dataCenterEdit);
+			}
+			
+			
+			/**
+			 * When user selects a Data Center from the List, we focus the Map on it
+			 **/
+			private function onClickDataCenterList():void
+			{
+				if(dataCenterList.selectedIndex > -1)
+				{
+					var dataCenter:DataCenter = dataCenterList.selectedItem as DataCenter;
+					
+					//Getting the marker that represents the data center selected by the user
+					var marker:Marker;
+					var markerDataCenterMapMark:DataCenterMapMark;
+					var length:int = _mapMarkers.length;
+					var i:int;
+					for(i = 0; i < length; i++)
+					{
+						marker = _mapMarkers.getItemAt(i) as Marker;
+						markerDataCenterMapMark = DataCenterMapMark(marker.getOptions().icon);
+						if(markerDataCenterMapMark.dataCenter == dataCenter)
+						{
+							markerDataCenterMapMark.onClickMapMark();
+							return;
+						}
+					}
+				}
+			}
+			
+			/**
+			 * Filter function for the data centers list
+			 **/
+			private function onFilterInputChange():void
+			{
+				var filterText:String = filterInput.text;
+				
+				if(filterText == null || filterText == "")
+					dataCenterList.dataProvider = _dataCentersArray;
+				else
+				{		
+					var filteredArray:ArrayCollection = new ArrayCollection();
+					var length:int = _dataCentersArray.length;
+					var i:int;
+					var dataCenter:DataCenter;
+					
+					for(i = 0; i < length; i++)
+					{
+						dataCenter = _dataCentersArray.getItemAt(i) as DataCenter;
+						if(dataCenter.name.toLocaleLowerCase().indexOf(filterText.toLocaleLowerCase()) > -1)
+							filteredArray.addItem(dataCenter);
+					}
+					
+					dataCenterList.dataProvider = filteredArray;
+				}
+			}
+			
+			////////////////////////////////////////////////////////////
+			// GOOGLE MAP
+			
+			private var _clientGeocoder:ClientGeocoder;
+			private var _mapMarkers:ArrayCollection;
+			
+			private function onMapPreinitialize(event:MapEvent):void
+			{
+				//Setting map initial options
+				var mapOptions:MapOptions = new MapOptions();
+				mapOptions.zoom = 6;
+				mapOptions.mapType = MapType.NORMAL_MAP_TYPE;
+				mapOptions.center = new LatLng(40, -3);
+				
+				dataCentersMap.setInitOptions(mapOptions);
+			}
+			
+			private function onMapReady(event:MapEvent):void
+			{
+				//Map loaded successfully, stoping timer
+				this._mapLoadControl.stop();
+				this._mapLoadControl.removeEventListener(TimerEvent.TIMER_COMPLETE, mapLoadFailed);
+				
+				//Adding more options
+				dataCentersMap.enableScrollWheelZoom();
+				
+				//Creating client geocoder, to retrieve Data Centers coordinates
+				_clientGeocoder = new ClientGeocoder();
+				_clientGeocoder.addEventListener(GeocodingEvent.GEOCODING_SUCCESS, onGeocodingSuccess);
+				_clientGeocoder.addEventListener(GeocodingEvent.GEOCODING_FAILURE, onGeocodingFault);
+				
+				//Adding controls to the map
+				dataCentersMap.addControl(new ZoomControl());
+				dataCentersMap.addControl(new PositionControl());
+				
+				//Notify to Google Maps when there are new Data Centers available, to draw markers
+				BindingUtils.bindSetter(mapDataCentersListener, AbiCloudModel.getInstance().infrastructureManager, "dataCenters");
+			}
+			
+			/**
+			 * Handler to control when Map was unabled to load successful
+			 */
+			private function mapLoadFailed(event:TimerEvent):void
+			{
+				//If this handler is called, the map was unabled to load
+				this._mapLoadControl.removeEventListener(TimerEvent.TIMER_COMPLETE, mapLoadFailed);
+				dataCentersMap.visible = false;
+				mapBox.enabled = false;				
+			}
+			
+			
+			/**
+			 * When new data centers are available, we can create their marks on the Google Map.
+			 * Before, we need to geocode the data center's position
+			 * To do so, we can make a service call to Google Maps
+			 * To not make too many petitions to Google's server in a short space of time, we set multiple Timers
+			 * to space server calls 1 second between them
+			 **/
+			private var _mapDataCentersArray:Array;
+			private function mapDataCentersListener(dataCenters:ArrayCollection):void
+			{
+				removeAllMapMarkers();
+				_mapDataCentersArray = dataCenters.toArray();
+				
+				if(_mapDataCentersArray.length > 0)
+				{
+					var timer:Timer = new Timer(150, _mapDataCentersArray.length);
+					timer.addEventListener(TimerEvent.TIMER, createDataCenterMarker);
+					timer.addEventListener(TimerEvent.TIMER_COMPLETE, createDataCenterMarker);
+					timer.start();
+				}										
+			}
+			
+			/**
+			 * Before we create the data center marker, we need to geocode the data center situation
+			 **/
+			private function createDataCenterMarker(event:TimerEvent):void
+			{
+				if(event.type == TimerEvent.TIMER)
+				{
+					var dataCenter:DataCenter = _mapDataCentersArray.pop() as DataCenter;
+					_clientGeocoder.geocode(dataCenter.situation);
+				}
+				else
+				{
+					event.currentTarget.removeEventListener(TimerEvent.TIMER, createDataCenterMarker);
+					event.currentTarget.removeEventListener(TimerEvent.TIMER_COMPLETE, createDataCenterMarker);
+				}	
+				
+			}
+			
+			
+			/**
+			 * If geocoding petition had success, we create the data center marker
+			 **/
+			private function onGeocodingSuccess(event:GeocodingEvent):void
+			{
+				var response:GeocodingResponse;
+				var placeMark:Placemark;
+				var dataCenter:DataCenter;
+				var marker:Marker;
+				
+				//Retrieving response
+				response = event.response;
+				
+				if(response.placemarks.length > 0)
+				{
+					//Google found the data center's situation
+					placeMark = response.placemarks[0];
+				
+					dataCenter = getDataCenterBySituation(response.name);
+					
+					if(dataCenter != null)
+					{
+						//Creating mark
+						marker = createMarker(dataCenter, placeMark);
+					
+						//Saving mark and adding it to the map
+						_mapMarkers.addItem(marker);
+						dataCentersMap.addOverlay(marker);
+					}
+				}
+			}
+
+			/**
+			 * Geocoding petition fault
+			 **/
+			private function onGeocodingFault(event:GeocodingEvent):void
+			{
+				
+			}
+			
+			private function createMarker(dataCenter:DataCenter, placeMark:Placemark):Marker
+			{
+				//Create mark renderer
+				var dataCenterMapMark:DataCenterMapMark = new DataCenterMapMark();
+				dataCenterMapMark.dataCenter = dataCenter;
+				dataCenterMapMark.dataCenterNumber = AbiCloudModel.getInstance().infrastructureManager.dataCenters.getItemIndex(dataCenter) + 1;
+				dataCenterMapMark.addEventListener("DataCenterMapMarkClicked", onClickDataCenterMapMark);
+				
+				//Creating mark options
+				var markerOptions:MarkerOptions = new MarkerOptions();
+				markerOptions.clickable = false;
+				markerOptions.draggable = false;
+				markerOptions.icon = dataCenterMapMark;
+				
+				return new Marker(placeMark.point, markerOptions);
+			}
+			
+			private function removeAllMapMarkers():void
+			{
+				var length:int = _mapMarkers.length;
+				var i:int = 0;
+				var marker:Marker;
+				for(i = 0; i < length; i++)
+				{
+					marker = _mapMarkers.getItemAt(i) as Marker;
+					dataCentersMap.removeOverlay(marker);
+				}
+				_mapMarkers.removeAll();
+			}
+			
+			private var _dataCenterMapMarkClicked:DataCenterMapMark = null;
+			private function onClickDataCenterMapMark(itemClickEvent:ItemClickEvent):void
+			{
+				//If user just clicks the already opened DataCenterMapMark, we are done
+				if(this._dataCenterMapMarkClicked == itemClickEvent.item as DataCenterMapMark)
+					this._dataCenterMapMarkClicked = null;
+					
+				else
+				{
+					//Contracting a previous expanded DataCenterMapMark
+					if(_dataCenterMapMarkClicked != null)
+						_dataCenterMapMarkClicked.contractDataCenterMapMark();
+				
+					this._dataCenterMapMarkClicked = itemClickEvent.item as DataCenterMapMark;
+
+					//Focusing the map on the DataCenterMapMark clicked
+					var marker:Marker;
+					var length:int = _mapMarkers.length;
+					var i:int;
+					for(i = 0; i < length; i++)
+					{
+						marker = _mapMarkers.getItemAt(i) as Marker;
+						if(DataCenterMapMark(marker.getOptions().icon) == this._dataCenterMapMarkClicked)
+						{
+							//Moving map to the position where the mark is
+							dataCentersMap.panTo(marker.getLatLng());
+							return;
+						}
+					}
+				} 
+			}
+			
+			private function getDataCenterBySituation(situation:String):DataCenter
+			{
+				var dataCenter:DataCenter;
+				var dataCenters:ArrayCollection = AbiCloudModel.getInstance().infrastructureManager.dataCenters;
+				var length:int = dataCenters.length;
+				var i:int;
+				
+				for(i = 0; i < length; i++)
+				{
+					dataCenter = dataCenters.getItemAt(i) as DataCenter;
+					if(dataCenter.situation == situation)
+						return dataCenter;
+				}
+				
+				return null;
+			}
+			
+			//////////////////////////////////////////
+			// FULL SCREEN FUNCTIONALITY
+            private function makeFulLScreen():void 
+            {
+                FullScreenManager.getInstance().makeFullScreen(dataCentersMap);                
+            }
+
+		]]>
+	</mx:Script>
+	
+	<!-- Data Centers list -->
+	<mx:HBox x="0" y="0" width="200" height="18" styleName="cabeceraPanel" paddingLeft="5" verticalAlign="middle">
+		<mx:Label text="@Resource(bundle='Common', key='LABEL_PANEL')" styleName="titlePanel" height="14"/>
+	</mx:HBox>
+	
+	<mx:Canvas left="0" height="100%" width="200"
+			   verticalScrollPolicy="off" horizontalScrollPolicy="off" top="18">
+
+		<mx:HBox width="200" height="32" verticalAlign="middle" paddingLeft="10" paddingRight="10" styleName="cabeceraPanelGris" horizontalGap="2">			
+			<mx:Image source="assets/buttonsMenu/lupa.png"/>
+			<mx:TextInput id="filterInput" width="100%" height="20"
+							  change="onFilterInputChange()"
+							  toolTip="@Resource(bundle='Common', key='BUTTON_FILTER_TOOLTIP')"/>	
+		</mx:HBox>
+		
+		<mx:List id="dataCenterList"
+				 top="32" bottom="31" width="100%"
+				 itemRenderer="net.undf.abicloud.view.infrastructure.components.datacenter.DataCenterListRenderer"
+				 click="onClickDataCenterList()" borderStyle="none"/>
+		
+		<!-- Tool Bar -->
+		<mx:HBox bottom="0" width="100%" height="32" verticalAlign="middle" styleName="bajo" 
+			horizontalGap="5" paddingLeft="6" paddingRight="6">
+		
+			<mx:Button id="addButton"
+						click="addDataCenter()" styleName="bAgregar"
+						toolTip="@Resource(bundle='Common', key='BUTTON_NEW_TOOLTIP')"/>
+				
+			<mx:Button id="deleteButton"
+					   click="askDataCenterDeletion()"
+					   enabled="{dataCenterList.selectedIndex > -1}" styleName="bNoAgregar"
+					   toolTip="@Resource(bundle='Common', key='BUTTON_DEL_TOOLTIP')"/>
+			<mx:Spacer width="100%"/>
+					   
+			<mx:Button id="editButton"
+					   click="editDataCenter()"
+					   enabled="{dataCenterList.selectedIndex > -1}" styleName="bConfig"
+					   toolTip="@Resource(bundle='Common', key='BUTTON_EDIT_TOOLTIP')"/>
+
+		</mx:HBox>
+								
+	</mx:Canvas>
+	
+	<!-- Google map to show data centers -->
+	<mx:HBox id="mapBox" left="210" right="0" top="0" height="18" styleName="cabeceraPanel" paddingLeft="5" verticalAlign="middle" paddingTop="0">
+		<mx:Label text="@Resource(bundle='Common', key='LABEL_DATA_PANEL')" styleName="titlePanel" height="14"/>
+		
+		<mx:Spacer width="100%"/>
+		
+		<mx:Button styleName="fullScreenButton"
+				   click="makeFulLScreen()"/>
+	</mx:HBox>
+	
+	<mx:Canvas  id="mapContainer"
+				top="18" bottom="0" left="210" right="0"/>
+
+</mx:Canvas>

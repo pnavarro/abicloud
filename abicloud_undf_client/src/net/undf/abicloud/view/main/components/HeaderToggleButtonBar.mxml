@@ -1,0 +1,148 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.events.ItemClickEvent;
+			import mx.collections.ArrayCollection;
+			
+			
+			private var _buttonList:ArrayCollection;
+			private var _defaultIndex:int = 0;
+			private var _selectedButton:HeaderButton;
+			private var _selectedIndex:int;
+			
+			public function set defaultIndex(index:int):void
+			{
+				this._defaultIndex = index;
+			}
+			
+			
+			[Bindable(event="headerToggleButtonBarSelectedIndexUpdated")]
+			public function get selectedIndex():int
+			{
+				return this._selectedIndex;
+			}
+			
+			/**
+			 * Sets the data provider with HeaderButtons 
+			 **/
+			public function set dataProvider(array:ArrayCollection):void
+			{
+				_buttonList = new ArrayCollection();
+				this.removeAllChildren();
+			
+				var headerButton:HeaderButton;
+				var length:int = array.length;
+				var i:int;
+				for(i = 0; i < length; i++)
+				{
+					headerButton = array.getItemAt(i) as HeaderButton;
+					headerButton.addEventListener(MouseEvent.CLICK, onClickButton);
+					
+					//Check if this is the default selected button
+					if(i == this._defaultIndex)
+					{
+						this._selectedButton = headerButton;
+						this._selectedIndex = i;
+						dispatchEvent(new Event("headerToggleButtonBarSelectedIndexUpdated"));
+						headerButton.selected = true;
+					}
+					
+					_buttonList.addItem(headerButton);
+					this.addChild(headerButton);
+				}
+			}
+			
+			public function onDashboardInteraction(itemClickEvent:ItemClickEvent):void
+			{
+				//Looking for the button that corresponds to the shortcurt
+				var length:int = _buttonList.length;
+				var headerButton:HeaderButton;
+				var i:int;
+				var dashboardHeaderButton:HeaderButton = itemClickEvent.item as HeaderButton;
+				for(i = 0; i < length; i++)
+				{
+					headerButton = _buttonList.getItemAt(i) as HeaderButton;
+					if(headerButton.index == dashboardHeaderButton.index)
+					{
+						//Unselecting the previous selected button
+						this._selectedButton.selected = false;
+						
+						//Marking the clicked button as selected
+						headerButton.selected = true;
+						this._selectedButton = headerButton;
+						this._selectedIndex = this._buttonList.getItemIndex(this._selectedButton);
+						dispatchEvent(new Event("headerToggleButtonBarSelectedIndexUpdated"));
+						
+						//Notifying that this button has been clicked
+						var event:ItemClickEvent = new ItemClickEvent("HeaderButtonClicked", true);
+						event.item = headerButton;
+						dispatchEvent(event);
+					}
+				} 
+			}
+			
+			
+			/**
+			 * When the user performs a "Click" action over a Button
+			 **/
+			private function onClickButton(mouseEvent:MouseEvent):void
+			{
+				var buttonClicked:HeaderButton = mouseEvent.target as HeaderButton;
+				if(buttonClicked != this._selectedButton)
+				{
+					//Unselecting the previous selected button
+					this._selectedButton.selected = false;
+					
+					//Marking the clicked button as selected
+					buttonClicked.selected = true;
+					this._selectedButton = buttonClicked;
+					this._selectedIndex = this._buttonList.getItemIndex(this._selectedButton);
+					dispatchEvent(new Event("headerToggleButtonBarSelectedIndexUpdated"));
+						
+					//Notifying that this button has been clicked
+					var event:ItemClickEvent = new ItemClickEvent("HeaderButtonClicked", true);
+					event.item = buttonClicked;
+					dispatchEvent(event);
+				}
+				
+			}
+		]]>
+	</mx:Script>
+</mx:HBox>

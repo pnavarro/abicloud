@@ -1,0 +1,13 @@
+activation.jar             
+jaxrpc.jar        
+vim25.jar
+axis-ant.jar               
+log4j-1.2.8.jar
+axis.jar
+log4j.properties  
+wsdl4j-1.5.1.jar
+commons-discovery-0.2.jar  
+mailapi.jar
+commons-logging-1.0.4.jar  
+saaj.jar
+

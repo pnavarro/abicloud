@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:HBox xmlns:mx="http://www.adobe.com/2006/mxml"
+		 width="100%" height="100%"
+		 verticalAlign="top"
+		 verticalScrollPolicy="off" horizontalScrollPolicy="off">
+	
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.model.AbiCloudModel;
+			import mx.resources.ResourceManager;
+			import mx.resources.ResourceBundle;
+			import mx.collections.ArrayCollection;
+			import mx.utils.ObjectUtil;
+			import net.undf.abicloud.vo.infrastructure.PhysicalMachine;
+			
+			[Bindable]
+			private var _ramChartDP:ArrayCollection;
+			
+			[Bindable]
+			private var _cpuChartDP:ArrayCollection;
+			
+			[Bindable]
+			private var _hdChartDP:ArrayCollection;
+			
+			private var shadow:DropShadowFilter = new DropShadowFilter(2, 90);
+			
+			[ResourceBundle("Infrastructure")]
+			private var rb:ResourceBundle;
+			
+	   		[Bindable]
+	   		private var _physicalMachine:PhysicalMachine;
+	   		/**
+	   		 * @private
+	   		 */
+	   		public function set physicalMachine(value:PhysicalMachine):void
+	   		{
+	   			this._physicalMachine = value;
+	   			this._physicalMachineEdited = ObjectUtil.copy(value) as PhysicalMachine;
+	   			
+	   								
+				//Building chart's Data Providers
+				_ramChartDP = new ArrayCollection([{label:ResourceManager.getInstance().getString("Infrastructure", "LABEL_USED"), data:_physicalMachine.ramUsed},
+										 		   {label:ResourceManager.getInstance().getString("Infrastructure", "LABEL_FREE"), data:(_physicalMachine.ram - _physicalMachine.ramUsed)}
+										 		 ]);
+										 		 
+				_cpuChartDP = new ArrayCollection([{label:ResourceManager.getInstance().getString("Infrastructure", "LABEL_USED"), data:_physicalMachine.cpuUsed},
+										 		   {label:ResourceManager.getInstance().getString("Infrastructure", "LABEL_FREE"), data:(_physicalMachine.cpu - _physicalMachine.cpuUsed)}
+										 		 ]);
+				
+				_hdChartDP = new ArrayCollection([{label:ResourceManager.getInstance().getString("Infrastructure", "LABEL_USED"), data:_physicalMachine.hdUsed},
+										 		   {label:ResourceManager.getInstance().getString("Infrastructure", "LABEL_FREE"), data:((_physicalMachine.hd - _physicalMachine.hdUsed) / AbiCloudModel.GB_TO_BYTES)}
+										 		 ]);
+	   		}
+	   		
+	   		[Bindable]
+	   		private var _physicalMachineEdited:PhysicalMachine;
+	   		/**
+	   		 * Returns a copy (not original) of _physicalMachine, with the changes that can be made in this component
+	   		 */
+	   		public function get physicalMachineEdited():PhysicalMachine
+	   		{
+	   			return this._physicalMachineEdited;
+	   		}
+		]]>
+	</mx:Script>
+	
+	<mx:Label text="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_RAM')" />
+	<mx:PieChart id="ramChart" height="100%" width="33%"
+    			 showDataTips="true" dataProvider="{_ramChartDP}">
+    
+        <mx:series>
+            <mx:PieSeries labelPosition="none" 
+            			  field="data" nameField="label"
+            			  filters="{[shadow]}">
+
+                <mx:fills>
+                	 <mx:SolidColor color="red" alpha="1.0" />
+                	 <mx:SolidColor color="green" alpha="1.0" />
+                </mx:fills>
+
+            </mx:PieSeries>
+        </mx:series>
+    </mx:PieChart>
+    
+    <mx:VRule width="1" height="100%" strokeColor="#CCCCCC" horizontalCenter="0"/>
+    
+    <mx:Label text="@Resource(bundle='Infrastructure', key='LABEL_CPU')" />
+    <mx:PieChart id="cpuChart" height="100%" width="33%"
+    			 showDataTips="true" dataProvider="{_cpuChartDP}">
+    
+        <mx:series>
+            <mx:PieSeries labelPosition="none" 
+            			  field="data" nameField="label"
+            			  filters="{[shadow]}">
+
+                <mx:fills>
+                	 <mx:SolidColor color="red" alpha="1.0" />
+                	 <mx:SolidColor color="green" alpha="1.0" />
+                </mx:fills>
+
+            </mx:PieSeries>
+        </mx:series>
+    </mx:PieChart>
+    
+    <mx:VRule width="1" height="100%" strokeColor="#CCCCCC" horizontalCenter="0"/>
+    
+    <mx:Label text="@Resource(bundle='Infrastructure', key='TEXTINPUT_LABEL_HD')" />
+    <mx:PieChart id="hdChart" height="100%" width="33%"
+    			 showDataTips="true" dataProvider="{_hdChartDP}">
+    
+        <mx:series>
+            <mx:PieSeries labelPosition="none" 
+            			  field="data" nameField="label"
+            			  filters="{[shadow]}">
+
+                <mx:fills>
+                	<mx:SolidColor color="red" alpha="1.0" />
+                	<mx:SolidColor color="green" alpha="1.0" />
+                </mx:fills>
+
+            </mx:PieSeries>
+        </mx:series>
+    </mx:PieChart>
+	
+</mx:HBox>

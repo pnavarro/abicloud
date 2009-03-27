@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		    width="100%" height="100%"
+		    backgroundColor="#FFFFFF"
+			backgroundAlpha="0"
+		    creationComplete="showMiniatures()">
+	
+	<!-- *********************************************************************************
+		This component renderers a list of virtual images that belong to the same category
+		********************************************************************************* -->
+		
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.events.VirtualImageEvent;
+			import mx.managers.DragManager;
+			import mx.events.DragEvent;
+			import net.undf.abicloud.business.managers.VirtualImageManager;
+			import mx.collections.ArrayCollection;
+			import net.undf.abicloud.model.AbiCloudModel;
+			import net.undf.abicloud.vo.virtualimage.VirtualImage;
+			import net.undf.abicloud.vo.virtualimage.Category;
+			
+			//The category assigned to this component
+			[Bindable]
+			private var _category:Category;
+			
+			//The list with the virtual images miniatures that will be shown
+			private var _virtualImages:ArrayCollection;
+			
+			//The title of this renderer, containing the category's name and number of virtual images
+			private var _title:String;
+			
+			//Multiplies the size of the Virtual Images Miniatures
+			private var _sizeMultiplier:Number = 1;
+			
+			//Indicates if the Virtual Images displayed can be editable
+			private var _editable:Boolean = false;
+			
+			public function set editable(value:Boolean):void
+			{
+				this._editable = value;
+			}
+			
+			/**
+			 * Sets the category that will render this component
+			 **/
+			public function set category(cat:Category):void
+			{
+				this._category = cat;
+				makeVirtualImagesMiniatures();
+				
+				this.label = this._category.name + '  (' + this._virtualImages.length + ')';
+			}
+			
+			public function get category():Category
+			{
+				return this._category;
+			}
+
+			
+			public function set sizeMultiplier(multiplier:Number):void
+			{
+				this._sizeMultiplier = multiplier;
+			}
+			
+			/**
+			 * Creates the miniatures for the virtual images that belongs to the category of this renderer
+			 **/
+			private function makeVirtualImagesMiniatures():void
+			{
+				//The list of virtual images that belongs to _category
+				var virtualImages:ArrayCollection = AbiCloudModel.getInstance().virtualImageManager.getVirtualImagesByCategory(this._category);
+				
+				var length:int = virtualImages.length;
+				var i:int;
+				var virtualImageMiniature:VirtualImageMiniature;
+				
+				//Build the miniatures
+				this._virtualImages = new ArrayCollection();
+				for(i = 0; i < length; i++)
+				{
+					virtualImageMiniature = new VirtualImageMiniature();
+					virtualImageMiniature.sizeMultiplier = this._sizeMultiplier;
+					virtualImageMiniature.virtualImage = virtualImages.getItemAt(i) as VirtualImage;
+					virtualImageMiniature.editable = this._editable;
+					
+					this._virtualImages.addItem(virtualImageMiniature);
+				}	
+			}
+			
+			/**
+			 * Adds the Virtual Images miniatures created in the Tile
+			 **/
+			private function showMiniatures():void
+			{				
+				var length:int = this._virtualImages.length;
+				var i:int;
+				
+				for(i = 0; i < length; i++)
+				{
+					virtualImagesTile.addChild(this._virtualImages.getItemAt(i) as VirtualImageMiniature);
+				}
+			}
+			
+			/**
+			 * Returns true if this CategoryRenderer already contains the virtualImage
+			 **/
+			public function containsVirtualImage(virtualImage:VirtualImage):Boolean
+			{
+				var length:int = this._virtualImages.length;
+				var i:int;
+				var vI:VirtualImage;
+				
+				for(i = 0; i < length; i++)
+				{
+					vI = VirtualImageMiniature(this._virtualImages.getItemAt(i)).virtualImage;
+					if(virtualImage.id == vI.id)
+						return true;
+				}
+				
+				return false;
+			}
+			
+			/**
+			 * Returns the VirtualImageMiniature that contains the virtualImage, or null if there is
+			 * no VirtualImageMiniature
+			 */
+			private function getVirtualImageMiniature(virtualImage:VirtualImage):VirtualImageMiniature
+			{
+				var length:int = this._virtualImages.length;
+				var i:int;
+				var vI:VirtualImage;
+				
+				for(i = 0; i < length; i++)
+				{
+					vI = VirtualImageMiniature(this._virtualImages.getItemAt(i)).virtualImage;
+					if(virtualImage.id == vI.id)
+						return VirtualImageMiniature(this._virtualImages.getItemAt(i));
+				}
+				
+				return null;
+			}
+			
+			/**
+			 * Handler when a Virtual Image has been updated. This category will check if needs to add
+			 * or delete a VirtualImageMiniature
+			 */
+			public function virtualImageEdited(virtualImage:VirtualImage):void
+			{
+				var virtualImageMiniature:VirtualImageMiniature = getVirtualImageMiniature(virtualImage);
+				if(virtualImage.category.id == this._category.id
+				   && virtualImageMiniature == null)
+				{
+					//This CategoryRenderer should contain the virtual image edited, but it does not
+					virtualImageMiniature = new VirtualImageMiniature();
+					virtualImageMiniature.sizeMultiplier = this._sizeMultiplier;
+					virtualImageMiniature.virtualImage = virtualImage;
+					virtualImageMiniature.editable = this._editable;
+					
+					this._virtualImages.addItem(virtualImageMiniature);
+					virtualImagesTile.addChild(virtualImageMiniature);
+					this.label = this._category.name + '  (' + this._virtualImages.length + ')';
+				}
+				else if(virtualImage.category.id != this._category.id
+					    && virtualImageMiniature != null)
+				{
+					//This CategoryRenderer should not contain the virtual image edited, but it does
+					this._virtualImages.removeItemAt(this._virtualImages.getItemIndex(virtualImageMiniature));
+					virtualImagesTile.removeChild(virtualImageMiniature);
+					this.label = this._category.name + '  (' + this._virtualImages.length + ')';
+				}
+			}
+		]]>
+	</mx:Script>
+	
+	<mx:Tile id="virtualImagesTile"
+			 backgroundColor="#FFFFFF"
+			 verticalCenter="0" horizontalCenter="0"
+			 width="100%" height="100%"/>
+</mx:Canvas>

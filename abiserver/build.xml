@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<project name="(abiServer)" default="deploy" basedir=".">
+
+	<!-- Test that a valid ant version is being used -->
+	<condition property="valid.ant.version">
+		<or>
+		  <contains substring="1.6.5" string="${ant.version}" />	
+		  <contains substring="1.7." string="${ant.version}" />	
+		</or>
+	</condition>
+	<fail message="You should be using ant 1.6.5 or better."
+	      unless="valid.ant.version"/>
+	
+	<property file="project.properties"/>
+	<property file="/home/mmorata/abiquo/cloud/installer_source/template/abi.config.properties"/>
+
+	<!-- Project properties check: There should be no CHANGE* set -->
+	<condition property="property.check">
+		<or>
+		  <contains substring="CHANGE" string="${webcontent.dir}" />
+		  <contains substring="CHANGE" string="${lib.dir}" />
+	      <contains substring="CHANGE" string="${dist.dir}" />	
+		</or>
+	</condition>
+	<fail message="You did not set a required property. Please check project.properties 
+		and/or etc/bindings.properties configuration."
+	      if="property.check"/>	
+	
+    <!-- Convenience method for users following default installation instructions.  -->
+	<!--  =================================================  -->
+	<!--   "deploy" - Deploys the jar to a webapp's lib dir  -->
+	<!--  =================================================  -->
+	<path id="deployer.classpath">
+		<pathelement path="${lib.dir}/catalina-ant.jar" />
+	</path>
+
+	<target name="deploy" depends="war">
+		<taskdef name="deploy" 
+			     classname="org.apache.catalina.ant.DeployTask" 
+			     classpathref="deployer.classpath" />
+		<deploy url="${catalina.manager.url}" 
+			    username="${catalina.manager.username}" 
+			    password="${catalina.manager.password}"
+		        path="${war.context.path}" 
+			    war="${basedir}/${dist.dir}/${war.filename}" 
+			    update="true" />
+	</target>
+
+	
+	<!--  =================================================  -->
+	<!--   "war" - Create the war file                       -->
+	<!--  =================================================  -->
+	<target name="war">
+		<war destfile="${basedir}/${dist.dir}/${war.filename}"
+	         webxml="${basedir}/${webcontent.dir}/WEB-INF/web.xml"
+	         index="true" update="false">
+			<!-- <webinf dir="${webcontent.dir}/WEB-INF"/> -->
+			<zipfileset dir="${basedir}/${webcontent.dir}" includes="*/**" />
+			<classes dir="${basedir}" includes="resources/**"/>
+			<classes dir="${basedir}" includes="conf/**" excludes="conf/log4j*"/>
+			<classes dir="${basedir}/conf" includes="log4j*"/>
+		</war>
+	</target>
+	
+    <target name="javadoc" description="Create javadocumentation">
+        <delete dir="javadoc"/>
+        <mkdir dir="javadoc"/>
+        <javadoc destdir="javadoc" private="true" charset="UTF-8">
+            <fileset dir="${basedir}/src" defaultexcludes="yes">
+                <include name="**/*.java"/>
+            </fileset>
+        </javadoc>
+    </target>
+
+    <target name="db.session_clean">
+      <echo file="XMLtoProperties.java">
+        import java.io.InputStream;
+        import java.util.Properties;
+        import java.io.PrintWriter;
+
+      public class XMLtoProperties{
+        public static void main(String[] args){
+        Properties properties = new Properties();
+
+            try{
+               InputStream inStream = XMLtoProperties.class.getClassLoader().getResourceAsStream("../tomcat/abiserver/WEB-INF/classes/conf/abi.config.xml");
+
+               if(inStream != null)
+                   properties.loadFromXML(inStream);
+
+               properties.store(new PrintWriter("build.properties"),"");
+
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+         }  
+      }  
+    </echo>
+
+    <javac srcdir="." includes="XMLtoProperties.java"/>
+    <java classname="XMLtoProperties" classpath="."/>
+
+    <property file="build.properties"/>
+
+    <!-- Borramos los ficheros generados -->
+    <delete file="XMLtoProperties.java"/>
+    <delete file="XMLtoProperties.class"/>
+
+    	<sql driver="com.mysql.jdbc.Driver"
+    		url="${db.url}"
+    		userid="${db.username}" password="${db.password}" 
+		classpath="mysql-connector-java-5.0.8-bin.jar">
+		<![CDATA[
+		delete from session;
+		delete from virtualapp;
+		]]>
+    	</sql>
+    </target>	    
+
+    	
+</project>

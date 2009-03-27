@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 16-oct-2008 16:52:14 by Hibernate Tools 3.2.1.GA -->
+<hibernate-mapping>
+  <class catalog="kinton" name="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.VirtualmachinenetworkmoduleHB" table="virtualmachinenetworkmodule">
+    <composite-id class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.VirtualmachinenetworkmoduleIdHB" name="id">
+      <key-property name="idVm" type="int">
+        <column name="idVM"/>
+      </key-property>
+      <key-property name="idModule" type="int">
+        <column name="idModule"/>
+      </key-property>
+    </composite-id>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.VirtualmachineHB" fetch="select" insert="false" name="virtualmachine" update="false">
+      <column name="idVM" not-null="true"/>
+    </many-to-one>
+  </class>
+</hibernate-mapping>

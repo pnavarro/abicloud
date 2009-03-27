@@ -1,0 +1,275 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml" 
+		   width="151" height="151"
+		   verticalScrollPolicy="off" horizontalScrollPolicy="off"
+		   rollOver="onRollOver()"
+		   rollOut="onRollOut()"
+		   mouseDown="onMouseDownVirtualMachineMiniature()"
+		   mouseUp="onMouseUpVirtualMachineMiniature()"
+		   xmlns:utils="net.undf.abicloud.utils.*">
+	
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.utils.ObjectUtil;
+			import net.undf.abicloud.events.InfrastructureEvent;
+			import mx.managers.DragManager;
+			import mx.controls.Image;
+			import mx.core.DragSource;
+			import net.undf.abicloud.utils.customtree.CustomTreeNode;
+			import net.undf.abicloud.vo.infrastructure.State;
+			import mx.events.ItemClickEvent;
+			import net.undf.abicloud.vo.infrastructure.VirtualMachine;
+			
+			
+			private static const DEFAULT_WIDTH:int = 150;
+			private static const DEFAULT_HEIGHT:int = 150;
+			
+			//The Virtual Machine that this VirtualMachineIcon represents
+			[Bindable]
+			private var _virtualMachine:VirtualMachine;
+			
+			
+			override public function set data(value:Object):void
+			{
+				super.data = value;
+				
+				if(value && value is VirtualMachine)
+					virtualMachine = data as VirtualMachine;
+			}
+			
+			public function set virtualMachine(vM:VirtualMachine):void
+			{
+				this._virtualMachine = vM;
+			}
+			
+			public function get virtualMachine():VirtualMachine
+			{
+				return this._virtualMachine;
+			}
+			
+			/**
+			 * Changes the size of this component by a multiplier
+			 **/
+			public function set sizeMultiplier(multiplier:Number):void
+			{
+				this.width = DEFAULT_WIDTH * multiplier;
+				this.height = DEFAULT_HEIGHT * multiplier;
+			}
+			
+			private function onRollOver():void
+			{
+				if(this._virtualMachine != null && this._virtualMachine.state.id != State.IN_PROGRESS)
+				{
+					buttonsContainer.visible = true;
+				}
+			}
+			
+			private function onRollOut():void
+			{
+				buttonsContainer.visible = false;
+			}
+			
+			//////////////////////////////////////////
+			// DRAG & DROP FUNCTIONALITY
+			
+			/**
+			 * Register Mouse Move events, to know if user wants to start a drag operation
+			 */
+			private function onMouseDownVirtualMachineMiniature():void
+			{
+				if(this._virtualMachine.state.id != State.IN_PROGRESS)
+					this.addEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+			}
+			
+			private function onMouseUpVirtualMachineMiniature():void
+			{
+				this.removeEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+			}
+			
+			/**
+			 * Initializes a Drag operation
+			 */
+			private function onMouseMove(mouseEvent:MouseEvent):void
+			{
+				//We don't need this handlers until user wants to initate another Drag operation
+				this.removeEventListener(MouseEvent.MOUSE_MOVE, onMouseMove);
+				
+				//To be able to interact with a CustomTree in a Drag Drop operation, we have to encapsulate the data
+				//in a CustomTreeNode
+				var customTreeNode:CustomTreeNode = new CustomTreeNode(this._virtualMachine);
+				
+				var dragSource:DragSource = new DragSource();
+				dragSource.addData(customTreeNode, "CustomTreeNode");
+				
+				var dragProxy:Image = new Image();
+				dragProxy.source = virtualMachineIcon.source;
+				dragProxy.width = virtualMachineIcon.width;
+				dragProxy.height = virtualMachineIcon.height;
+				
+				DragManager.doDrag(this, dragSource, mouseEvent, dragProxy);
+			}
+			
+			
+			/**
+			 * Performs a "Start" or "Shutdown" action in the Virtual Machine
+			 **/
+			private function onClickPowerOnOffButton(mouseEvent:MouseEvent):void
+			{
+				mouseEvent.stopImmediatePropagation();
+				var event:InfrastructureEvent;
+				
+				if(_virtualMachine.state.id == 1 || _virtualMachine.state.id == 2)
+				{
+					//The Virtual Machine is running or paused. We proceed to power it off
+					event = new InfrastructureEvent(InfrastructureEvent.SHUTDOWN_VIRTUALMACHINE);
+				}
+				else
+				{
+					//The Virtual Machine is powered off. We proceed to power it on
+					event = new InfrastructureEvent(InfrastructureEvent.START_VIRTUALMACHINE);
+				}
+				
+				event.infrastructureElement = ObjectUtil.copy(this._virtualMachine) as VirtualMachine;
+				event.oldInfrastructureElement = this._virtualMachine;
+				dispatchEvent(event);
+			}
+			
+			
+			/**
+			 * Performs a "Shutdown" action in the Virtual Machine
+			 **/
+			private function onClickPauseButton(mouseEvent:MouseEvent):void
+			{
+				mouseEvent.stopImmediatePropagation();
+				var event:InfrastructureEvent;
+				
+				if(_virtualMachine.state.id == State.PAUSED)
+				{
+					//The virtual machine is paused. We proceed to resume it
+					event = new InfrastructureEvent(InfrastructureEvent.START_VIRTUALMACHINE);
+				}
+				else if(_virtualMachine.state.id == State.RUNNING)
+				{
+					//The virtual machine is running. We procced to pause it
+					event = new InfrastructureEvent(InfrastructureEvent.PAUSE_VIRTUALMACHINE);
+				}
+				
+				event.infrastructureElement = ObjectUtil.copy(this._virtualMachine) as VirtualMachine;
+				event.oldInfrastructureElement = this._virtualMachine;
+				dispatchEvent(event);
+			}
+			
+			/**
+			 * Performs a "Reboot" action in the Virtual Machine
+			 **/
+			 private function onClickRebootButton(mouseEvent:MouseEvent):void
+			 {
+			 	mouseEvent.stopImmediatePropagation();
+			 	
+			 	//Proceed to reboot the virtual machine
+			 	var event:InfrastructureEvent = new InfrastructureEvent(InfrastructureEvent.REBOOT_VIRTUALMACHINE);
+			 	event.infrastructureElement = ObjectUtil.copy(this._virtualMachine) as VirtualMachine;
+				event.oldInfrastructureElement = this._virtualMachine;
+			 	dispatchEvent(event);
+			 }
+			 
+			 private function onClickAccessVRDPButton(event:MouseEvent):void
+			 {
+			 	event.stopImmediatePropagation();
+			 	
+			 	var appletURL:String = "properJavaRDP/properJavaRDP.html?vrdpIP=" + this._virtualMachine.vdrpIP + "&vrdpPort=" + this._virtualMachine.vdrpPort;
+				navigateToURL(new URLRequest(appletURL), "_blank");
+			 }
+		]]>
+	</mx:Script>
+	
+	<mx:Canvas top="1" bottom="1" left="1" right="1"
+			   verticalScrollPolicy="off" horizontalScrollPolicy="off"
+			   backgroundColor="#F4F4F4" backgroundAlpha="0.8"
+			   borderThickness="1" borderColor="#cccccc" borderStyle="solid">
+		
+		<utils:SmoothImage id="virtualMachineIcon" verticalCenter="0" horizontalCenter="0"
+				  source="assets/infrastructure/virtualMachine.png" scaleContent="true" maintainAspectRatio="true"
+				  top="5" bottom="20" left="30" right="10"/>
+					  
+		<mx:Label horizontalCenter="0" bottom="5"
+				  text="{_virtualMachine.name}" 
+				  fontWeight="bold"/>
+				  
+		<utils:SmoothImage right="10" top="10" width="14" height="14"
+						   visible="{this._virtualMachine.state.id != State.IN_PROGRESS}"
+						   source="{(_virtualMachine.state.id == State.RUNNING) ? 'assets/buttonsMenu/verde.png' : 
+						   			((_virtualMachine.state.id == State.PAUSED) ? 'assets/buttonsMenu/amarillo.png' : 'assets/buttonsMenu/rojo.png')}"/>
+						   			
+		<mx:SWFLoader id="busyIcon"
+				  	  source="assets/buttonsMenu/CargaPeque.swf" scaleContent="true" maintainAspectRatio="true"
+				      right="10" top="10" width="14" height="14"
+				      visible="{this._virtualMachine.state.id == State.IN_PROGRESS}"/>
+					   			
+		<mx:HBox id="buttonsContainer"
+				 width="100%" height="20%" verticalCenter="0" verticalAlign="middle" horizontalGap="0"
+				 backgroundColor="#000000" backgroundAlpha="0.7" visible="false"
+				 hideEffect="{fadeOut}" showEffect="{fadeIn}">
+			
+			<mx:Button id="powerOnOffButton" styleName="PowerOnOffButtonSmall"
+					   selected="{_virtualMachine.state.id == State.PAUSED || _virtualMachine.state.id == State.RUNNING}"
+					   click="onClickPowerOnOffButton(event)" />
+			
+			<mx:Button id="pauseButton" styleName="PauseButtonSmall"
+					   enabled="{_virtualMachine.state.id == State.PAUSED || _virtualMachine.state.id == State.RUNNING}"
+					   selected="{_virtualMachine.state.id == State.PAUSED}"
+					   click="onClickPauseButton(event)"/>
+			
+			<mx:Button id="rebootButton" styleName="RebootButtonSmall"
+					   enabled="{_virtualMachine.state.id == State.PAUSED || _virtualMachine.state.id == State.RUNNING}"
+					   click="onClickRebootButton(event)"/>
+					   
+			<mx:Spacer width="100%" />
+			
+			<mx:Button id="accessVRDPButton" styleName="AccessVRDPButtonSmall"
+					   click="onClickAccessVRDPButton(event)"
+					   enabled="{this._virtualMachine.state.id == State.RUNNING || this._virtualMachine.state.id == State.PAUSED}"/>
+		</mx:HBox>					   			
+	
+	</mx:Canvas>
+	
+	<mx:Fade id="fadeOut" duration="300" alphaFrom="1.0" alphaTo="0.0"/>
+    <mx:Fade id="fadeIn" duration="300" alphaFrom="0.0" alphaTo="1.0"/>
+	
+	</mx:Canvas>

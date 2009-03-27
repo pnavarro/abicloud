@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 16-oct-2008 16:52:14 by Hibernate Tools 3.2.1.GA -->
+<hibernate-mapping>
+  <class catalog="kinton" name="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.NetworkmoduleHB" table="networkmodule">
+    <composite-id class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.NetworkmoduleIdHB" name="id">
+      <key-property name="idNetworkModule" type="int">
+        <column name="idNetworkModule"/>
+      </key-property>
+      <key-property name="idPhysicalMachine" type="int">
+        <column name="idPhysicalMachine"/>
+      </key-property>
+    </composite-id>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.UserHB" fetch="select" name="userHBByIdUserLastModification">
+      <column name="idUser_lastModification"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.UserHB" fetch="select" name="userHBByIdUserCreation">
+      <column name="idUserCreation" not-null="true"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.PhysicalmachineHB" fetch="select" insert="false" name="physicalmachine" update="false">
+      <column name="idPhysicalMachine" not-null="true"/>
+    </many-to-one>
+    <property name="dhcp" type="int">
+      <column name="dhcp" not-null="true">
+        <comment>0-False 1-True</comment>
+      </column>
+    </property>
+    <property name="ip" type="string">
+      <column length="39" name="ip"/>
+    </property>
+    <property name="gateway" type="string">
+      <column length="39" name="gateway"/>
+    </property>
+    <property name="subnetMask" type="string">
+      <column length="39" name="subnetMask"/>
+    </property>
+    <property name="bw" type="big_decimal">
+      <column name="bw" precision="10"/>
+    </property>
+    <property name="creationDate" type="timestamp">
+      <column length="0" name="creationDate" not-null="true"/>
+    </property>
+    <property name="lastModifcationDate" type="timestamp">
+      <column length="0" name="lastModifcationDate"/>
+    </property>
+    <set inverse="true" name="dnses">
+      <key>
+        <column name="idNetworkModule" not-null="true"/>
+        <column name="idPhysicalMachine" not-null="true"/>
+      </key>
+      <one-to-many class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.DnsHB"/>
+    </set>
+  </class>
+</hibernate-mapping>

@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		   implements="net.undf.abicloud.view.main.IBodyComponent"
+		   width="100%" height="100%" xmlns:components="net.undf.abicloud.view.main.components.*"
+		   verticalScrollPolicy="off" horizontalScrollPolicy="off">
+	<mx:Script>
+		<![CDATA[
+			import net.undf.abicloud.security.SecurableResource;
+			import mx.resources.ResourceManager;
+			import mx.resources.ResourceBundle;
+			import net.undf.abicloud.view.main.components.HeaderButton;
+			
+			[ResourceBundle("Main")]
+			private var rb:ResourceBundle;
+			
+			/////////////////////////////////////
+			//IBodyComponent implementation
+			
+			public function hasUnsavedChanges():Boolean
+			{
+				return false;
+			}
+			
+			public function saveChanges():void
+			{
+				
+			}
+			
+			public function discardUnsavedChanges():void
+			{
+				
+			}
+		]]>
+	</mx:Script>
+	
+	<!-- ********************************************
+		Application's dashboard, with direct links and useful information
+		********************************************* -->
+	<mx:VBox verticalGap="0" horizontalCenter="0" verticalCenter="0"
+			 verticalScrollPolicy="off" horizontalScrollPolicy="off">
+		
+		<mx:HBox width="100%" height="50%"
+				 paddingBottom="0" paddingTop="0">
+				 
+			<components:SecurableDashboardShortcurt headerButton="{new HeaderButton(1)}"
+										   label="@Resource(bundle='Main', key='HEADER_MENU_INFRASTRUCTURE')"
+										   imageSource="assets/dashboard/infraestructura.jpg"
+										   securableResource="{new SecurableResource('INFRASTRUCTURE_BUTTON', 'MAIN')}"/>
+			
+			<mx:VRule height="100%"/>
+			
+			<components:SecurableDashboardShortcurt headerButton="{new HeaderButton(2)}"
+										   label="@Resource(bundle='Main', key='HEADER_MENU_VIRTUALAPPLIANCE')"
+										   imageSource="assets/dashboard/aplicaciones_virtuales.jpg"
+										   securableResource="{new SecurableResource('VIRTUALAPP_BUTTON', 'MAIN')}"/>
+			
+			<mx:VRule height="100%"/>
+			
+			<components:SecurableDashboardShortcurt headerButton="{new HeaderButton(3)}"
+										   label="@Resource(bundle='Main', key='HEADER_MENU_VIRTUALIMAGE')"
+										   imageSource="assets/dashboard/imagenes_virtuales.jpg"
+										   securableResource="{new SecurableResource('VIRTUALIMAGE_BUTTON', 'MAIN')}"/>
+		</mx:HBox>
+		
+		<mx:HRule width="100%"/>
+		
+		<mx:HBox width="100%" height="50%"
+				 paddingBottom="0" paddingTop="0">
+				 
+			<components:SecurableDashboardShortcurt headerButton="{new HeaderButton(4)}"
+										   label="@Resource(bundle='Main', key='HEADER_MENU_USER')"
+										   imageSource="assets/dashboard/usuario.jpg"
+										   securableResource="{new SecurableResource('USER_BUTTON', 'MAIN')}"/>
+			
+			<mx:VRule height="100%"/>
+			
+			<components:SecurableDashboardShortcurt headerButton="{new HeaderButton(5)}"
+										   label="@Resource(bundle='Main', key='HEADER_MENU_CHARTS')"
+										   imageSource="assets/dashboard/estadisticas.jpg"
+										   enterButtonEnabled="false"
+										   securableResource="{new SecurableResource('CHARTS_BUTTON', 'MAIN')}"/>
+			
+			<mx:VRule height="100%"/>
+			
+			<components:SecurableDashboardShortcurt headerButton="{new HeaderButton(6)}"
+										   label="@Resource(bundle='Main', key='HEADER_MENU_CONFIG')"
+										   imageSource="assets/dashboard/configuracion.jpg"
+										   enterButtonEnabled="false"
+										   securableResource="{new SecurableResource('CONFIG_BUTTON', 'MAIN')}"/>
+		</mx:HBox>
+	
+	</mx:VBox>
+</mx:Canvas>

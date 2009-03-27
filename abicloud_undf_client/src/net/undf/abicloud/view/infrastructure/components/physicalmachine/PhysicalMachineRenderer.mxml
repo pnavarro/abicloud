@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		   xmlns:componentsPM="net.undf.abicloud.view.infrastructure.components.physicalmachine.*"
+		   width="100%" height="100%" xmlns:utils="net.undf.abicloud.utils.*"
+		   horizontalScrollPolicy="off" verticalScrollPolicy="off"
+		   styleName="PhysicalMachineRenderer">
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.resources.ResourceManager;
+			import mx.resources.ResourceBundle;
+			import mx.collections.ArrayCollection;
+			import net.undf.abicloud.vo.infrastructure.NetworkModule;
+			import net.undf.abicloud.events.InfrastructureEvent;
+			import net.undf.abicloud.vo.infrastructure.PhysicalMachine;
+			
+			
+			//The Physical Machine that will be rendered
+			[Bindable]
+			private var _physicalMachine:PhysicalMachine;
+			
+			[Bindable]
+			private var _editMode:Boolean;
+			
+			/**
+			 * Initializes this component with the Physical Machine that will be rendered
+			 */
+			public function init(pM:PhysicalMachine):void
+			{
+				this._physicalMachine = null;
+				this._physicalMachine = pM;
+				this._editMode = false;
+				
+				if(physicalMachineVS != null)
+					physicalMachineVS.selectedIndex = 0;
+			}
+			
+			/**
+			 * Sets this component in edit mode
+			 */
+			private function onClickEdit():void
+			{
+				this._editMode = true;	
+				
+				//Setting the values that can be edited
+				nameInput.text = this._physicalMachine.name;
+			}
+			
+			/**
+			 * Saves the changes made to the physical machine being rendered
+			 */
+			private function onClickAccept():void
+			{
+				//Getting the changes made to the Physical Machine in the component that is being showed
+				var physicalMachineEdited:PhysicalMachine;
+				switch(physicalMachineVS.selectedIndex)
+				{
+					case 0:
+						physicalMachineEdited = physicalMachineRendererGeneral.physicalMachineEdited;
+						break;
+					case 1:
+						physicalMachineEdited = physicalMachineRendererNetwork.physicalMachineEdited;
+						break;
+					case 2:
+						physicalMachineEdited = physicalMachineRendererHypervisor.physicalMachineEdited;
+						//Saving the hypervisor that this component is managing
+						physicalMachineRendererHypervisor.saveSelectedHypervisor();
+						break;
+					case 3:
+						physicalMachineEdited = physicalMachineRendererState.physicalMachineEdited;	
+				}
+				
+				//Updating changes made to name field, that is editable in this component
+				physicalMachineEdited.name = nameInput.text;
+				
+				//Announcing that the Physical Machine has been edited
+				var infrastructureEvent:InfrastructureEvent = new InfrastructureEvent(InfrastructureEvent.EDIT_PHYSICALMACHINE);
+				infrastructureEvent.infrastructureElement = physicalMachineEdited;
+				infrastructureEvent.oldInfrastructureElement = this._physicalMachine;
+				dispatchEvent(infrastructureEvent);
+				
+				//Turning off edit mode
+				this._editMode = false;
+			}
+			
+			/**
+			 * Cancels the edition of the physical machine being rendered
+			 */
+			private function onClickCancel():void
+			{
+				this._editMode = false;	
+			}			 
+
+		]]>
+	</mx:Script>
+	
+
+	<utils:SmoothImage id="physicalMachineIcon"
+					   source="assets/infrastructure/physicalMachine.png" maintainAspectRatio="true" 
+					   height="143" width="143" top="5" left="15"/>
+	
+	<mx:HBox top="5" left="168" width="100%">
+		<mx:Label text="{this._physicalMachine.name}" 
+		  	  fontSize="16" fontWeight="bold"
+		  	  visible="{! _editMode}" includeInLayout="{! _editMode}"/>
+		 
+		<mx:TextInput id="nameInput" maxChars="29" height="20" width="120"
+					  visible="{_editMode}" includeInLayout="{_editMode}"/>
+		
+		<mx:Spacer width="100%"/>
+		
+		<utils:SmoothImage height="17"
+						   source="assets/general/lapiz.png"
+						   toolTip="@Resource(bundle='Common', key='BUTTON_EDIT_TOOLTIP')"
+						   visible="{! this._editMode}" includeInLayout="{! this._editMode}"
+						   click="onClickEdit()"/>			   
+									   
+		<mx:Button label="@Resource(bundle='Common', key='BUTTON_ACCEPT')" height="17"
+				   visible="{this._editMode}" includeInLayout="{this._editMode}"
+				   click="onClickAccept()"/>
+				   
+		<mx:Button label="@Resource(bundle='Common', key='BUTTON_CANCEL')" height="17" styleName="buttonGris"
+				   visible="{this._editMode}" includeInLayout="{this._editMode}"
+				   click="onClickCancel()"/> 	  
+	</mx:HBox>
+	
+	 
+	<mx:TabBar top="41" left="168" width="80" styleName="PhysicalMachineRendererTabBar"
+			   dataProvider="physicalMachineVS"
+			   direction="vertical"/>
+			   
+	<mx:ViewStack id="physicalMachineVS"
+				  top="26" bottom="10" left="264" right="15"
+				  change="this._editMode = false">
+		
+		<!-- General Info -->
+		<componentsPM:PhysicalMachineRendererGeneral id="physicalMachineRendererGeneral"
+												   label="@Resource(bundle='Infrastructure', key='TAB_GENERAL_INFO')" 
+												   physicalMachine="{this._physicalMachine}" editMode="{this._editMode}"/>
+		
+		<!-- Network Info -->
+		<componentsPM:PhysicalMachineRendererNetwork id="physicalMachineRendererNetwork"
+												   label="@Resource(bundle='Infrastructure', key='TAB_NETWORK_INFO')"
+												   physicalMachine="{this._physicalMachine}" editMode="{this._editMode}"/>
+		<!-- Hypervisors Info -->
+		<componentsPM:PhysicalMachineRendererHypervisor id="physicalMachineRendererHypervisor"
+													  label="@Resource(bundle='Infrastructure', key='FORM_LABEL_HYPERVISOR')"
+													  physicalMachine="{this._physicalMachine}" editMode="{this._editMode}"/>
+													  
+		<!-- State Info -->
+		<componentsPM:PhysicalMachineRendererState id="physicalMachineRendererState"
+												 label="@Resource(bundle='Infrastructure', key='TAB_STATE_INFO')"
+												 physicalMachine="{this._physicalMachine}"/>
+	</mx:ViewStack>
+</mx:Canvas>

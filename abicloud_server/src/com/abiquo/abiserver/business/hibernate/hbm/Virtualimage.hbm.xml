@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-mapping PUBLIC "-//Hibernate/Hibernate Mapping DTD 3.0//EN" "http://hibernate.sourceforge.net/hibernate-mapping-3.0.dtd">
+<!-- Generated 16-oct-2008 16:52:14 by Hibernate Tools 3.2.1.GA -->
+<hibernate-mapping>
+  <class catalog="kinton" name="com.abiquo.abiserver.business.hibernate.pojohb.virtualimage.VirtualimageHB" table="virtualimage">
+    <id name="idImage" type="java.lang.Integer">
+      <column name="idImage"/>
+      <generator class="identity"/>
+    </id>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.UserHB" fetch="select" name="userHBByIdUserLastModification">
+      <column name="idUser_lastModification"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.virtualimage.RepositoryHB" fetch="select" name="repository">
+      <column name="idRepository" not-null="true"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.user.UserHB" fetch="select" name="userHBByIdUserCreation">
+      <column name="idUserCreation" not-null="true"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.infrastructure.SoHB" fetch="select" name="so">
+      <column name="idSO"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.virtualimage.IconHB" fetch="select" name="icon" not-null="false">
+      <column name="idIcon"/>
+    </many-to-one>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.virtualimage.CategoryHB" fetch="select" name="category">
+      <column name="idCategory" not-null="true"/>
+    </many-to-one>
+    <property name="name" type="string">
+      <column length="20" name="name" not-null="true"/>
+    </property>
+    <property name="description" type="string">
+      <column length="100" name="description"/>
+    </property>
+    <property name="pathName" type="string">
+      <column length="100" name="pathName" not-null="true"/>
+    </property>
+    <property name="hdRequired" type="java.lang.Long">
+      <column name="hd_required"/>
+    </property>
+    <property name="ramRequired" type="java.lang.Integer">
+      <column name="ram_required"/>
+    </property>
+    <property name="cpuRequired" type="java.lang.Integer">
+      <column name="cpu_required"/>
+    </property>
+    <property name="treaty" type="int">
+      <column name="treaty" not-null="true">
+        <comment>0-No 1-Yes</comment>
+      </column>
+    </property>
+    <property name="deleted" type="int">
+      <column name="deleted" not-null="true">
+        <comment>0-No 1-Yes</comment>
+      </column>
+    </property>
+    <many-to-one class="com.abiquo.abiserver.business.hibernate.pojohb.virtualimage.VirtualimageTypeHB" name="virtualimageTypeHB">
+      <column name="imageType"/>
+    </many-to-one>
+    <property name="creationDate" type="timestamp">
+      <column length="0" name="creationDate" not-null="true"/>
+    </property>
+    <property name="lastModificationDate" type="timestamp">
+      <column length="0" name="lastModificationDate"/>
+    </property>
+  </class>
+</hibernate-mapping>

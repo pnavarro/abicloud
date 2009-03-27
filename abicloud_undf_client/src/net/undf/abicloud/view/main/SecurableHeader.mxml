@@ -1,0 +1,233 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<!--
+/*
+* The contents of this file are subject to the Common Public Attribution License
+
+* Version 1.0 (the "License"); you may not use this file except in compliance
+* with the License. You may obtain a copy of the License at http://cpal.abiquo.com.
+
+
+
+* The License is based on the Mozilla Public License Version 1.1 but Sections 14
+* and 15 have been added to cover use of software over a computer network and
+* provide for limited attribution for the Original Developer. In addition,
+
+
+
+* Exhibit A has been modified to be consistent with Exhibit B.
+*
+* Software distributed under the License is distributed on an "AS IS" basis,
+* WITHOUT WARRANTY OF ANY KIND, either express or implied. See the License
+
+
+
+* for the specific language governing rights and limitations under the License.
+*
+* The Original Code is abiquo,  14 Jul 2008. The Original Developer is the
+* Initial Developer. The Initial Developer of the Original Code is Soluciones Grid,
+
+
+
+* S.L.. All portions of the code are Copyright © Soluciones Grid, S.L.
+* All Rights Reserved.
+*/
+
+-->
+<mx:Canvas xmlns:mx="http://www.adobe.com/2006/mxml"
+		   implements="net.undf.abicloud.security.ISecurableComponent"
+		   xmlns:components="net.undf.abicloud.view.main.components.*"
+		   width="100%" height="100%"
+		   creationComplete = "onCreationComplete()" >
+	
+	
+	<mx:Metadata>
+		[Event(name="selectMenuOption", type="mx.events.ItemClickEvent")]
+	</mx:Metadata>
+	
+	<mx:Script>
+		<![CDATA[
+			import mx.managers.PopUpManager;
+			import net.undf.abicloud.view.user.components.UserEdit;
+			import net.undf.abicloud.business.managers.AuthorizationManager;
+			import net.undf.abicloud.view.main.components.HeaderButton;
+			import mx.core.Application;
+			import flash.net.navigateToURL;
+			import mx.controls.Alert;
+			import net.undf.abicloud.model.AbiCloudModel;
+			import net.undf.abicloud.events.LoginEvent;
+			import mx.resources.ResourceManager;
+			import mx.resources.ResourceBundle;
+			import mx.events.ItemClickEvent;
+			import mx.collections.ArrayCollection;
+			import net.undf.abicloud.security.SecurableResource;
+			
+			//Pop Ups
+			private var _userEdit:UserEdit;
+			
+			/**
+			 * When the Securable Header is created
+			 **/
+			private function onCreationComplete():void
+			{
+				defineSecurableResources();
+				checkSecurableResources();
+				
+				//Creating Pop Up
+				_userEdit = new UserEdit();
+				_userEdit.roleEditable = false;
+				_userEdit.activeEditable = false;
+				_userEdit.addEventListener("userEditClose", closeUserEdit);
+			}
+			
+			
+			public function set authorizationManager(auth:AuthorizationManager):void
+			{
+				this._authorizationManager = auth;
+			}
+			
+			/**
+			 * Shows a Pop Up for user who has logged in can modify his data
+			 **/
+			private function onClickUserLoggedInfo():void
+			{
+				PopUpManager.addPopUp(this._userEdit, Application.application.document, true);
+				PopUpManager.centerPopUp(this._userEdit);
+			
+				this._userEdit.init(AbiCloudModel.getInstance().loginManager.user);
+			}
+			
+			private function closeUserEdit(event:Event):void
+			{
+				PopUpManager.removePopUp(this._userEdit);
+			}
+			
+			private function onLogout():void
+			{				
+				//Notifying that user wants to make logout
+				var event:LoginEvent = new LoginEvent(LoginEvent.LOGOUT);
+				event.logout = AbiCloudModel.getInstance().loginManager.session;
+				dispatchEvent(event);
+			}
+			
+			/////////////////////////////////////////////////////////////////////////////
+			//ISecurableComponent implementation
+			
+			//Securable Resources of this Securable Component
+			private var startButton:SecurableResource;
+			private var infrastructureButton:SecurableResource;
+			private var userButton:SecurableResource;
+			private var virtualApplianceButton:SecurableResource;
+			private var virtualImageButton:SecurableResource;
+			
+			//Auhorization Manager that this Securable Component will use
+			private var _authorizationManager:AuthorizationManager;
+			
+			public function defineSecurableResources():void
+			{
+				startButton = new SecurableResource("DASHBOARD_BUTTON", "MAIN");
+				userButton = new SecurableResource("USER_BUTTON", "MAIN");
+				infrastructureButton = new SecurableResource("INFRASTRUCTURE_BUTTON", "MAIN");
+				virtualApplianceButton = new SecurableResource("VIRTUALAPP_BUTTON", "MAIN");
+				virtualImageButton = new SecurableResource("VIRTUALIMAGE_BUTTON", "MAIN");
+			}
+			
+			
+			/**
+			 * Checks that the current user is authorized to use each SecurableResource, and if so, creates the
+			 * appropiate button for user interaction
+			 **/
+			[ResourceBundle("Main")]
+			private var rb:ResourceBundle;
+			public function checkSecurableResources():void
+			{
+				var menuOptions:ArrayCollection = new ArrayCollection();
+				var menuOption:HeaderButton;
+				
+				if(startButton.applyAuthorization(_authorizationManager))
+				{
+					//Making available this resource
+					menuOption = new HeaderButton(0);
+					menuOption.label = ResourceManager.getInstance().getString("Main", "HEADER_MENU_START");
+					menuOption.styleName = "buttonDashboard"; 
+					menuOptions.addItem(menuOption);
+				}
+				
+				if(infrastructureButton.applyAuthorization(_authorizationManager))
+				{
+					//Making available this resource
+					menuOption = new HeaderButton(1);
+					menuOption.label = ResourceManager.getInstance().getString("Main", "HEADER_MENU_INFRASTRUCTURE")
+					menuOption.styleName = "buttonInfrastructure";  
+					menuOptions.addItem(menuOption);
+				}
+				
+				if(virtualApplianceButton.applyAuthorization(_authorizationManager))
+				{
+					//Making available this resource
+					menuOption = new HeaderButton(2);
+					menuOption.label = ResourceManager.getInstance().getString("Main", "HEADER_MENU_VIRTUALAPPLIANCE");
+					menuOption.styleName =  "buttonVirtualApp"; 
+					menuOptions.addItem(menuOption);	
+				}
+				
+				if(virtualImageButton.applyAuthorization(_authorizationManager))
+				{
+					//Making available this resource
+					menuOption = new HeaderButton(3);
+					menuOption.label =  ResourceManager.getInstance().getString("Main", "HEADER_MENU_VIRTUALIMAGE");
+					menuOption.styleName = "buttonVirtualImage"; 
+					menuOptions.addItem(menuOption);
+				}
+				
+				if(userButton.applyAuthorization(_authorizationManager))
+				{
+					//Making available this resource
+					menuOption = new HeaderButton(4);
+					menuOption.label = ResourceManager.getInstance().getString("Main", "HEADER_MENU_USER");
+					menuOption.styleName = "buttonUsers"; 
+					menuOptions.addItem(menuOption);
+				}
+				
+				//Setting the Data Provider for the header
+				menu.dataProvider = menuOptions;
+			}
+			
+			
+			/**
+			 * We don't need to implement this function, since the SecurableHeader will never become entirely unavailable
+			 **/
+			public function makeUnavailable():void {}
+			
+		]]>
+	</mx:Script>
+	
+
+	<mx:HBox height="64" verticalCenter="0" verticalAlign="middle" left="15" right="15" horizontalGap="0">
+		<mx:Spacer width="10" height="10"/>
+		<mx:Image source="assets/general/logoLogin.png" 
+		/>
+		<mx:Spacer width="100%" height="10"/>
+		<components:HeaderToggleButtonBar id="menu"
+										  visible="{menu.selectedIndex != 0}"
+										  styleName="menuToggleButtonBar"/>
+		<mx:Spacer width="100%"/>
+		
+		
+		<mx:Label id="userLoggedInfo"
+				  text="{AbiCloudModel.getInstance().loginManager.user.name + ' ' + AbiCloudModel.getInstance().loginManager.user.surname}"
+				  fontWeight="bold" fontSize="11"
+				  buttonMode="true" useHandCursor="true" mouseChildren="false"
+				  rollOver="userLoggedInfo.setStyle('textDecoration', 'underline')"
+				  rollOut="userLoggedInfo.setStyle('textDecoration', 'none')"
+				  click="onClickUserLoggedInfo()"/>	
+		
+		<mx:Spacer width="25" />
+		
+		<mx:Button id="logoutButton"
+				   click="onLogout()"
+				   label="@Resource(bundle='Main', key='HEADER_MENU_LOGOUT')"
+		 		   styleName="buttonMenulogout" labelPlacement="bottom">
+		</mx:Button>
+	</mx:HBox>
+</mx:Canvas>
