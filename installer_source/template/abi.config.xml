@@ -16,26 +16,15 @@
     <!--Datacenter name-->
     <entry key="dataCenterName">myDatacenter</entry>
 
-
-    <!--
-      Database properties
-      192.168.1.45:3306
-      kinton
-      s0ng0ku
-    -->
     <entry key="db.url">jdbc:mysql://##databaseHost##:##databasePort##/##databaseName##</entry>
     <entry key="db.username">##databaseUsername##</entry>
     <entry key="db.password">##databasePassword##</entry>
     
     
     <!--  Session timeout in minutes -->
-    <entry key="sessionTimeout">5</entry>
-    
+    <entry key="sessionTimeout">60</entry>
     
     <!-- Maximum number of session. A value of 0 means no limit -->
     <entry key="">1</entry>
-    
-    
-    
     
 </properties>
