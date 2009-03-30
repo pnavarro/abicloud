@@ -8,13 +8,13 @@ import java.net.URL;
 
 import junit.framework.TestCase;
 
-import com.abiquo.appliancemanager.filesystems.FileFTP;
 import com.abiquo.appliancemanager.filesystems.FileFactory;
-import com.abiquo.appliancemanager.filesystems.FileHttp;
-import com.abiquo.appliancemanager.filesystems.FileLocal;
-import com.abiquo.appliancemanager.filesystems.FileS3;
-import com.abiquo.appliancemanager.filesystems.IFileSystem;
 
+/**
+ * Open a file to count its bytes, check if are the expected.
+ * 
+ * In order to run this test you must properly set the urlLocal and urlFtp.  
+ * */
 public class FileDownloadTest extends TestCase
 {
 
@@ -26,18 +26,18 @@ public class FileDownloadTest extends TestCase
     {
     }
 
+    private final static boolean isLoggingProgess=true;
+    
     public final static String urlHttp =
         "http://ftp.udc.es/apache-dist/hadoop/core/hadoop-0.19.1/hadoop-0.19.1.tar.gz";
 
     public final static String urlLocal = "file://home/apuig/test/hadoop-0.19.1.tar.gz";
 
-    public final static String urlFtp = "ftp:/XXXXXXXXX TODO XXXXXXXXX"; // TODO
+    public final static String urlFtp = "ftp://apuig/test/hadoop-0.19.1.tar.gz"; 
 
-    public final static String urlS3 = "s3:///XXXXXXXXX TODO XXXXXXXXX"; // TODO
+    
 
     final static BigInteger fileSize = BigInteger.valueOf(55745146);
-
-    // private IFileSystem file;
 
     private URL fileLocation;
 
@@ -59,11 +59,13 @@ public class FileDownloadTest extends TestCase
         fileTest();
     }
 
+    /** TODO
+    public final static String urlS3 = "s3:///XXXXXXXXX TODO XXXXXXXXX"; // TODO
     public void testS3File() throws MalformedURLException
     {
         fileLocation = new URL(urlS3);
         fileTest();
-    }
+    }**/
 
     private void fileTest()
     {
@@ -77,10 +79,14 @@ public class FileDownloadTest extends TestCase
         }
         catch (Exception e) // DownloadException or MalformedURLException
         {
+            e.printStackTrace();
             fail("can not get the inputStream from the http source");
         }
     }
 
+    
+    
+    
     public BigInteger countStreamBytes(InputStream is)
     {
         long current = 0;
@@ -97,6 +103,11 @@ public class FileDownloadTest extends TestCase
                 {
                     current += nRead;
                 }
+                
+                if(isLoggingProgess)
+                {                    
+                    System.out.println(((double )current * 100/fileSize.longValue()));
+                }
             }
         }
         catch (IOException e)
@@ -105,6 +116,5 @@ public class FileDownloadTest extends TestCase
         }
 
         return BigInteger.valueOf(current);
-    }
-
+    }   
 }

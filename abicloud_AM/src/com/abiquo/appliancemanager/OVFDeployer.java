@@ -29,12 +29,7 @@ import org.slf4j.LoggerFactory;
 import com.abiquo.appliancemanager.exceptions.DownloadException;
 import com.abiquo.appliancemanager.exceptions.IdNotFound;
 import com.abiquo.appliancemanager.exceptions.RepositoryException;
-import com.abiquo.appliancemanager.filesystems.FileFTP;
 import com.abiquo.appliancemanager.filesystems.FileFactory;
-import com.abiquo.appliancemanager.filesystems.FileHttp;
-import com.abiquo.appliancemanager.filesystems.FileLocal;
-import com.abiquo.appliancemanager.filesystems.FileS3;
-import com.abiquo.appliancemanager.filesystems.IFileSystem;
 import com.abiquo.appliancemanager.util.EnvelopeUtils;
 import com.abiquo.appliancemanager.xml.OVFSerializer;
 
@@ -102,13 +97,18 @@ public class OVFDeployer
     public void deployOVFPackage(EnvelopeType envelope, URL ovfPackageLocation)
         throws DownloadException, RepositoryException
     {
+        Map<String, String> relativePaths = new HashMap<String, String>();
         Path ovfpPath;
 
         // TODO assert URL is a directory !!!
 
-        String packageName = ovfPackageLocation.getFile();
-
-        ovfpPath = new Path(packageName);
+        String packageDirectory = ovfPackageLocation.getFile();
+        String[] packageDirElems = packageDirectory.split(File.separator); 
+        String packageName = packageDirElems[packageDirElems.length-1];
+        
+        log.debug("deploing package directory "+packageDirectory+" pakcagename "+packageName);
+        
+        ovfpPath = new Path(packageDirectory);
 
         // create the OVF Package directory into the repository
         try
@@ -120,7 +120,7 @@ public class OVFDeployer
              */
             repositoryFS.mkdirs(ovfpPath);
 
-            log.debug("Created OVFPackage directory " + packageName);
+            log.debug("Created OVFPackage directory " + packageDirectory);
         }
         catch (IOException e1)
         {
@@ -165,19 +165,31 @@ public class OVFDeployer
                 }
             }
 
-            try
-            {
-                relativeFilePath = deploy(fileURL, ovfpPath, file.getSize());
+            relativeFilePath = deploy(fileURL, ovfpPath, file.getSize());
 
-                EnvelopeUtils.changeFileReference(envelope, file.getId(), relativeFilePath);
-            }
-            catch (IdNotFound e) // MalformedURLException or
-            {
-                final String msg = "Invalid file reference " + file.getHref();
-                throw new DownloadException(msg, e);
-            }
+            log.debug("Deployed "+fileURL);
+            
+            relativePaths.put(file.getId(), relativeFilePath);
+            
+            
+            
+        }//for each fileRef
+
+
+        for(String fileId : relativePaths.keySet())
+        try
+        {
+            EnvelopeUtils.changeFileReference(envelope, fileId, relativePaths.get(fileId));    
         }
-
+        catch (IdNotFound e) // MalformedURLException or
+        {
+            final String msg = "Invalid file reference " + fileId;
+            throw new DownloadException(msg, e);
+        }
+        
+        
+        
+        
         // Write the modified OVF XML description file into the OVF package directory on the
         // repository.
         try
@@ -185,13 +197,19 @@ public class OVFDeployer
             FSDataOutputStream osOVFDesc =
                 repositoryFS.create(new Path(ovfpPath, packageName + ".ovf"));
 
-            OVFSerializer.getInstance().writeXML(envelope, osOVFDesc);
+            OVFSerializer.getInstance().writeXML(envelope, osOVFDesc);            
+            osOVFDesc.flush();
+            osOVFDesc.sync();//TODO
+            osOVFDesc.close();
+            
         }
         catch (Exception e1) // IOException or XMLException
         {
             final String msg = "The OVF XML description can not be write into the repository";
             throw new RepositoryException(msg, e1);
         }
+        
+        log.debug("Downloaded OVFPackage "+packageDirectory);
     }
 
     /**
@@ -210,7 +228,9 @@ public class OVFDeployer
     {
 
         InputStream isDownload;
-        String fileRelatPath = target.getFile();
+        
+        String fileRelatPath = target.getFile().replace(File.separatorChar, '_'); // TODO
+        
         Path destinationPath = new Path(ovfpPath, fileRelatPath);
 
         log.debug("Deploing file " + target.toString() + " to " + destinationPath.toString()
@@ -296,7 +316,7 @@ public class OVFDeployer
          */
         public FileDownloadStatus getProgress()
         {
-            double progress = (currentSize / expectedSize) * 100;
+            double progress = ((double) currentSize * 100/ expectedSize);
             return new FileDownloadStatus(getSource(), progress);
         }
 
@@ -325,27 +345,25 @@ public class OVFDeployer
                 buffer = new byte[bufferSize];
                 int nRead = 0;
 
-                while (nRead != -1)
+                while (nRead != -1 && (currentSize < expectedSize))
                 {
                     nRead = source.read(buffer);
 
-                    // System.err.println("readed");
-                    osDest.getWrappedStream().write(buffer, 0, nRead);
-                    // System.err.println("writed");
+                    osDest.write(buffer, 0, nRead);
 
-                    osDest.getWrappedStream().flush();
+                    osDest.flush();
                     osDest.sync();
-
-                    // TODO some flush
 
                     if (nRead != -1)
                     {
-                        currentSize += nRead;
+                        currentSize += nRead;    
                     }
-
-                    log.debug("prgress: " + getProgress().getProgress() + "%"); // TODO remove
+                    
+                    log.debug("prgress: " + getProgress().getProgress() + "% nRead "+nRead); // TODO remove
                 }
 
+                log.debug("complet");
+                
                 source.close();
                 osDest.close();
 

@@ -78,15 +78,18 @@ public class OVFDeployerTest extends TestCase
         // use files form FileDownloadTest
         files.add(EnvelopeUtils.createFileType(FileDownloadTest.fileSize, null, null,
             FileDownloadTest.urlLocal, "localFileID"));
-
-        files.add(EnvelopeUtils.createFileType(FileDownloadTest.fileSize, null, null,
-            FileDownloadTest.urlHttp, "httpFileID"));
-
+        
         files.add(EnvelopeUtils.createFileType(FileDownloadTest.fileSize, null, null,
             FileDownloadTest.urlFtp, "ftpFileID"));
+        
 
         files.add(EnvelopeUtils.createFileType(FileDownloadTest.fileSize, null, null,
+            FileDownloadTest.urlHttp, "httpFileID"));        
+
+        /** TODO s3
+        files.add(EnvelopeUtils.createFileType(FileDownloadTest.fileSize, null, null,
             FileDownloadTest.urlS3, "s3FileID"));
+            **/
     }
 
     private void setFileReferencesLocalRelative()
@@ -128,5 +131,16 @@ public class OVFDeployerTest extends TestCase
         return OVFSerializer.getInstance().readXMLEnvelope(
             new FileInputStream("resources/test/myservice.ovf"));
     }
+    
+    
+    
+    public static void main(String[] args)
+    {
+        OVFDeployerTest test = new OVFDeployerTest();
+        test.setUp();
+        test.testRemoteDeploy();        
+    }
+    
+    
 
 }
