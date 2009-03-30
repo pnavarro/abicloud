@@ -401,64 +401,107 @@ public class UserCommand extends BasicCommand
         return basicResult;
     }
 
-    /**
-     * Closes any existing session for the given users
-     * 
-     * @param userSession
-     * @param users The list of users whose session will be closed
-     * @return A BasicResult object, informing if the operation had success
-     */
-    protected BasicResult closeSessionUsers(UserSession userSession, ArrayList<User> users)
-    {
-        BasicResult basicResult = new BasicResult();
-
-        Session session = null;
-        Transaction transaction = null;
-
-        try
-        {
-            session = HibernateUtil.getSession();
-            transaction = session.beginTransaction();
-
-            // Generating the list of users for the query
-            // String userNames = "(";
-
-            if (users.size() > 0)
-            {
-                String userNames = "(";
-                User user;
-                for (int i = 0; i < users.size(); i++)
-                {
-                    user = users.get(i);
-                    if (i > 0)
-                        userNames = userNames + "," + "'" + user.getUser() + "'";
-                    else
-                        userNames = userNames + "'" + user.getUser() + "'";
-                }
-                userNames = userNames + ")";
-
-                session.createSQLQuery("DELETE FROM session WHERE user IN " + userNames)
-                    .executeUpdate();
-            }
-
-            transaction.commit();
-
-            // Generating result
-            basicResult.setSuccess(true);
-            basicResult.setMessage(UserCommand.resourceManager
-                .getMessage("closeSessionUsers.success"));
-        }
-        catch (Exception e)
-        {
-            if (transaction != null && transaction.isActive())
-                transaction.rollback();
-
-            // Generating error
-            this.errorManager.reportError(resourceManager, basicResult, "closeSessionUsers", e);
-        }
-
-        return basicResult;
-    }
+	/**
+	 * Closes any existing session for the given users
+	 * @param userSession
+	 * @param users	The list of users whose session will be closed
+	 * @return A BasicResult object, informing if the operation had success
+	 */
+	protected BasicResult closeSessionUsers(UserSession userSession, ArrayList<User> users)
+	{
+		BasicResult basicResult = new BasicResult();
+		
+		Session session = null;
+		Transaction transaction = null;
+		
+		try
+		{
+			session = HibernateUtil.getSession();
+			transaction = session.beginTransaction();
+			
+			//Generating the list of users for the query
+			
+			if(users.size() > 0)
+			{
+				String userNames = "(";
+				User user;
+				for(int i = 0; i < users.size(); i++)
+				{
+					user = users.get(i);
+					if(i > 0)
+						userNames = userNames + "," + "'" + user.getUser() + "'";
+					else
+						userNames = userNames + "'" + user.getUser() + "'";
+				}
+				userNames = userNames + ")";
+				
+				//TODO use an HQL query instead of an SQL query
+				session.createSQLQuery("DELETE FROM session WHERE user IN " + userNames).executeUpdate();
+			}
+			
+			transaction.commit();
+			
+			//Generating result
+			basicResult.setSuccess(true);
+			basicResult.setMessage( UserCommand.resourceManager.getMessage("closeSessionUsers.success") );
+		}
+		catch (Exception e)
+		{
+			if(transaction != null && transaction.isActive())
+				transaction.rollback();
+			
+			//Generating error
+			this.errorManager.reportError(resourceManager,basicResult,"closeSessionUsers", e);
+		}
+		
+		return basicResult;
+	}
+	
+	
+	/**
+	 * Closes all current active sessions, except the userSession
+	 * @param userSession
+	 * @param users	The list of users whose session will be closed
+	 * @return A BasicResult object, informing if the operation had success
+	 */
+	protected BasicResult closeSessionUsers(UserSession userSession)
+	{
+		BasicResult basicResult = new BasicResult();
+		
+		Session session = null;
+		Transaction transaction = null;
+		
+		try
+		{
+			session = HibernateUtil.getSession();
+			transaction = session.beginTransaction();
+			
+			//Generating a custom query to delete all sessions, except userSession
+			String hqlDelete = "delete UserSession uS where uS.user != :notUser and uS.key != :notKey";
+			session.createQuery(hqlDelete)
+				   .setString("notUser", userSession.getUser())
+				   .setString("notKey", userSession.getKey())
+				   .executeUpdate();
+			
+			transaction.commit();
+			
+	
+			
+			//Generating result
+			basicResult.setSuccess(true);
+			basicResult.setMessage( UserCommand.resourceManager.getMessage("closeSessionUsers.success") );
+		}
+		catch (Exception e)
+		{
+			if(transaction != null && transaction.isActive())
+				transaction.rollback();
+			
+			//Generating error
+			this.errorManager.reportError(resourceManager,basicResult,"closeSessionUsers", e);
+		}
+		
+		return basicResult;
+	}
 
     // ///////////////////////////////////////
     // ENTERPRISES
@@ -625,6 +668,7 @@ public class UserCommand extends BasicCommand
 
             this.errorManager.reportError(resourceManager, dataResult, "createEnterprise", e);
         }
+
 
         return dataResult;
     }

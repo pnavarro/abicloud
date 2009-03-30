@@ -48,15 +48,6 @@ import com.abiquo.abiserver.pojo.user.UserListOptions;
 
 public class UserService
 {
-
-    /**
-     * Returns all users stored in the Data Base
-     * 
-     * @param userSession
-     * @return A DataResult object containing an UserListResult object with an ArrayList of User and
-     *         the number of total users
-     */
-
     /**
      * Returns a list of users stored in the Data Base. Users marked as deleted will not be returned
      * 
@@ -131,23 +122,34 @@ public class UserService
     }
 
     /**
-     * Closes any existing session for the given users
-     * 
-     * @param userSession
-     * @param users The list of users whose session will be closed
-     * @return A BasicResult object, informing if the operation had success
-     */
-    public BasicResult closeSessionUsers(UserSession userSession, ArrayList<User> users)
-    {
-        UserCommand userCommand = new UserCommand();
-        Object[] args = new Object[2];
-        args[0] = userSession;
-        // We need to do this because users is casted as an flex.messaging.io.ArrayCollection
-        args[1] = new ArrayList<User>(users);
-
-        return userCommand.execute(userSession, ResourceLocator.USERS_CLOSE_SESSION, args);
-    }
-
+	 * Closes any existing session for the given users
+	 * 
+	 * @param userSession
+	 * @param users	The list of users whose session will be closed. If null, all current active sessions
+	 * will be closed, except the userSession
+	 * @return A BasicResult object, informing if the operation had success
+	 */
+	public BasicResult closeSessionUsers(UserSession userSession, ArrayList<User> users)
+	{
+		UserCommand userCommand = new UserCommand();
+		Object[] args;
+		
+		if(users != null)
+		{
+			args = new Object[2];
+			args[0] = userSession;
+			args[1] = new ArrayList<User>(users);
+		}
+		else
+		{
+			args = new Object[1];
+			args[0] = userSession;
+		}
+ 		
+		return userCommand.execute(userSession, ResourceLocator.USERS_CLOSE_SESSION, args);
+	}
+    
+    
     // ///////////////////////////////////////
     // ENTERPRISES
 
