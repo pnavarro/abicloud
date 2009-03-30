@@ -2,8 +2,9 @@
     <shortName>abicloud</shortName>
     <fullName>AbiCloud</fullName>
     <version>0.6.0</version>
-    <installerFilename></installerFilename>
     <licenseFile>licence</licenseFile>
+    <leftImage>../../abicloud/installer_source/CustomPreloaderLogo.png</leftImage>
+    <logoImage>../../abicloud/installer_source/CustomPreloaderLogo.png</logoImage>
     <showPostInstallationScriptResult>1</showPostInstallationScriptResult>
     <preInstallationActionList>
         <autodetectJava>
