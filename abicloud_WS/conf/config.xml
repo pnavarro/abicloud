@@ -6,7 +6,7 @@
 			<SanDatastore name="nfsrepository"></SanDatastore>
 			<!-- <VmfsDatastore name="datastore1"></VmfsDatastore> -->
 			<user>root</user>
-			<password>voycruzand0elrio</password>
+			<password></password>
 			<ignorecert>true</ignorecert>
 		</vmware>
 	</hypervisors>
