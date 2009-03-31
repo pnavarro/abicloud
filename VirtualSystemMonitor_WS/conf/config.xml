@@ -4,7 +4,7 @@
 		<vmware>
 			<!-- <datacenter>ha-datacenter</datacenter> -->
 			<user>root</user>
-			<password>voycruzand0elrio</password>
+			<password></password>
 			<ignorecert>true</ignorecert>
 		</vmware>
 	</hypervisors>
